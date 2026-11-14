@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS imoveis (
   fonte TEXT NOT NULL, id_fonte TEXT NOT NULL,
   uf TEXT, cidade TEXT, bairro TEXT, endereco TEXT,
   preco REAL, valor_avaliacao REAL, desconto_pct REAL, modalidade TEXT,
-  tipo TEXT, area_privativa REAL, area_terreno REAL, descricao TEXT, link TEXT, data_fonte TEXT,
+  tipo TEXT, area_privativa REAL, area_terreno REAL, area_total REAL, descricao TEXT, link TEXT, data_fonte TEXT,
   chave_endereco TEXT,
   situacao TEXT NOT NULL DEFAULT 'ativo',      -- ativo | saiu_da_lista
   estagio TEXT NOT NULL DEFAULT 'identificado', -- etapa do funil, alterada por pessoas
@@ -32,14 +32,38 @@ CREATE TABLE IF NOT EXISTS coletas (
 );
 """
 CAMPOS = ("uf", "cidade", "bairro", "endereco", "preco", "valor_avaliacao", "desconto_pct",
-          "modalidade", "tipo", "area_privativa", "area_terreno", "descricao", "link", "data_fonte")
+          "modalidade", "tipo", "area_privativa", "area_terreno", "area_total", "descricao", "link", "data_fonte")
+
+
+# Colunas acrescentadas depois da primeira versão: (tabela, coluna, tipo SQL).
+# Base antiga ganha a coluna vazia; o valor é preenchido na próxima coleta ou por
+# ferramentas/reprocessar_descricao.py.
+COLUNAS_NOVAS = [
+    ("imoveis", "area_total", "REAL"),
+]
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
     con = sqlite3.connect(caminho)
     con.row_factory = sqlite3.Row
     con.executescript(ESQUEMA)
+    _migrar(con, caminho)
     return con
+
+
+def _migrar(con, caminho: str) -> None:
+    faltando = [(t, c, tipo) for t, c, tipo in COLUNAS_NOVAS
+                if c not in {r["name"] for r in con.execute(f"PRAGMA table_info({t})")}]
+    if not faltando:
+        return
+    if caminho != ":memory:":           # cópia da base antes de mudar o esquema
+        destino = f"{caminho}.antes_migracao_{datetime.now():%Y%m%d_%H%M%S}"
+        with sqlite3.connect(destino) as copia:
+            con.backup(copia)
+        copia.close()
+    for t, c, tipo in faltando:
+        con.execute(f"ALTER TABLE {t} ADD COLUMN {c} {tipo}")
+    con.commit()
 
 
 def gravar_coleta(con, fonte: str, recorte: str, origem: str,

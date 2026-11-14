@@ -68,13 +68,14 @@ def _mapear_cabecalho(celulas: List[str]) -> dict:
     return mapa
 
 
-def _tipo_e_areas(descricao: str) -> Tuple[str, float, float]:
+def tipo_e_areas(descricao: str) -> Tuple[str, float, float, float]:
+    """Devolve (tipo, área privativa, área do terreno, área total) a partir da descrição."""
     tipo = chave(descricao.split(",")[0]) if descricao else ""
     def area(rotulo):
         m = re.search(r"([\d.,]+)\s*de\s*[áa]rea\s*" + rotulo, descricao or "", re.I)
         v = numero_br(m.group(1)) if m else None
         return v if v else None          # 0.00 na fonte significa "não informado"
-    return tipo, area("privativa"), area("do terreno")
+    return tipo, area("privativa"), area("do terreno"), area("total")
 
 
 def interpretar(texto: str) -> Tuple[List[ImovelCaptado], List[str]]:
@@ -108,12 +109,13 @@ def interpretar(texto: str) -> Tuple[List[ImovelCaptado], List[str]]:
         preco = numero_br(col("preco"))
         if preco is None:
             avisos.append(f"linha {n}: imóvel {id_fonte} sem preço legível")
-        tipo, a_priv, a_terr = _tipo_e_areas(col("descricao"))
+        tipo, a_priv, a_terr, a_total = tipo_e_areas(col("descricao"))
         imoveis.append(ImovelCaptado(
             fonte=FONTE, id_fonte=id_fonte, uf=col("uf").upper(), cidade=col("cidade"),
             bairro=col("bairro"), endereco=col("endereco"), preco=preco,
             valor_avaliacao=numero_br(col("valor_avaliacao")),
             desconto_pct=numero_br(col("desconto_pct")), modalidade=col("modalidade"),
             tipo=tipo, area_privativa=a_priv, area_terreno=a_terr,
+            area_total=a_total,
             descricao=col("descricao"), link=col("link"), data_fonte=data_fonte))
     return imoveis, avisos

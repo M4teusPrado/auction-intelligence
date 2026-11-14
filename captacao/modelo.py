@@ -18,6 +18,7 @@ class ImovelCaptado:
     tipo: str                  # casa, apartamento, terreno... (extraído da descrição, melhor esforço)
     area_privativa: Optional[float]
     area_terreno: Optional[float]
+    area_total: Optional[float]        # área total da fonte; não substitui a privativa
     descricao: str
     link: str
     data_fonte: str            # data de geração informada pela fonte, se houver

@@ -4,3 +4,5 @@ captacao.db
 __pycache__/
 *.pyc
 .DS_Store
+backups/
+*.antes_migracao_*
