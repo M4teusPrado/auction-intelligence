@@ -11,13 +11,21 @@ Só usa Python 3.9+ e a biblioteca padrão: não precisa instalar nada.
     python -m captacao novidades
     python -m captacao duplicados
     python -m captacao exportar imoveis.csv
+    python -m captacao tela                 # tela de triagem em http://127.0.0.1:8765/
 
 Se a Caixa bloquear o download automático, baixe o arquivo pelo navegador em
 https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_SP.csv e rode:
 
     python -m captacao coletar --uf SP --arquivo Lista_imoveis_SP.csv
 
-Testes: `python tests/test_captacao.py`
+Testes: `python tests/test_captacao.py` e `python tests/test_triagem.py`
+
+## Tela de triagem
+
+`python -m captacao tela` sobe um servidor local (só em 127.0.0.1, porta 8765; outra com
+`--porta`) e abre o navegador. Funciona sem internet. Cada imóvel passa pelos estágios
+identificado (na fila), analisar, depois e descartado; toda mudança fica na tabela
+`triagens` e desfazer grava uma linha nova, nada é apagado. Ctrl+C no terminal encerra.
 
 ## O que ele faz
 
@@ -39,6 +47,11 @@ Testes: `python tests/test_captacao.py`
     captacao/normaliza.py     limpeza de números e endereços
     captacao/fontes/caixa.py  download e leitura da lista da Caixa
     captacao/repositorio.py   base SQLite, histórico e duplicados
+    captacao/classifica.py    categoria e alertas derivados (não alteram a fonte)
+    captacao/triagem.py       funções da API da tela (filtros, resumo, triagem)
+    captacao/tela.py          servidor local da tela
+    captacao/web/index.html   a tela (HTML, CSS e JS num arquivo só)
     captacao/cli.py           comandos
+    ferramentas/              scripts de manutenção da base
 
 Para adicionar outra fonte: criar `captacao/fontes/<nome>.py` que devolva uma lista de `ImovelCaptado`.
