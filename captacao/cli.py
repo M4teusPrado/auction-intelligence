@@ -2,6 +2,7 @@
   python -m captacao coletar --uf SP                 baixa a lista da Caixa e atualiza a base
   python -m captacao coletar --uf SP --arquivo x.csv usa um arquivo baixado pelo navegador
   python -m captacao listar --uf SP --cidade campinas --tipo terreno --desconto-min 30
+  python -m captacao listar --categoria terreno       tipo agrupado (terreno inclui gleba)
   python -m captacao novidades                       o que mudou na última coleta
   python -m captacao duplicados                      possíveis imóveis repetidos
   python -m captacao exportar imoveis.csv
@@ -10,7 +11,7 @@ import argparse
 import csv
 import sys
 
-from . import repositorio
+from . import classifica, repositorio
 from .fontes import caixa
 from .normaliza import chave
 
@@ -26,6 +27,7 @@ def cmd_coletar(a, con):
     else:
         dados, origem = caixa.baixar(a.uf), caixa.URL.format(uf=a.uf.upper())
     imoveis, avisos = caixa.interpretar(caixa.decodificar(dados))
+    avisos += classifica.classificar(imoveis)
     r = repositorio.gravar_coleta(con, caixa.FONTE, a.uf.upper(), origem, imoveis, len(avisos))
     print(f"Coleta {r['coleta']} ({a.uf.upper()}): {r['total']} imóveis lidos, {r['novos']} novos, "
           f"{r['alterados']} alterados, {r['saidos']} saíram da lista, {r['avisos']} avisos.")
@@ -37,6 +39,8 @@ def cmd_listar(a, con):
     sql, p = "SELECT * FROM imoveis WHERE situacao='ativo'", []
     if a.uf:
         sql += " AND uf=?"; p.append(a.uf.upper())
+    if a.categoria:
+        sql += " AND categoria=?"; p.append(a.categoria.lower())
     if a.desconto_min is not None:
         sql += " AND desconto_pct>=?"; p.append(a.desconto_min)
     if a.preco_max is not None:
@@ -92,6 +96,7 @@ def main(argv=None):
     c = s.add_parser("coletar"); c.add_argument("--uf", required=True); c.add_argument("--arquivo")
     c.set_defaults(f=cmd_coletar)
     l = s.add_parser("listar"); l.add_argument("--uf"); l.add_argument("--cidade"); l.add_argument("--tipo")
+    l.add_argument("--categoria", help="casa, apartamento, terreno, comercial, rural, outros")
     l.add_argument("--desconto-min", type=float); l.add_argument("--preco-max", type=float)
     l.add_argument("--limite", type=int, default=30); l.set_defaults(f=cmd_listar)
     n = s.add_parser("novidades"); n.add_argument("--limite", type=int, default=50); n.set_defaults(f=cmd_novidades)

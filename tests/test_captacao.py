@@ -1,6 +1,6 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import repositorio
+from captacao import classifica, repositorio
 from captacao.fontes import caixa
 from captacao.normaliza import numero_br, chave_endereco
 
@@ -86,6 +86,30 @@ class AreaTotal(unittest.TestCase):
         con.close()
         repositorio.conectar(caminho).close()  # segunda abertura não migra nem copia de novo
         self.assertEqual(len(glob.glob(caminho + ".antes_migracao_*")), 1)
+
+
+class Categoria(unittest.TestCase):
+    def test_mapa(self):
+        for tipo, cat in [("sobrado", "casa"), ("gleba urbana", "terreno"), ("galpao", "comercial"),
+                          ("predio", "comercial"), ("imovel rural", "rural"),
+                          ("apartamento", "apartamento"), ("chacara", "outros"), ("", "outros")]:
+            self.assertEqual(classifica.categoria(tipo), cat, tipo)
+
+    def test_tipo_novo_gera_aviso_e_mantem_tipo(self):
+        ims, _ = ler()
+        ims[0].tipo = "chacara"; ims[1].tipo = "chacara"
+        avisos = classifica.classificar(ims)
+        self.assertEqual(len(avisos), 1)
+        self.assertIn("chacara", avisos[0]); self.assertIn("2 imóveis", avisos[0])
+        self.assertEqual((ims[0].tipo, ims[0].categoria), ("chacara", "outros"))
+        self.assertEqual(ims[2].categoria, "terreno")
+
+    def test_grava_categoria(self):
+        con = repositorio.conectar(":memory:")
+        ims, _ = ler(); classifica.classificar(ims)
+        repositorio.gravar_coleta(con, "caixa", "SP", "teste", ims)
+        self.assertEqual([r[0] for r in con.execute("SELECT categoria FROM imoveis ORDER BY id")],
+                         ["casa", "apartamento", "terreno"])
 
 
 if __name__ == "__main__":
