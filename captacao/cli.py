@@ -41,6 +41,8 @@ def cmd_listar(a, con):
         sql += " AND uf=?"; p.append(a.uf.upper())
     if a.categoria:
         sql += " AND categoria=?"; p.append(a.categoria.lower())
+    if a.sem_alertas:
+        sql += " AND COALESCE(alertas,'')=''"
     if a.desconto_min is not None:
         sql += " AND desconto_pct>=?"; p.append(a.desconto_min)
     if a.preco_max is not None:
@@ -49,10 +51,12 @@ def cmd_listar(a, con):
               if (not a.cidade or chave(a.cidade) in chave(r["cidade"]))
               and (not a.tipo or chave(a.tipo) in (r["tipo"] or ""))]
     for r in linhas[:a.limite]:
-        print(f"{r['id_fonte']:>15} | {r['cidade'][:22]:<22} | {(r['tipo'] or '?')[:12]:<12} | "
+        marca = "!" if r["alertas"] else " "
+        print(f"{marca}{r['id_fonte']:>15} | {r['cidade'][:22]:<22} | {(r['tipo'] or '?')[:12]:<12} | "
               f"{_brl(r['preco']):>14} | aval. {_brl(r['valor_avaliacao']):>14} | "
-              f"{(r['desconto_pct'] or 0):5.1f}% | {r['modalidade'][:24]}")
-    print(f"{len(linhas)} imóveis (mostrando até {a.limite}).")
+              f"{(r['desconto_pct'] or 0):5.1f}% | {r['modalidade'][:24]}"
+              + (f" | alertas: {r['alertas']}" if r["alertas"] else ""))
+    print(f"{len(linhas)} imóveis (mostrando até {a.limite}). '!' = imóvel com alerta.")
 
 
 def cmd_novidades(a, con):
@@ -98,6 +102,7 @@ def main(argv=None):
     l = s.add_parser("listar"); l.add_argument("--uf"); l.add_argument("--cidade"); l.add_argument("--tipo")
     l.add_argument("--categoria", help="casa, apartamento, terreno, comercial, rural, outros")
     l.add_argument("--desconto-min", type=float); l.add_argument("--preco-max", type=float)
+    l.add_argument("--sem-alertas", action="store_true", help="esconde imóveis com alerta")
     l.add_argument("--limite", type=int, default=30); l.set_defaults(f=cmd_listar)
     n = s.add_parser("novidades"); n.add_argument("--limite", type=int, default=50); n.set_defaults(f=cmd_novidades)
     s.add_parser("duplicados").set_defaults(f=cmd_duplicados)

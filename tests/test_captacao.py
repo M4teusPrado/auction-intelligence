@@ -2,6 +2,7 @@ import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from captacao import classifica, repositorio
 from captacao.fontes import caixa
+from captacao.modelo import ImovelCaptado
 from captacao.normaliza import numero_br, chave_endereco
 
 AQUI = os.path.dirname(__file__)
@@ -110,6 +111,62 @@ class Categoria(unittest.TestCase):
         repositorio.gravar_coleta(con, "caixa", "SP", "teste", ims)
         self.assertEqual([r[0] for r in con.execute("SELECT categoria FROM imoveis ORDER BY id")],
                          ["casa", "apartamento", "terreno"])
+
+
+class Alertas(unittest.TestCase):
+    def im(self, **k):
+        base = dict(fonte="caixa", id_fonte="1", uf="SP", cidade="X", bairro="", endereco="",
+                    preco=100.0, valor_avaliacao=None, desconto_pct=None, modalidade="",
+                    tipo="casa", area_privativa=50.0, area_terreno=100.0, area_total=None,
+                    descricao="", link="", data_fonte="")
+        base.update(k)
+        return ImovelCaptado(**base)
+
+    def test_sem_alerta(self):
+        self.assertEqual(classifica.alertas(self.im()), "")
+
+    def test_area_terreno_suspeita(self):
+        self.assertEqual(classifica.alertas(self.im(area_terreno=1.0)), "area_terreno_suspeita")
+        self.assertEqual(classifica.alertas(self.im(area_terreno=0.01)), "area_terreno_suspeita")
+        self.assertEqual(classifica.alertas(self.im(area_terreno=1.5)), "")
+
+    def test_terreno_com_construcao(self):
+        t = dict(tipo="terreno", area_privativa=None)
+        self.assertEqual(classifica.alertas(self.im(**t)), "")
+        self.assertEqual(classifica.alertas(self.im(area_total=45.0, **t)), "terreno_com_construcao")
+        self.assertEqual(classifica.alertas(self.im(descricao="Terreno, ..., 1 qto(s)", **t)),
+                         "terreno_com_construcao")
+        self.assertEqual(classifica.alertas(self.im(tipo="gleba", area_privativa=None, area_total=5.0)),
+                         "terreno_com_construcao")
+        # casa com área total não é alerta
+        self.assertEqual(classifica.alertas(self.im(area_total=80.0, descricao="2 qto(s)")), "")
+
+    def test_sem_area_e_preco_ausente(self):
+        self.assertEqual(classifica.alertas(self.im(area_privativa=None, area_terreno=None, preco=None)),
+                         "sem_area,preco_ausente")
+
+    def test_valor_da_fonte_nao_muda(self):
+        im = self.im(area_terreno=1.0)
+        classifica.classificar([im])
+        self.assertEqual((im.area_terreno, im.alertas), (1.0, "area_terreno_suspeita"))
+
+    def test_listar_sem_alertas(self):
+        import io, contextlib, tempfile
+        caminho = os.path.join(tempfile.mkdtemp(), "b.db")
+        con = repositorio.conectar(caminho)
+        ims, _ = ler(); ims[0].area_terreno = 1.0; classifica.classificar(ims)
+        repositorio.gravar_coleta(con, "caixa", "SP", "teste", ims); con.close()
+        from captacao import cli
+        def rodar(*args):
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out):
+                cli.main(["--base", caminho, "listar", *args])
+            return out.getvalue()
+        tudo = rodar()
+        self.assertRegex(tudo, r"(?m)^!\s+1111111111111 ")
+        self.assertIn("alertas: area_terreno_suspeita", tudo)
+        self.assertNotIn("1111111111111", rodar("--sem-alertas"))
+        self.assertIn("1 imóveis", rodar("--categoria", "terreno"))
 
 
 if __name__ == "__main__":

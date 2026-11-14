@@ -23,6 +23,7 @@ class ImovelCaptado:
     link: str
     data_fonte: str            # data de geração informada pela fonte, se houver
     categoria: str = ""        # derivada do tipo (classifica.py); o tipo da fonte não muda
+    alertas: str = ""          # códigos separados por vírgula (classifica.py); só marca, não corrige
 
     def como_dict(self) -> dict:
         return asdict(self)

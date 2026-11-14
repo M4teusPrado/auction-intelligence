@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS imoveis (
   uf TEXT, cidade TEXT, bairro TEXT, endereco TEXT,
   preco REAL, valor_avaliacao REAL, desconto_pct REAL, modalidade TEXT,
   tipo TEXT, area_privativa REAL, area_terreno REAL, area_total REAL, descricao TEXT, link TEXT, data_fonte TEXT,
-  categoria TEXT,
+  categoria TEXT, alertas TEXT,
   chave_endereco TEXT,
   situacao TEXT NOT NULL DEFAULT 'ativo',      -- ativo | saiu_da_lista
   estagio TEXT NOT NULL DEFAULT 'identificado', -- etapa do funil, alterada por pessoas
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS coletas (
 """
 CAMPOS = ("uf", "cidade", "bairro", "endereco", "preco", "valor_avaliacao", "desconto_pct",
           "modalidade", "tipo", "area_privativa", "area_terreno", "area_total", "descricao", "link", "data_fonte",
-          "categoria")
+          "categoria", "alertas")
 
 
 # Colunas acrescentadas depois da primeira versão: (tabela, coluna, tipo SQL).
@@ -43,6 +43,7 @@ CAMPOS = ("uf", "cidade", "bairro", "endereco", "preco", "valor_avaliacao", "des
 COLUNAS_NOVAS = [
     ("imoveis", "area_total", "REAL"),
     ("imoveis", "categoria", "TEXT"),
+    ("imoveis", "alertas", "TEXT"),
 ]
 
 
