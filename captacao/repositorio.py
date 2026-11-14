@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS imoveis (
   categoria TEXT, alertas TEXT,
   chave_endereco TEXT,
   situacao TEXT NOT NULL DEFAULT 'ativo',      -- ativo | saiu_da_lista
-  estagio TEXT NOT NULL DEFAULT 'identificado', -- etapa do funil, alterada por pessoas
+  estagio TEXT NOT NULL DEFAULT 'identificado', -- identificado | analisar | depois | descartado
   primeira_vez TEXT NOT NULL, ultima_vez TEXT NOT NULL,
   UNIQUE (fonte, id_fonte)
 );
@@ -27,11 +27,17 @@ CREATE TABLE IF NOT EXISTS historico (
   evento TEXT NOT NULL,                         -- novo | alterado | saiu_da_lista | voltou
   campo TEXT, valor_antigo TEXT, valor_novo TEXT
 );
+CREATE TABLE IF NOT EXISTS triagens (            -- toda mudança de estágio; nunca apagar
+  id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
+  de TEXT NOT NULL, para TEXT NOT NULL, nota TEXT, quando TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_triagens_imovel ON triagens (imovel_id);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
 );
 """
+ESTAGIOS = ("identificado", "analisar", "depois", "descartado")
 CAMPOS = ("uf", "cidade", "bairro", "endereco", "preco", "valor_avaliacao", "desconto_pct",
           "modalidade", "tipo", "area_privativa", "area_terreno", "area_total", "descricao", "link", "data_fonte",
           "categoria", "alertas")
@@ -47,27 +53,37 @@ COLUNAS_NOVAS = [
 ]
 
 
+# Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
+TABELAS_NOVAS = ("triagens",)
+
+
 def conectar(caminho: str) -> sqlite3.Connection:
-    con = sqlite3.connect(caminho)
+    con = sqlite3.connect(caminho, timeout=10)
     con.row_factory = sqlite3.Row
+    _copiar_se_for_migrar(con, caminho)
     con.executescript(ESQUEMA)
-    _migrar(con, caminho)
+    for t, c, tipo in _colunas_faltando(con):
+        con.execute(f"ALTER TABLE {t} ADD COLUMN {c} {tipo}")
+    con.commit()
     return con
 
 
-def _migrar(con, caminho: str) -> None:
-    faltando = [(t, c, tipo) for t, c, tipo in COLUNAS_NOVAS
-                if c not in {r["name"] for r in con.execute(f"PRAGMA table_info({t})")}]
-    if not faltando:
+def _colunas_faltando(con):
+    return [(t, c, tipo) for t, c, tipo in COLUNAS_NOVAS
+            if c not in {r["name"] for r in con.execute(f"PRAGMA table_info({t})")}]
+
+
+def _copiar_se_for_migrar(con, caminho: str) -> None:
+    """Base existente que vai ganhar tabela ou coluna nova: copia antes de mexer."""
+    tabelas = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+    if caminho == ":memory:" or "imoveis" not in tabelas:   # base nova: nada a preservar
         return
-    if caminho != ":memory:":           # cópia da base antes de mudar o esquema
-        destino = f"{caminho}.antes_migracao_{datetime.now():%Y%m%d_%H%M%S}"
-        with sqlite3.connect(destino) as copia:
-            con.backup(copia)
-        copia.close()
-    for t, c, tipo in faltando:
-        con.execute(f"ALTER TABLE {t} ADD COLUMN {c} {tipo}")
-    con.commit()
+    if not (set(TABELAS_NOVAS) - tabelas or _colunas_faltando(con)):
+        return
+    destino = f"{caminho}.antes_migracao_{datetime.now():%Y%m%d_%H%M%S}"
+    with sqlite3.connect(destino) as copia:
+        con.backup(copia)
+    copia.close()
 
 
 def gravar_coleta(con, fonte: str, recorte: str, origem: str,

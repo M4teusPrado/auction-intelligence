@@ -88,6 +88,21 @@ class AreaTotal(unittest.TestCase):
         repositorio.conectar(caminho).close()  # segunda abertura não migra nem copia de novo
         self.assertEqual(len(glob.glob(caminho + ".antes_migracao_*")), 1)
 
+    def test_migra_tabela_triagens(self):
+        import sqlite3, tempfile, glob
+        caminho = os.path.join(tempfile.mkdtemp(), "sem_triagens.db")
+        con = repositorio.conectar(caminho); con.execute("DROP TABLE triagens"); con.commit(); con.close()
+        con = repositorio.conectar(caminho)
+        nomes = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        self.assertIn("triagens", nomes)
+        self.assertEqual(len(glob.glob(caminho + ".antes_migracao_*")), 1)
+
+    def test_base_nova_nao_gera_copia(self):
+        import tempfile, glob
+        caminho = os.path.join(tempfile.mkdtemp(), "nova.db")
+        repositorio.conectar(caminho).close()
+        self.assertEqual(glob.glob(caminho + ".antes_migracao_*"), [])
+
 
 class Categoria(unittest.TestCase):
     def test_mapa(self):
