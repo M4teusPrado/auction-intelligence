@@ -1,0 +1,6 @@
+captacao.db
+*.csv
+!tests/exemplo_caixa.csv
+__pycache__/
+*.pyc
+.DS_Store

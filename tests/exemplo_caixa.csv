@@ -1,0 +1,7 @@
+ Lista de Imóveis da Caixa Econômica Federal - Data de geração: 14/11/2026
+
+ N° do imóvel;UF;Cidade;Bairro;Endereço;Preço;Valor de avaliação;Desconto;Descrição;Modalidade de venda;Link de acesso
+ 1111111111111;SP;CAMPINAS;JARDIM FICTICIO;RUA DAS FLORES, N. 100;150.000,00;200.000,00;25.00;Casa, 0.00 de área total, 80.50 de área privativa, 250.00 de área do terreno, 2 qto(s);Venda Direta Online;https://exemplo.invalid/1
+ 2222222222222;SP;SOROCABA;VILA EXEMPLO;AV. BRASIL, 2000, APTO 12;90.000,00;180.000,00;50.00;Apartamento, 0.00 de área total, 45.20 de área privativa, 0.00 de área do terreno;Leilão SFI - Edital Único;https://exemplo.invalid/2
+ 3333333333333;SP;CAMPINAS;JARDIM FICTICIO;R DAS FLORES, 100;140.000,00;200.000,00;30.00;Terreno, 0.00 de área total, 0.00 de área privativa, 300.00 de área do terreno;Venda Online;https://exemplo.invalid/3
+ ;SP;SEM NUMERO;X;RUA Y;1,00;1,00;0;Casa;Venda;x
