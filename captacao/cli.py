@@ -6,6 +6,7 @@
   python -m captacao novidades                       o que mudou na última coleta
   python -m captacao duplicados                      possíveis imóveis repetidos
   python -m captacao exportar imoveis.csv
+  python -m captacao tela [--porta 8765]             abre a tela de triagem no navegador
 """
 import argparse
 import csv
@@ -92,6 +93,11 @@ def cmd_exportar(a, con):
     print(f"{n} imóveis exportados para {a.destino}.")
 
 
+def cmd_tela(a):
+    from . import tela
+    return tela.rodar(a.base, a.porta, not a.sem_navegador)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="captacao", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -107,13 +113,17 @@ def main(argv=None):
     n = s.add_parser("novidades"); n.add_argument("--limite", type=int, default=50); n.set_defaults(f=cmd_novidades)
     s.add_parser("duplicados").set_defaults(f=cmd_duplicados)
     e = s.add_parser("exportar"); e.add_argument("destino"); e.set_defaults(f=cmd_exportar)
+    t = s.add_parser("tela"); t.add_argument("--porta", type=int, default=8765)
+    t.add_argument("--sem-navegador", action="store_true", help="não abre o navegador")
+    t.set_defaults(f=cmd_tela)
     a = p.parse_args(argv)
+    if a.cmd == "tela":                  # não cria base vazia se o caminho estiver errado
+        return cmd_tela(a)
     con = repositorio.conectar(a.base)
     try:
-        a.f(a, con)
+        return a.f(a, con) or 0
     except (caixa.FormatoInesperado, OSError) as erro:
         print("Erro:", erro, file=sys.stderr); return 1
-    return 0
 
 
 if __name__ == "__main__":
