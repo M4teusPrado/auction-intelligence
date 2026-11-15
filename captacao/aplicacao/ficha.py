@@ -184,3 +184,35 @@ def baixar_documentos_fonte(repo: RepositorioDeAnalise, pasta: str, imovel_id: i
             erros.append(f"{d['rotulo'] or d['tipo']}: {e}")
     return {"baixados": baixados, "erros": erros, "anexos": repo.anexos(imovel_id),
             "achados": _achados(repo, imovel_id)}
+
+
+def transcrever_anexo(repo: RepositorioDeAnalise, pasta: str, transcritor, anexo_id: int) -> dict:
+    """PDF escaneado (sem texto): a IA transcreve, página por página, a pedido da pessoa.
+    A transcrição é guardada com CPF e RG mascarados e passa a valer para a busca de trechos e o parecer."""
+    from ..dominio.parecer import mascarar_dados_pessoais
+    from .portas import ErroDeAnalise
+    a = repo.anexo(anexo_id)
+    if a is None:
+        raise NaoEncontrado("anexo não encontrado")
+    if transcritor is None:
+        raise ErroDeAnalise("a leitura de PDF escaneado com IA não está configurada")
+    motivo = transcritor.disponivel()
+    if motivo:
+        raise ErroDeAnalise(motivo)
+    atual = next((x for x in repo.anexos(a["imovel_id"]) if x["id"] == anexo_id), {})
+    if not a["arquivo"].endswith(".pdf"):
+        raise EntradaInvalida("só PDFs podem ser transcritos")
+    if atual.get("leitura") in ("lido", "transcrito_ia"):
+        raise EntradaInvalida("este PDF já tem texto lido; não precisa transcrever")
+    caminho, _, _ = arquivo_anexo(repo, pasta, anexo_id)
+    with open(caminho, "rb") as f:
+        dados = f.read()
+    if len(dados) > 30 * 1024 * 1024:
+        raise EntradaInvalida("PDF maior que 30 MB")
+    r = transcritor.transcrever_pdf(dados)
+    paginas = [mascarar_dados_pessoais(p) for p in r["paginas"]]
+    if not any(p.strip() for p in paginas):
+        raise ErroDeAnalise("a IA não encontrou texto legível neste PDF")
+    repo.gravar_leitura(anexo_id, "transcrito_ia", paginas)
+    return {"anexos": repo.anexos(a["imovel_id"]), "achados": _achados(repo, a["imovel_id"]),
+            "uso": r.get("uso") or {}, "paginas": len(paginas)}

@@ -308,6 +308,8 @@
   .docs-links { display: flex; flex-wrap: wrap; gap: 6px; }
   .docs-links .btn { text-decoration: none; min-height: 32px; padding: 4px 12px; font-size: 13.5px; }
   .docs-msg.erro { color: var(--alerta); font-weight: 600; }
+  .transcrever { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; width: 100%; }
+  .transcrever .dica { font-size: 12px; color: var(--texto-3); }
   .exemplo.da-fonte { background: var(--destaque-claro); color: var(--destaque-escuro); }
 
   .parecer-ia { border: 2px solid #c9d8f2; background: #f6f9ff; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: grid; gap: 8px; }
@@ -1131,7 +1133,7 @@ function avisoLeitura(d) {
   const semTexto = d.anexos.filter((a) => a.leitura === "sem_texto" || a.leitura === "erro").map((a) => a.nome_original);
   const partes = [];
   if (!d.leitura_pdf) partes.push("A leitura automática de PDF está desligada neste computador. Os arquivos ficam guardados, mas o sistema não procura trechos neles.");
-  if (semTexto.length) partes.push(`Não foi possível ler o texto de: ${semTexto.join(", ")}. Provavelmente é imagem escaneada; leia o documento.`);
+  if (semTexto.length) partes.push(`Sem texto para ler em: ${semTexto.join(", ")} (PDF escaneado). Use "Ler PDF escaneado com IA" no arquivo para transcrever.`);
   return partes.length ? el("div", { class: "aviso-leitura", id: "aviso-leitura" }, partes.join(" ")) : el("div", { id: "aviso-leitura", hidden: true });
 }
 const STATUS_BOTOES = [["ok", "OK"], ["atencao", "Atenção"], ["impeditivo", "Impeditivo"], ["nao_se_aplica", "Não se aplica"]];
@@ -1163,9 +1165,16 @@ function blocoParecer(d) {
   const p = d.parecer && d.parecer.parecer, ia = d.ia || {};
   const caixa = el("section", { class: "parecer-ia", id: "parecer-ia" });
   const msg = el("p", { class: "dica parecer-msg" });
+  const lidos = d.anexos.filter((a) => a.leitura === "lido" || a.leitura === "transcrito_ia").length;
+  let confirmouSemDocs = false;
   const b = el("button", { type: "button", class: "btn btn-primario", disabled: !ia.disponivel,
     text: p ? "Gerar de novo" : "Gerar parecer com IA",
     onclick: async () => {
+      if (!lidos && !confirmouSemDocs) {           // sem edital/matrícula o parecer fica fraco: avisa antes de gastar
+        confirmouSemDocs = true; msg.classList.add("erro");
+        msg.textContent = "Nenhum edital ou matrícula anexado (ou com texto lido). O parecer vai usar só a descrição do lote e ficará limitado. Anexe os PDFs abaixo, ou clique de novo para gerar mesmo assim.";
+        b.textContent = "Gerar só com a descrição"; return;
+      }
       b.disabled = true; b.textContent = "Analisando os documentos…"; msg.classList.remove("erro");
       msg.textContent = "A IA está lendo a descrição e os PDFs anexados. Pode levar de 1 a 3 minutos.";
       try {
@@ -1280,13 +1289,30 @@ function cartaoItem(d, it) {
   if (TIPO_DO_ITEM[it.item]) card.append(blocoAnexos(d, TIPO_DO_ITEM[it.item]));
   return card;
 }
+function botaoTranscrever(d, a) {
+  const msg = el("span", { class: "dica" });
+  const b = el("button", { type: "button", class: "btn btn-anexar", disabled: !(d.ia || {}).disponivel,
+    text: "Ler PDF escaneado com IA", title: (d.ia || {}).disponivel ? "" : (d.ia || {}).motivo,
+    onclick: async () => {
+      b.disabled = true; b.textContent = "Lendo o PDF…"; msg.textContent = "A IA está transcrevendo página por página (1 a 3 minutos).";
+      try {
+        const r = await api(`/api/anexos/${a.id}/transcrever`, POST_JSON({}));
+        await abrirFicha(d.imovel.id);
+        mostrarAviso(`${r.paginas} página(s) transcritas` + (r.uso && r.uso.custo_usd != null ? ` · custo US$ ${r.uso.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""), null);
+      } catch (e) { msg.textContent = e.message; b.disabled = false; b.textContent = "Ler PDF escaneado com IA"; }
+    } });
+  return el("span", { class: "transcrever" }, b, msg,
+    el("span", { class: "dica", text: "~US$ 0,10–0,30 por documento. O PDF vai inteiro para a IA (imagem não pode ser mascarada); a transcrição guardada fica com CPF e RG mascarados." }));
+}
+
 function blocoAnexos(d, tipoFixo) {
   const lista = el("ul", { class: "anexo-lista" });
   const meus = () => d.anexos.filter((a) => (tipoFixo ? a.tipo === tipoFixo : !Object.values(TIPO_DO_ITEM).includes(a.tipo)));
   const desenhar = () => lista.replaceChildren(...meus().map((a) => el("li", {},
     el("a", { href: `/anexos/${a.id}`, target: "_blank", rel: "noopener", text: a.nome_original }),
     el("span", { class: "meta num", text: `${tipoFixo ? "" : (d.tipos_anexo[a.tipo] || a.tipo) + " · "}${tamanhoArquivo(a.tamanho)} · ${dataHoraBR(a.quando)}` +
-      ({ lido: " · texto lido", sem_texto: " · sem texto (escaneado?)", erro: " · não deu para ler", desligada: " · leitura desligada" }[a.leitura] || "") }))));
+      ({ lido: " · texto lido", transcrito_ia: " · transcrito por IA", sem_texto: " · PDF escaneado (sem texto)", erro: " · não deu para ler", desligada: " · leitura desligada" }[a.leitura] || "") }),
+    ["sem_texto", "erro"].includes(a.leitura) ? botaoTranscrever(d, a) : null)));
   desenhar();
   const arquivo = el("input", { type: "file", class: "sr", accept: ".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" });
   const tipoSel = tipoFixo ? null : el("select", { class: "campo campo-curto", "aria-label": "Tipo do arquivo" },

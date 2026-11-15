@@ -13,6 +13,7 @@ Rotas:
   POST /api/importar                           {"url": "..."}  importa uma oferta pelo link
   POST /api/imoveis/<id>/documentos-fonte      baixa edital/matrícula publicados pela fonte
   POST /api/imoveis/<id>/parecer               gera o parecer preliminar com IA (só sugere)
+  POST /api/anexos/<id>/transcrever            PDF escaneado: a IA transcreve o texto
 """
 import json
 import os
@@ -33,6 +34,7 @@ HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.ht
 CORPO_MAX = 16 * 1024
 ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte|parecer))?$")
 ROTA_ANEXO = re.compile(r"^/anexos/(\d{1,12})$")
+ROTA_TRANSCREVER = re.compile(r"^/api/anexos/(\d{1,12})/transcrever$")
 TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
 
 
@@ -166,6 +168,9 @@ def _criar_handler(caminho_base: str, porta: int):
                 nome = unquote(self.headers.get("X-Nome-Arquivo", ""))
                 return self._executar(lambda repo: ficha.anexar(
                     repo, pasta_anexos, int(m.group(1)), (q.get("tipo") or [""])[0], nome, dados))
+            mt = ROTA_TRANSCREVER.match(url.path)
+            if mt:
+                return self._executar(lambda repo: ficha.transcrever_anexo(repo, pasta_anexos, montagem.ANALISADOR, int(mt.group(1))))
             if url.path not in ("/api/simular", "/api/importar") and not (m and m.group(2)):
                 return self._json(404, {"erro": "rota não encontrada"})
             # exigir JSON impede envio por formulário de outro site (CSRF)

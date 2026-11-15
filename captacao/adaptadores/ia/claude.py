@@ -112,3 +112,67 @@ class AnalisadorClaude:
         custo = round(entrada / 1e6 * PRECO_POR_MILHAO[0] + saida / 1e6 * PRECO_POR_MILHAO[1], 4)
         return {"parecer": parecer, "uso": {"entrada": entrada, "saida": saida, "custo_usd": custo,
                                             "modelo_resposta": getattr(resp, "model", self.modelo)}}
+
+
+    def transcrever_pdf(self, dados: bytes) -> dict:
+        import base64
+        motivo = self.disponivel()
+        if motivo:
+            raise ErroDeAnalise(motivo)
+        cliente = self._cliente or anthropic.Anthropic()
+        conteudo = [{"type": "document", "source": {"type": "base64", "media_type": "application/pdf",
+                                                    "data": base64.standard_b64encode(dados).decode("ascii")}},
+                    {"type": "text", "text": "Transcreva o documento acima, página por página."}]
+        try:
+            with cliente.beta.messages.stream(               # streaming: a transcrição pode ser longa
+                model=self.modelo,
+                max_tokens=64000,
+                betas=["server-side-fallback-2026-07-01"],
+                fallbacks="default",
+                output_config={"effort": "low", "format": {"type": "json_schema", "schema": ESQUEMA_TRANSCRICAO}},
+                system=INSTRUCOES_TRANSCRICAO,
+                messages=[{"role": "user", "content": conteudo}],
+            ) as fluxo:
+                resp = fluxo.get_final_message()
+        except Exception as e:
+            if anthropic is not None:
+                if isinstance(e, anthropic.AuthenticationError):
+                    raise ErroDeAnalise("a credencial da Anthropic foi recusada")
+                if isinstance(e, anthropic.RateLimitError):
+                    raise ErroDeAnalise("limite de uso da API atingido; tente de novo em alguns minutos")
+                if isinstance(e, anthropic.APIConnectionError):
+                    raise ErroDeAnalise("sem conexão com a API da Anthropic")
+                if isinstance(e, anthropic.APIStatusError):
+                    raise ErroDeAnalise(f"a API respondeu {e.status_code}: {getattr(e, 'message', e)}")
+            raise
+        if resp.stop_reason == "refusal":
+            raise ErroDeAnalise("a IA não quis transcrever este documento")
+        if resp.stop_reason == "max_tokens":
+            raise ErroDeAnalise("o documento é longo demais para transcrever de uma vez")
+        texto = next((b.text for b in resp.content if b.type == "text"), "")
+        try:
+            paginas = sorted(json.loads(texto)["paginas"], key=lambda p: p["numero"])
+        except (ValueError, KeyError, TypeError):
+            raise ErroDeAnalise("a IA devolveu a transcrição em formato inválido")
+        u = resp.usage
+        entrada, saida = getattr(u, "input_tokens", 0) or 0, getattr(u, "output_tokens", 0) or 0
+        custo = round(entrada / 1e6 * PRECO_POR_MILHAO[0] + saida / 1e6 * PRECO_POR_MILHAO[1], 4)
+        return {"paginas": [p["texto"] for p in paginas], "uso": {"entrada": entrada, "saida": saida, "custo_usd": custo}}
+
+
+INSTRUCOES_TRANSCRICAO = """Transcreva fielmente o texto de cada página deste documento (matrícula de imóvel, edital \
+de leilão ou laudo). Copie exatamente como está escrito: números, datas, valores, nomes, siglas e a numeração dos \
+registros e averbações (R.1, AV.2...). Não resuma, não corrija e não interprete. Mantenha a ordem do texto. \
+Onde algo não puder ser lido, escreva [ilegível]. Carimbos e anotações à mão: transcreva se legíveis, entre colchetes. \
+Devolva uma entrada por página, na ordem do documento."""
+
+ESQUEMA_TRANSCRICAO = {
+    "type": "object",
+    "properties": {"paginas": {"type": "array", "items": {
+        "type": "object",
+        "properties": {"numero": {"type": "integer"}, "texto": {"type": "string"}},
+        "required": ["numero", "texto"], "additionalProperties": False}}},
+    "required": ["paginas"],
+    "additionalProperties": False,
+}
+

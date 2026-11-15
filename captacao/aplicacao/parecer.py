@@ -30,7 +30,8 @@ def montar_contexto(repo: RepositorioDeAnalise, imovel_id: int):
     for a in repo.textos_lidos(imovel_id):
         codigo = f"A{a['id']}"
         fontes[codigo] = [mascarar_dados_pessoais(p) for p in a["paginas"]]
-        documentos.append({"codigo": codigo, "nome": a["nome_original"], "anexo_id": a["id"]})
+        nome = a["nome_original"] + (" (transcrição por IA de PDF escaneado)" if a.get("transcrito_ia") else "")
+        documentos.append({"codigo": codigo, "nome": nome, "anexo_id": a["id"]})
     pracas = "; ".join(f"{p['numero']}ª praça {p['data']}: {_valor(p['valor'])}" for p in lei.get("pracas", [])) or "não informadas"
     cabecalho = "\n".join([
         "DADOS DO IMÓVEL (como publicados pela fonte)",

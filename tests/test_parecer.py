@@ -131,5 +131,69 @@ class Adaptador(unittest.TestCase):
                 AnalisadorClaude(cliente=self.cliente(stop, texto)).analisar("x")
 
 
+class TranscritorFalso:
+    modelo = "falso"
+
+    def __init__(self):
+        self.recebidos = []
+
+    def disponivel(self):
+        return None
+
+    def transcrever_pdf(self, dados):
+        self.recebidos.append(dados)
+        return {"paginas": MATRICULA, "uso": {"entrada": 3000, "saida": 800, "custo_usd": 0.028}}
+
+
+class Transcricao(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        self.repo = base_teste(); self.addCleanup(self.repo.close)
+        self.iid = self.repo.con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
+        self.pasta = tempfile.mkdtemp()
+        r = ficha.anexar(self.repo, self.pasta, self.iid, "matricula", "matricula-scan.pdf", b"%PDF-1.4\n%%EOF\n")
+        self.aid = r["anexos"][0]["id"]
+
+    def test_transcreve_escaneado_e_mascara(self):
+        self.assertIn(self.repo.anexos(self.iid)[0]["leitura"], ("sem_texto", "erro", "desligada"))
+        t = TranscritorFalso()
+        r = ficha.transcrever_anexo(self.repo, self.pasta, t, self.aid)
+        self.assertEqual(t.recebidos, [b"%PDF-1.4\n%%EOF\n"])                         # o PDF original vai para a IA
+        self.assertEqual((r["paginas"], r["anexos"][0]["leitura"]), (2, "transcrito_ia"))
+        textos = self.repo.textos_lidos(self.iid)[0]
+        self.assertTrue(textos["transcrito_ia"])
+        self.assertNotIn("123.456.789-09", " ".join(textos["paginas"]))                # guardado mascarado
+        self.assertIn("matricula", r["achados"])                                        # busca de trechos funciona
+        ctx, _, docs = montar_contexto(self.repo, self.iid)
+        self.assertIn("transcrição por IA", docs[1]["nome"])
+        with self.assertRaises(Exception):                                             # já tem texto: não repete
+            ficha.transcrever_anexo(self.repo, self.pasta, t, self.aid)
+
+    def test_sem_transcritor(self):
+        with self.assertRaises(ErroDeAnalise):
+            ficha.transcrever_anexo(self.repo, self.pasta, None, self.aid)
+
+
+class AdaptadorTranscricao(unittest.TestCase):
+    def test_envia_pdf_e_le_paginas(self):
+        chamadas = []
+        resp = SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(type="text", text=json.dumps(
+            {"paginas": [{"numero": 2, "texto": "pág 2"}, {"numero": 1, "texto": "pág 1"}]}))],
+            usage=SimpleNamespace(input_tokens=10000, output_tokens=2000))
+        class Fluxo:
+            def __enter__(s): return s
+            def __exit__(s, *a): pass
+            def get_final_message(s): return resp
+        def stream(**kw):
+            chamadas.append(kw); return Fluxo()
+        cliente = SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(stream=stream)))
+        r = AnalisadorClaude(cliente=cliente).transcrever_pdf(b"%PDF-teste")
+        self.assertEqual(r["paginas"], ["pág 1", "pág 2"])                              # ordenado pelo número
+        doc = chamadas[0]["messages"][0]["content"][0]
+        self.assertEqual((doc["type"], doc["source"]["media_type"]), ("document", "application/pdf"))
+        self.assertEqual(chamadas[0]["fallbacks"], "default")
+        self.assertEqual(r["uso"]["custo_usd"], 0.08)
+
+
 if __name__ == "__main__":
     unittest.main()

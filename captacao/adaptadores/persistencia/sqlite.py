@@ -450,11 +450,12 @@ class RepositorioSQLite:
     def textos_lidos(self, imovel_id: int) -> List[dict]:
         """Anexos lidos com o texto de cada página: [{id, nome_original, paginas: [...]}]."""
         saida = []
-        for a in self.con.execute("SELECT id, nome_original FROM anexos WHERE imovel_id=? AND leitura='lido' "
-                                  "ORDER BY id", (imovel_id,)).fetchall():
+        for a in self.con.execute("SELECT id, nome_original, leitura FROM anexos WHERE imovel_id=? "
+                                  "AND leitura IN ('lido', 'transcrito_ia') ORDER BY id", (imovel_id,)).fetchall():
             paginas = [r[0] for r in self.con.execute(
                 "SELECT texto FROM anexo_paginas WHERE anexo_id=? ORDER BY pagina", (a["id"],))]
-            saida.append({"id": a["id"], "nome_original": a["nome_original"], "paginas": paginas})
+            saida.append({"id": a["id"], "nome_original": a["nome_original"], "paginas": paginas,
+                          "transcrito_ia": a["leitura"] == "transcrito_ia"})
         return saida
 
     # ------------------------------------------------------------------ simulações

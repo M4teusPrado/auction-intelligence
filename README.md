@@ -71,6 +71,12 @@ CPF e RG são mascarados antes do envio. Nada é marcado sozinho: a pessoa usa o
 Custa cerca de US$ 0,15 por análise. Precisa de credencial da Anthropic (`ANTHROPIC_API_KEY`
 ou `ant auth login`); sem ela, a tela mostra o motivo.
 
+**PDF escaneado** (matrícula em imagem, comum na Caixa): o botão "Ler PDF escaneado com IA" no
+arquivo manda o PDF original para o Claude transcrever página por página (aprovado em 15/11/2026,
+~US$ 0,10–0,30 por documento, uma vez só). A imagem vai inteira (não dá para mascarar antes); a
+transcrição guardada tem CPF e RG mascarados e passa a valer para a busca de trechos e o parecer,
+marcada como "transcrição por IA".
+
 ## O que ele faz
 
 - Guarda cada imóvel com a fonte, o identificador na fonte, o link e as datas da primeira e da última vez em que apareceu.

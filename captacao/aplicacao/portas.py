@@ -148,3 +148,13 @@ class AnalisadorDeDocumentos(Protocol):
 
     def analisar(self, contexto: str) -> dict:
         """Devolve {"parecer": {...}, "uso": {"entrada": n, "saida": n, "custo_usd": x}}."""
+
+
+class TranscritorDePdf(Protocol):
+    """Transforma um PDF escaneado (imagem) em texto, página por página."""
+    modelo: str
+
+    def disponivel(self) -> Optional[str]: ...
+
+    def transcrever_pdf(self, dados: bytes) -> dict:
+        """Devolve {"paginas": [texto da página 1, ...], "uso": {...}}. Falha: ErroDeAnalise."""
