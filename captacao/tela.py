@@ -21,7 +21,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import ficha, repositorio, triagem
+from . import ficha, montagem, triagem
 
 HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
 CORPO_MAX = 16 * 1024
@@ -99,7 +99,7 @@ def _criar_handler(caminho_base: str, porta: int):
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
             elif (m := ROTA_IMOVEL.match(url.path)) and m.group(2) is None:
-                self._executar(lambda con: ficha.ficha(con, int(m.group(1)), pasta_anexos))
+                self._executar(lambda con: ficha.ficha(con, int(m.group(1)), pasta_anexos, montagem.FONTES))
             elif m := ROTA_ANEXO.match(url.path):
                 self._enviar_anexo(int(m.group(1)))
             else:
@@ -182,7 +182,7 @@ def rodar(caminho_base: str, porta: int = 8765, abrir_navegador: bool = True) ->
         print(f"Base não encontrada: {caminho_base}. Rode antes: python -m captacao coletar --uf SP",
               file=sys.stderr)
         return 1
-    repositorio.conectar(caminho_base).close()        # migra o esquema (com cópia) se preciso
+    montagem.repositorio(caminho_base).close()        # migra o esquema (com cópia) se preciso
     try:
         servidor = ThreadingHTTPServer(("127.0.0.1", porta), _criar_handler(caminho_base, porta))
     except OSError as e:

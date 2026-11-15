@@ -1,15 +1,18 @@
-"""Base central em SQLite: imóveis, histórico de mudanças e registro de cada coleta."""
+"""Adaptador de persistência em SQLite: imóveis, histórico de mudanças, coletas e análise.
+
+Único lugar do sistema com SQL. Implementa as portas de repositório (aplicacao/portas.py).
+"""
 import sqlite3
 from datetime import datetime
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
-from .modelo import ImovelCaptado
-from .normaliza import chave_endereco
+from ...dominio.modelo import ImovelCaptado
+from ...dominio.normaliza import chave_endereco
 
 ESQUEMA = """
 CREATE TABLE IF NOT EXISTS imoveis (
   id INTEGER PRIMARY KEY,
-  fonte TEXT NOT NULL, id_fonte TEXT NOT NULL,
+  fonte TEXT NOT NULL, id_fonte TEXT NOT NULL, recorte TEXT,
   uf TEXT, cidade TEXT, bairro TEXT, endereco TEXT,
   preco REAL, valor_avaliacao REAL, desconto_pct REAL, modalidade TEXT,
   tipo TEXT, area_privativa REAL, area_terreno REAL, area_total REAL, descricao TEXT, link TEXT, data_fonte TEXT,
@@ -71,6 +74,7 @@ COLUNAS_NOVAS = [
     ("imoveis", "categoria", "TEXT"),
     ("imoveis", "alertas", "TEXT"),
     ("anexos", "leitura", "TEXT"),        # lido | sem_texto | erro | desligada | imagem
+    ("imoveis", "recorte", "TEXT"),       # parte da fonte em que o imóvel apareceu (ex.: UF)
 ]
 
 
@@ -85,6 +89,8 @@ def conectar(caminho: str) -> sqlite3.Connection:
     con.executescript(ESQUEMA)
     for t, c, tipo in _colunas_faltando(con):
         con.execute(f"ALTER TABLE {t} ADD COLUMN {c} {tipo}")
+    # dados antigos: antes da coluna recorte só havia a Caixa, coletada por UF
+    con.execute("UPDATE imoveis SET recorte=uf WHERE recorte IS NULL AND fonte='caixa'")
     con.commit()
     return con
 
@@ -107,8 +113,8 @@ def _copiar_se_for_migrar(con, caminho: str) -> None:
     copia.close()
 
 
-def gravar_coleta(con, fonte: str, recorte: str, origem: str,
-                  imoveis: Iterable[ImovelCaptado], n_avisos: int = 0, agora: str = None) -> dict:
+def _gravar_coleta(con, fonte: str, recorte: str, origem: str,
+                   imoveis: Iterable[ImovelCaptado], n_avisos: int = 0, agora: Optional[str] = None) -> dict:
     """Compara a coleta com a base. `recorte` (ex.: 'SP') limita quem pode ser marcado
     como 'saiu_da_lista': só imóveis da mesma fonte e do mesmo recorte."""
     agora = agora or datetime.now().isoformat(timespec="seconds")
@@ -134,8 +140,8 @@ def gravar_coleta(con, fonte: str, recorte: str, origem: str,
         atual = con.execute("SELECT * FROM imoveis WHERE fonte=? AND id_fonte=?",
                             (im.fonte, im.id_fonte)).fetchone()
         if atual is None:
-            cols = ("fonte", "id_fonte") + CAMPOS + ("chave_endereco", "primeira_vez", "ultima_vez")
-            vals = [im.fonte, im.id_fonte] + [d[c] for c in CAMPOS] + [ch, agora, agora]
+            cols = ("fonte", "id_fonte", "recorte") + CAMPOS + ("chave_endereco", "primeira_vez", "ultima_vez")
+            vals = [im.fonte, im.id_fonte, recorte] + [d[c] for c in CAMPOS] + [ch, agora, agora]
             cur = con.execute(f"INSERT INTO imoveis ({','.join(cols)}) "
                               f"VALUES ({','.join('?' * len(cols))})", vals)
             hist(cur.lastrowid, "novo")
@@ -151,12 +157,12 @@ def gravar_coleta(con, fonte: str, recorte: str, origem: str,
             mudou = True
         alterados += mudou
         sets = ",".join(f"{c}=?" for c in CAMPOS)
-        con.execute(f"UPDATE imoveis SET {sets}, chave_endereco=?, situacao='ativo', ultima_vez=? "
-                    "WHERE id=?", [d[c] for c in CAMPOS] + [ch, agora, atual["id"]])
+        con.execute(f"UPDATE imoveis SET {sets}, recorte=?, chave_endereco=?, situacao='ativo', ultima_vez=? "
+                    "WHERE id=?", [d[c] for c in CAMPOS] + [recorte, ch, agora, atual["id"]])
 
     saidos = 0
     if imoveis:   # coleta vazia não derruba a base inteira: provável falha da fonte
-        for r in con.execute("SELECT id, id_fonte FROM imoveis WHERE fonte=? AND uf=? "
+        for r in con.execute("SELECT id, id_fonte FROM imoveis WHERE fonte=? AND recorte=? "
                              "AND situacao='ativo'", (fonte, recorte)).fetchall():
             if r["id_fonte"] not in vistos:
                 con.execute("UPDATE imoveis SET situacao='saiu_da_lista' WHERE id=?", (r["id"],))
@@ -169,7 +175,7 @@ def gravar_coleta(con, fonte: str, recorte: str, origem: str,
             "alterados": alterados, "saidos": saidos, "avisos": n_avisos}
 
 
-def possiveis_duplicados(con) -> List[list]:
+def _possiveis_duplicados(con) -> List[list]:
     """Grupos de imóveis ativos com o mesmo endereço normalizado. Sugestão, não certeza."""
     grupos = []
     for g in con.execute("SELECT chave_endereco FROM imoveis WHERE situacao='ativo' "
@@ -179,3 +185,29 @@ def possiveis_duplicados(con) -> List[list]:
             "SELECT id, fonte, id_fonte, cidade, endereco, preco FROM imoveis "
             "WHERE chave_endereco=? AND situacao='ativo'", (g[0],))])
     return grupos
+
+
+class RepositorioSQLite:
+    """Implementa as portas de repositório sobre um arquivo SQLite. Use com `with`."""
+
+    def __init__(self, caminho: str):
+        self.caminho = caminho
+        self.con = conectar(caminho)
+
+    def close(self) -> None:
+        self.con.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
+    def gravar_coleta(self, fonte: str, recorte: str, origem: str, imoveis: Iterable[ImovelCaptado],
+                      n_avisos: int = 0, agora: Optional[str] = None) -> dict:
+        """Compara a coleta com a base. Só imóveis da mesma fonte e do mesmo recorte
+        podem ser marcados como 'saiu_da_lista'."""
+        return _gravar_coleta(self.con, fonte, recorte, origem, imoveis, n_avisos, agora)
+
+    def possiveis_duplicados(self) -> List[list]:
+        return _possiveis_duplicados(self.con)

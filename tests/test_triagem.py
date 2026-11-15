@@ -1,7 +1,9 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import classifica, repositorio, triagem
-from captacao.modelo import ImovelCaptado
+from captacao import triagem
+from captacao.dominio import classifica
+from captacao.adaptadores.persistencia import sqlite as repositorio
+from captacao.dominio.modelo import ImovelCaptado
 from captacao.triagem import EntradaInvalida, NaoEncontrado
 
 SFI = "Leilão SFI - Edital Único"
@@ -27,7 +29,7 @@ def base_teste():
     ims[115].area_terreno = 1.0                      # alerta area_terreno_suspeita
     classifica.classificar(ims)
     con = repositorio.conectar(":memory:")
-    repositorio.gravar_coleta(con, "caixa", "SP", "teste", ims, agora="2026-11-14T10:00:00")
+    repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims, agora="2026-11-14T10:00:00")
     return con
 
 
@@ -97,7 +99,7 @@ class Resumo(unittest.TestCase):
         ims = [imovel(i) for i in range(100)]          # segunda coleta: 2 quedas, 1 alta, 20 saem
         ims[0].preco = 50000.0; ims[1].preco = 60000.0; ims[2].preco = 999999.0
         classifica.classificar(ims)
-        repositorio.gravar_coleta(con, "caixa", "SP", "teste", ims, agora="2026-11-15T10:00:00")
+        repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims, agora="2026-11-15T10:00:00")
         r = triagem.resumo(con)
         self.assertEqual(r["total_ativo"], 100)
         self.assertEqual(r["por_estagio"], {"identificado": 100, "analisar": 0, "depois": 0, "descartado": 0})

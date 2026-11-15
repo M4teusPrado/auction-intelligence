@@ -1,6 +1,8 @@
 """Uso:
+  python -m captacao fontes                          lista as fontes e seus recortes
   python -m captacao coletar --uf SP                 baixa a lista da Caixa e atualiza a base
   python -m captacao coletar --uf SP --arquivo x.csv usa um arquivo baixado pelo navegador
+  python -m captacao coletar --fonte caixa --recorte SP   forma geral, para qualquer fonte
   python -m captacao listar --uf SP --cidade campinas --tipo terreno --desconto-min 30
   python -m captacao listar --categoria terreno       tipo agrupado (terreno inclui gleba)
   python -m captacao novidades                       o que mudou na última coleta
@@ -12,31 +14,42 @@ import argparse
 import csv
 import sys
 
-from . import classifica, repositorio
-from .fontes import caixa
-from .normaliza import chave
+from . import montagem
+from .aplicacao.coletar import coletar
+from .aplicacao.portas import ErroDeFonte
+from .dominio.normaliza import chave
 
 
 def _brl(v):
     return "-" if v is None else f"R$ {v:,.0f}".replace(",", ".")
 
 
-def cmd_coletar(a, con):
+def cmd_fontes(a, repo):
+    for f in montagem.FONTES.values():
+        rec = f.recortes()
+        print(f"{f.nome:<12} {f.descricao}")
+        print(f"{'':<12} recortes: {', '.join(rec) if rec else '(um só)'}")
+
+
+def cmd_coletar(a, repo):
+    f = montagem.fonte(a.fonte)
+    recorte = a.recorte if a.recorte is not None else (a.uf or "")
+    if f.nome == "caixa":
+        recorte = recorte.upper()
+    arquivo = None
     if a.arquivo:
-        with open(a.arquivo, "rb") as f:
-            dados, origem = f.read(), a.arquivo
-    else:
-        dados, origem = caixa.baixar(a.uf), caixa.URL.format(uf=a.uf.upper())
-    imoveis, avisos = caixa.interpretar(caixa.decodificar(dados))
-    avisos += classifica.classificar(imoveis)
-    r = repositorio.gravar_coleta(con, caixa.FONTE, a.uf.upper(), origem, imoveis, len(avisos))
-    print(f"Coleta {r['coleta']} ({a.uf.upper()}): {r['total']} imóveis lidos, {r['novos']} novos, "
+        with open(a.arquivo, "rb") as arq:
+            arquivo = arq.read()
+    r = coletar(f, repo, recorte, arquivo, a.arquivo or "")
+    rotulo = f"{f.nome} {r['recorte']}".strip()
+    print(f"Coleta {r['coleta']} ({rotulo}): {r['total']} imóveis lidos, {r['novos']} novos, "
           f"{r['alterados']} alterados, {r['saidos']} saíram da lista, {r['avisos']} avisos.")
-    for av in avisos[:10]:
+    for av in r["lista_avisos"][:10]:
         print("  aviso:", av)
 
 
-def cmd_listar(a, con):
+def cmd_listar(a, repo):
+    con = repo.con
     sql, p = "SELECT * FROM imoveis WHERE situacao='ativo'", []
     if a.uf:
         sql += " AND uf=?"; p.append(a.uf.upper())
@@ -60,7 +73,8 @@ def cmd_listar(a, con):
     print(f"{len(linhas)} imóveis (mostrando até {a.limite}). '!' = imóvel com alerta.")
 
 
-def cmd_novidades(a, con):
+def cmd_novidades(a, repo):
+    con = repo.con
     ult = con.execute("SELECT * FROM coletas ORDER BY id DESC LIMIT 1").fetchone()
     if not ult:
         print("Nenhuma coleta registrada."); return
@@ -73,8 +87,8 @@ def cmd_novidades(a, con):
         print(f"  {h['evento']:<14} {h['id_fonte']} ({h['cidade']}){det}")
 
 
-def cmd_duplicados(a, con):
-    grupos = repositorio.possiveis_duplicados(con)
+def cmd_duplicados(a, repo):
+    grupos = repo.possiveis_duplicados()
     for g in grupos:
         print("Possível mesmo imóvel (confirmar manualmente):")
         for r in g:
@@ -82,7 +96,8 @@ def cmd_duplicados(a, con):
     print(f"{len(grupos)} grupos.")
 
 
-def cmd_exportar(a, con):
+def cmd_exportar(a, repo):
+    con = repo.con
     cur = con.execute("SELECT * FROM imoveis ORDER BY uf, cidade")
     with open(a.destino, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f, delimiter=";")
@@ -103,8 +118,10 @@ def main(argv=None):
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--base", default="captacao.db", help="arquivo da base (padrão: captacao.db)")
     s = p.add_subparsers(dest="cmd", required=True)
-    c = s.add_parser("coletar"); c.add_argument("--uf", required=True); c.add_argument("--arquivo")
-    c.set_defaults(f=cmd_coletar)
+    s.add_parser("fontes").set_defaults(f=cmd_fontes)
+    c = s.add_parser("coletar"); c.add_argument("--fonte", default="caixa")
+    c.add_argument("--recorte", help="parte da fonte (ex.: UF)"); c.add_argument("--uf", help="o mesmo que --recorte")
+    c.add_argument("--arquivo"); c.set_defaults(f=cmd_coletar)
     l = s.add_parser("listar"); l.add_argument("--uf"); l.add_argument("--cidade"); l.add_argument("--tipo")
     l.add_argument("--categoria", help="casa, apartamento, terreno, comercial, rural, outros")
     l.add_argument("--desconto-min", type=float); l.add_argument("--preco-max", type=float)
@@ -119,11 +136,13 @@ def main(argv=None):
     a = p.parse_args(argv)
     if a.cmd == "tela":                  # não cria base vazia se o caminho estiver errado
         return cmd_tela(a)
-    con = repositorio.conectar(a.base)
-    try:
-        return a.f(a, con) or 0
-    except (caixa.FormatoInesperado, OSError) as erro:
-        print("Erro:", erro, file=sys.stderr); return 1
+    if a.cmd == "fontes":
+        return cmd_fontes(a, None) or 0
+    with montagem.repositorio(a.base) as repo:
+        try:
+            return a.f(a, repo) or 0
+        except (ErroDeFonte, OSError) as erro:
+            print("Erro:", erro, file=sys.stderr); return 1
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import json, os, sys, tempfile, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import ficha, repositorio
+from captacao import ficha
 from captacao.triagem import EntradaInvalida, NaoEncontrado
 from test_triagem import base_teste
 

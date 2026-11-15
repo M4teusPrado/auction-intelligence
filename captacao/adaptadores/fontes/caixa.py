@@ -7,10 +7,11 @@ import csv
 import io
 import re
 import urllib.request
-from typing import List, Tuple
+from typing import Callable, List, Optional, Tuple
 
-from ..modelo import ImovelCaptado
-from ..normaliza import chave, numero_br
+from ...aplicacao.portas import Coleta, ErroDeFonte
+from ...dominio.modelo import ImovelCaptado
+from ...dominio.normaliza import chave, numero_br
 
 FONTE = "caixa"
 URL = "https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_{uf}.csv"
@@ -32,15 +33,22 @@ COLUNAS = {
 OBRIGATORIAS = ("id_fonte", "uf", "cidade", "endereco", "preco")
 
 
-class FormatoInesperado(Exception):
+UFS = ["AC", "AL", "AM", "AP", "BA", "CE", "DF", "ES", "GO", "MA", "MG", "MS", "MT", "PA", "PB", "PE",
+       "PI", "PR", "RJ", "RN", "RO", "RR", "RS", "SC", "SE", "SP", "TO"]
+
+
+class FormatoInesperado(ErroDeFonte):
     pass
 
 
 def baixar(uf: str, timeout: int = 60) -> bytes:
     req = urllib.request.Request(URL.format(uf=uf.upper()),
                                  headers={"User-Agent": "Mozilla/5.0 (captacao-imoveis)"})
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        dados = resp.read()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            dados = resp.read()
+    except OSError as e:
+        raise ErroDeFonte(f"não foi possível baixar a lista da Caixa ({e}). Baixe pelo navegador e use --arquivo.")
     if dados.lstrip()[:1] == b"<":
         raise FormatoInesperado(
             "A Caixa devolveu uma página em vez do CSV (provável bloqueio de acesso automático). "
@@ -80,7 +88,10 @@ def tipo_e_areas(descricao: str) -> Tuple[str, float, float, float]:
 
 def interpretar(texto: str) -> Tuple[List[ImovelCaptado], List[str]]:
     """Devolve (imóveis, avisos). Linhas com problema viram aviso, não imóvel."""
-    linhas = list(csv.reader(io.StringIO(texto), delimiter=";"))
+    try:
+        linhas = list(csv.reader(io.StringIO(texto, newline=""), delimiter=";"))
+    except csv.Error as e:     # arquivo corrompido ou que não é CSV
+        raise FormatoInesperado(f"O arquivo não pôde ser lido como CSV ({e}).")
     data_fonte, mapa, inicio = "", None, 0
     for i, linha in enumerate(linhas[:15]):
         junto = " ".join(linha)
@@ -119,3 +130,36 @@ def interpretar(texto: str) -> Tuple[List[ImovelCaptado], List[str]]:
             area_total=a_total,
             descricao=col("descricao"), link=col("link"), data_fonte=data_fonte))
     return imoveis, avisos
+
+
+class FonteCaixa:
+    """Adaptador da porta FonteDeImoveis para a lista pública da Caixa."""
+    nome = FONTE
+    descricao = "Lista pública de imóveis da Caixa, um arquivo CSV por estado"
+
+    def __init__(self, baixar_lista: Callable[[str], bytes] = baixar):
+        self._baixar = baixar_lista          # trocável nos testes, para não acessar a rede
+
+    def recortes(self) -> List[str]:
+        return list(UFS)
+
+    def coletar(self, recorte: str, arquivo: Optional[bytes] = None, nome_arquivo: str = "") -> Coleta:
+        uf = recorte.upper()
+        if arquivo is None:
+            dados, origem = self._baixar(uf), URL.format(uf=uf)
+        else:
+            dados, origem = arquivo, nome_arquivo or "arquivo enviado"
+        imoveis, avisos = interpretar(decodificar(dados))
+        return Coleta(imoveis=imoveis, recorte=uf, origem=origem, avisos=avisos)
+
+    def descrever_modalidade(self, modalidade: str) -> Optional[str]:
+        """Hipótese a partir da modalidade da lista. Precisa ser confirmada no edital."""
+        m = (modalidade or "").lower()
+        if "sfi" in m:
+            return ("Leilão SFI: em geral é o leilão extrajudicial da Lei 9.514 (alienação fiduciária). "
+                    "Hipótese; confirme no edital.")
+        if "licita" in m:
+            return "Licitação aberta da Caixa: venda por propostas, não é leilão judicial. Confirme no edital."
+        if "venda direta" in m or "venda online" in m:
+            return "Venda direta da Caixa: compra sem disputa de leilão. Confirme as condições na página do imóvel."
+        return None

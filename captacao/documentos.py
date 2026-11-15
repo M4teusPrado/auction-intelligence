@@ -10,7 +10,7 @@ pypdf é opcional: sem ele a ficha funciona e só avisa que a leitura está desl
 import io
 import re
 import unicodedata
-from typing import List, Optional
+from typing import List
 
 try:
     import pypdf
@@ -100,15 +100,3 @@ def buscar(paginas: List[str]) -> List[dict]:
                                     "depois": _limpar(texto[b:b + TRECHO]).rstrip()})
     return achados
 
-
-def sugestao_leilao(modalidade: str) -> Optional[str]:
-    """Hipótese a partir da modalidade da lista da Caixa. Precisa ser confirmada no edital."""
-    m = (modalidade or "").lower()
-    if "sfi" in m:
-        return ("Leilão SFI: em geral é o leilão extrajudicial da Lei 9.514 (alienação fiduciária). "
-                "Hipótese; confirme no edital.")
-    if "licita" in m:
-        return "Licitação aberta da Caixa: venda por propostas, não é leilão judicial. Confirme no edital."
-    if "venda direta" in m or "venda online" in m:
-        return "Venda direta da Caixa: compra sem disputa de leilão. Confirme as condições na página do imóvel."
-    return None

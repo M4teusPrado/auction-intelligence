@@ -1,7 +1,7 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import simulador
-from captacao.simulador import PremissaInvalida
+from captacao.dominio import simulador
+from captacao.dominio.simulador import PremissaInvalida
 
 # Exemplo feito à mão:
 # lance 100.000; leiloeiro 5% = 5.000; ITBI 3% = 3.000; registro 1,5% = 1.500;

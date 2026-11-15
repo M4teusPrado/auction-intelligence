@@ -8,7 +8,8 @@ import os
 import re
 from datetime import datetime
 
-from . import documentos, simulador
+from . import documentos
+from .dominio import simulador
 from .triagem import COLUNAS_IMOVEL, EntradaInvalida, NaoEncontrado, _imovel
 
 ITENS = [  # (chave, rótulo, o que conferir)
@@ -100,7 +101,12 @@ def _achados(con, imovel_id: int, pasta: str = None) -> dict:
     return por_item
 
 
-def ficha(con, imovel_id: int, pasta: str = None) -> dict:
+def _descrever_modalidade(fontes, im):
+    f = (fontes or {}).get(im.get("fonte"))
+    return f.descrever_modalidade(im.get("modalidade")) if f else None
+
+
+def ficha(con, imovel_id: int, pasta: str = None, fontes: dict = None) -> dict:
     im = _buscar_imovel(con, imovel_id)
     historico = [dict(r) for r in con.execute(
         "SELECT h.quando, h.evento, h.campo, h.valor_antigo, h.valor_novo FROM historico h "
@@ -112,7 +118,7 @@ def ficha(con, imovel_id: int, pasta: str = None) -> dict:
     return {"imovel": im, "historico": historico, "triagens": triagens,
             "investigacao": _checklist(con, imovel_id), "status": STATUS,
             "achados": _achados(con, imovel_id, pasta), "anexos": _anexos(con, imovel_id), "tipos_anexo": TIPOS_ANEXO,
-            "leitura_pdf": documentos.leitura_ligada(), "sugestao_leilao": documentos.sugestao_leilao(im.get("modalidade")),
+            "leitura_pdf": documentos.leitura_ligada(), "sugestao_leilao": _descrever_modalidade(fontes, im),
             "premissas": simulador.descricao_premissas(),
             "premissas_padrao": simulador.padrao_para(im),
             "simulacao_salva": {"premissas": json.loads(salva["premissas"]), "quando": salva["quando"]} if salva else None}

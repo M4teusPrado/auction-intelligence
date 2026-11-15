@@ -6,9 +6,9 @@ import math
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from .classifica import CATEGORIAS
-from .normaliza import chave
-from .repositorio import ESTAGIOS
+from .adaptadores.persistencia.sqlite import ESTAGIOS
+from .dominio.classifica import CATEGORIAS
+from .dominio.normaliza import chave
 
 POR_PAGINA = 50
 CATEGORIAS_VALIDAS = sorted(set(CATEGORIAS.values()) | {"outros"})

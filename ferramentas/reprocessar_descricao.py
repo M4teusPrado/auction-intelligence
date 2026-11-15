@@ -10,9 +10,10 @@ import sys
 from collections import Counter
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from captacao import classifica, repositorio          # noqa: E402
-from captacao.fontes import caixa                       # noqa: E402
-from captacao.modelo import ImovelCaptado               # noqa: E402
+from captacao.adaptadores.fontes import caixa           # noqa: E402
+from captacao.adaptadores.persistencia import sqlite     # noqa: E402
+from captacao.dominio import classifica                 # noqa: E402
+from captacao.dominio.modelo import ImovelCaptado       # noqa: E402
 
 EXTRATORES = {"caixa": caixa.tipo_e_areas}
 
@@ -23,7 +24,7 @@ def main(argv=None):
     a = p.parse_args(argv)
     if not os.path.exists(a.base):
         print("Base não encontrada:", a.base, file=sys.stderr); return 1
-    con = repositorio.conectar(a.base)      # migra o esquema (com cópia) se preciso
+    con = sqlite.conectar(a.base)      # migra o esquema (com cópia) se preciso
     campos = [f for f in ImovelCaptado.__dataclass_fields__ if f not in ("categoria", "alertas")]
     n, divergentes, sem_extrator = 0, [], Counter()
     for r in con.execute("SELECT * FROM imoveis").fetchall():

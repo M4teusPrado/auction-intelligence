@@ -54,11 +54,6 @@ class Busca(unittest.TestCase):
     def test_limite_por_termo(self):
         self.assertEqual(len(documentos.buscar(["hipoteca " * 20])), documentos.POR_TERMO_MAX)
 
-    def test_sugestao_leilao(self):
-        self.assertIn("9.514", documentos.sugestao_leilao("Leilão SFI - Edital Único"))
-        self.assertIn("Venda direta", documentos.sugestao_leilao("Venda Direta Online"))
-        self.assertIsNone(documentos.sugestao_leilao("Outra coisa"))
-
 
 @unittest.skipUnless(documentos.leitura_ligada(), "pypdf não instalado (rode com .venv/bin/python)")
 class LeituraPdf(unittest.TestCase):
