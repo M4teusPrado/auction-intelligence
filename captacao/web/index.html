@@ -259,6 +259,50 @@
     .premissa { grid-template-columns: minmax(0, 1fr) 130px; }
     .linha-tempo li { grid-template-columns: minmax(0, 1fr); gap: 0; }
   }
+  /* passo a passo guiado */
+  .btn-tour { margin-left: auto; min-height: 32px; padding: 4px 12px; font-size: 13.5px; color: var(--destaque-escuro); border-color: var(--destaque); }
+  .tour-bloqueio { position: fixed; inset: 0; z-index: 40; background: transparent; }
+  .tour-bloqueio.escuro { background: rgba(15, 22, 19, .55); }
+  .tour-destaque { position: fixed; z-index: 41; border-radius: 10px; pointer-events: none;
+                   box-shadow: 0 0 0 3px var(--destaque), 0 0 0 9999px rgba(15, 22, 19, .55); transition: all .25s ease; }
+  .tour-balao { position: fixed; z-index: 42; width: min(380px, calc(100vw - 32px)); background: var(--superficie); color: var(--texto);
+                border-radius: 12px; padding: 16px 18px; box-shadow: 0 18px 48px rgba(0,0,0,.28); display: grid; gap: 10px; transition: top .2s ease, left .2s ease; }
+  .tour-balao.centro { left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100vw - 32px)); }
+  .tour-balao.carregando { opacity: .6; }
+  .tour-balao h2 { margin: 0; font-size: 18px; letter-spacing: -.01em; }
+  .tour-balao p { margin: 0; color: var(--texto-2); font-size: 14.5px; }
+  .tour-topo { display: flex; justify-content: space-between; align-items: center; }
+  .tour-contador { font-size: 12.5px; font-weight: 650; color: var(--destaque-escuro); letter-spacing: .04em; text-transform: uppercase; }
+  .tour-fechar { appearance: none; background: none; border: 0; color: var(--texto-3); cursor: pointer; font-size: 13px; padding: 4px; }
+  .tour-fechar:hover { color: var(--texto); }
+  .tour-pontos { display: flex; gap: 5px; }
+  .tour-pontos i { flex: 1; height: 4px; border-radius: 2px; background: var(--borda); }
+  .tour-pontos i.feito { background: #9fcfc5; }
+  .tour-pontos i.atual { background: var(--destaque); }
+  .tour-acoes { display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+  .tour-fluxo { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .tour-fluxo li { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--borda); color: var(--texto-3); }
+  .tour-fluxo li.feito { color: var(--destaque-escuro); border-color: #9fcfc5; }
+  .tour-fluxo li.atual { background: var(--destaque); border-color: var(--destaque); color: #fff; }
+  .tour-mini-botoes { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .tour-mini-botoes .m { font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--borda-forte); }
+  .tour-mini-botoes .primario { background: var(--destaque); border-color: var(--destaque); color: #fff; }
+  .tour-mini-botoes .escuro { background: #1f2523; border-color: #1f2523; color: #9fe3d6; }
+  .tour-mini-botoes .seta { color: var(--texto-3); }
+  .tour-mini-conta { display: grid; gap: 3px; background: #f0f2ef; border-radius: 8px; padding: 10px 12px; font-size: 13px; }
+  .tour-mini-conta .l { display: flex; justify-content: space-between; color: var(--texto-2); }
+  .tour-mini-conta .soma { color: var(--texto); font-weight: 650; border-top: 1px solid var(--borda-forte); padding-top: 3px; }
+  .tour-mini-conta .destaque { color: var(--destaque-escuro); font-weight: 700; }
+  .tour-mini-check { display: grid; gap: 4px; }
+  .tour-mini-check .i { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 10px; border-left: 4px solid var(--borda); background: #f6f7f5; border-radius: 4px; }
+  .tour-mini-check .i em { font-style: normal; font-weight: 600; color: var(--texto-3); }
+  .tour-mini-check .ok { border-left-color: #2f8a5b; } .tour-mini-check .ok em { color: #2f8a5b; }
+  .tour-mini-check .at { border-left-color: #c98a12; } .tour-mini-check .at em { color: var(--alerta); }
+  .tour-mini-check .imp { border-left-color: var(--erro); } .tour-mini-check .imp em { color: var(--erro); }
+  @media (max-width: 560px) {
+    .tour-balao:not(.centro) { left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); top: auto !important; width: auto; }
+    .btn-tour { margin-left: 0; }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -268,6 +312,7 @@
     <div class="marca">
       <h1>Auction Intelligence <span>· Triagem</span></h1>
       <div class="fonte-info" id="fonte-info">Carregando…</div>
+      <button type="button" class="btn btn-tour" id="btn-tour">Como funciona</button>
     </div>
     <div class="coleta-info num" id="coleta-info"></div>
     <div class="abas" role="tablist" aria-label="Estágios da triagem" id="abas"></div>
@@ -972,7 +1017,190 @@ function rota() {
   }
 }
 window.addEventListener("hashchange", rota);
-iniciar().then(() => { if (location.hash) rota(); });
+/* ---------- passo a passo guiado ("Como funciona") ---------- */
+// Destaca partes reais da tela em sequência. Não clica em nada e não altera dados.
+const tour = { i: 0, ativo: false, idFicha: null, gatilho: null };
+const naFicha = () => /^#\/imovel\/\d+$/.test(location.hash);
+const estreito = () => window.matchMedia("(max-width: 860px)").matches;
+
+function miniFluxo(etapas, atual) {
+  return el("ol", { class: "tour-fluxo", "aria-hidden": "true" },
+    etapas.map((e, i) => el("li", { class: i === atual ? "atual" : i < atual ? "feito" : "" }, e)));
+}
+const FLUXO = ["Lista da Caixa", "Triagem", "Ficha", "Investigação", "Simulação", "Decisão"];
+function miniBotoes() {
+  return el("div", { class: "tour-mini-botoes", "aria-hidden": "true" },
+    el("span", { class: "m primario", text: "Analisar" }), el("span", { class: "m", text: "Depois" }), el("span", { class: "m", text: "Descartar" }),
+    el("span", { class: "seta", text: "→" }), el("span", { class: "m escuro", text: "Desfazer" }));
+}
+function miniConta() {
+  const linha = (a, b, cls) => el("div", { class: "l " + (cls || "") }, el("span", { text: a }), el("b", { text: b }));
+  return el("div", { class: "tour-mini-conta", "aria-hidden": "true" },
+    linha("Lance + leiloeiro + ITBI + registro", ""), linha("+ débitos + reforma + custo mensal", ""),
+    linha("= Investimento total", "", "soma"), linha("Venda − corretagem − imposto − investimento", ""),
+    linha("= Lucro e retorno", "", "soma"), linha("Meta de retorno → lance máximo", "", "destaque"));
+}
+function miniChecklist() {
+  const it = (t, s, c) => el("div", { class: "i " + c }, el("span", { text: t }), el("em", { text: s }));
+  return el("div", { class: "tour-mini-check", "aria-hidden": "true" },
+    it("Matrícula", "OK", "ok"), it("Ocupação", "Atenção", "at"), it("Débitos de IPTU", "Pendente", ""), it("Edital", "Impeditivo", "imp"));
+}
+
+const PASSOS = [
+  { tela: "triagem", titulo: "Da lista da Caixa ao lance máximo",
+    texto: () => `Este passo a passo mostra o caminho de um imóvel dentro do sistema. A base tem hoje ${(estado.resumo?.total_ativo ?? 0).toLocaleString("pt-BR")} imóveis ativos.`,
+    extra: () => miniFluxo(FLUXO, -1) },
+  { tela: "triagem", alvo: () => document.querySelector(".marca"), titulo: "1. De onde vêm os imóveis",
+    texto: () => "Da lista pública da Caixa, um arquivo por estado. Cada imóvel guarda a fonte e a data da lista. Linha com problema vira aviso, nunca dado errado.",
+    extra: () => miniFluxo(FLUXO, 0) },
+  { tela: "triagem", alvo: () => $("abas"), titulo: "2. As quatro etapas da triagem",
+    texto: () => "Todo imóvel novo entra em Na fila. Daí vai para Para analisar, Depois ou Descartados. Os números mostram quantos imóveis há em cada etapa.",
+    extra: () => miniFluxo(FLUXO, 1) },
+  { tela: "triagem", alvo: () => (estreito() ? $("abrir-gaveta") : $("filtros")), titulo: "3. Filtre até sobrar o que interessa",
+    texto: () => "Modalidade, categoria, cidade, preço, desconto, área de terreno e ordenação. A tela abre filtrada em Leilão SFI, que pode ser o extrajudicial; isso ainda precisa de confirmação." },
+  { tela: "triagem", alvo: () => document.querySelector(".cartao .acoes"), titulo: "4. Decida em um clique",
+    texto: () => "Analisar, Depois ou Descartar. O cartão sai da lista e aparece a opção Desfazer. Tudo fica registrado; desfazer grava uma linha nova, nada é apagado.",
+    extra: miniBotoes },
+  { tela: "triagem", alvo: () => document.querySelector(".cartao .links a"), titulo: "5. Abra a ficha do imóvel",
+    texto: () => "Clique no nome da cidade ou em Ficha e simulação. No próximo passo o tour abre a ficha deste imóvel.",
+    extra: () => miniFluxo(FLUXO, 2) },
+  { tela: "ficha", alvo: () => document.querySelector("#vista-ficha .secao"), titulo: "6. Os dados como vieram da Caixa",
+    texto: () => "Preço, avaliação, áreas e alertas, sem nenhuma alteração. A avaliação da Caixa é só referência: não é valor de mercado." },
+  { tela: "ficha", alvo: () => [...document.querySelectorAll("#vista-ficha .secao")].find((s) => s.querySelector(".check")),
+    titulo: "7. Investigue item por item",
+    texto: () => "Sete itens para conferir: leilão, edital, matrícula, ocupação, IPTU, condomínio e vistoria. Cada item tem situação e anotação, salvas na hora.",
+    extra: miniChecklist },
+  { tela: "ficha", alvo: () => document.querySelector("#vista-ficha .anexo-form")?.closest(".secao"), titulo: "8. Guarde matrícula e edital",
+    texto: () => "Baixe pelo botão Abrir na Caixa e anexe aqui: PDF, PNG ou JPG. O sistema não busca nada na internet." },
+  { tela: "ficha", alvo: () => document.querySelector("#vista-ficha .sim"), titulo: "9. Simule e ache o lance máximo",
+    texto: () => "Uma conta fixa vai do lance ao lucro líquido. Com uma meta de retorno, ela mostra até quanto vale dar de lance. Os campos marcados como exemplo ainda não foram ajustados, e o valor de venda é você que informa.",
+    extra: miniConta },
+  { tela: "triagem", titulo: "Pronto",
+    texto: () => "Comece pela fila: filtre, decida e abra a ficha dos imóveis que valem análise. Para rever este passo a passo, use o botão Como funciona no topo.",
+    extra: () => miniFluxo(FLUXO, 6) },
+];
+
+async function esperar(cond, ms = 6000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) { if (cond()) return true; await new Promise((r) => setTimeout(r, 60)); }
+  return false;
+}
+async function idParaFicha() {
+  const c = document.querySelector(".cartao");
+  if (c) return Number(c.dataset.id);
+  try { const r = await api("/api/imoveis?ordem=preco"); return r.itens[0]?.id ?? null; } catch (e) { return null; }
+}
+async function irParaTela(tela) {
+  if (tela === "ficha") {
+    if (!naFicha()) {
+      tour.idFicha = tour.idFicha ?? (await idParaFicha());
+      if (tour.idFicha == null) return false;
+      location.hash = `#/imovel/${tour.idFicha}`;
+    }
+    return esperar(() => document.querySelector("#sim-resultado table"));
+  }
+  if (naFicha()) location.hash = "#/";
+  if (estreito() && $("filtros").classList.contains("aberta")) gaveta(false);
+  return esperar(() => !$("vista-triagem").hidden && (document.querySelector(".cartao") || document.querySelector(".vazio")));
+}
+
+function iniciarTour() {
+  if (tour.ativo) return;
+  tour.ativo = true; tour.i = 0; tour.idFicha = null; tour.gatilho = document.activeElement;
+  document.body.append(
+    el("div", { class: "tour-bloqueio", id: "tour-bloqueio" }),
+    el("div", { class: "tour-destaque", id: "tour-destaque", hidden: true }),
+    el("div", { class: "tour-balao", id: "tour-balao", role: "dialog", "aria-modal": "true", "aria-labelledby": "tour-titulo" }));
+  document.addEventListener("keydown", teclaTour, true);
+  window.addEventListener("resize", posicionarTour); window.addEventListener("scroll", posicionarTour, { passive: true });
+  mostrarPasso(0);
+}
+function encerrarTour() {
+  if (!tour.ativo) return;
+  tour.ativo = false;
+  ["tour-bloqueio", "tour-destaque", "tour-balao"].forEach((id) => $(id)?.remove());
+  document.removeEventListener("keydown", teclaTour, true);
+  window.removeEventListener("resize", posicionarTour); window.removeEventListener("scroll", posicionarTour);
+  try { localStorage.setItem("tour-visto", "1"); } catch (e) { /* sem armazenamento: tudo bem */ }
+  if (naFicha() && tour.idFicha != null) location.hash = "#/";
+  const volta = $("btn-tour"); if (volta) volta.focus();
+}
+function teclaTour(ev) {
+  if (!tour.ativo) return;
+  if (ev.key === "Escape") { ev.preventDefault(); encerrarTour(); }
+  else if (ev.key === "ArrowRight") { ev.preventDefault(); mostrarPasso(tour.i + 1); }
+  else if (ev.key === "ArrowLeft") { ev.preventDefault(); mostrarPasso(tour.i - 1); }
+  else if (ev.key === "Tab") {   // mantém o foco dentro do balão
+    const f = [...$("tour-balao").querySelectorAll("button")]; if (!f.length) return;
+    const i = f.indexOf(document.activeElement);
+    if (ev.shiftKey && i <= 0) { ev.preventDefault(); f[f.length - 1].focus(); }
+    else if (!ev.shiftKey && i === f.length - 1) { ev.preventDefault(); f[0].focus(); }
+  }
+}
+
+async function mostrarPasso(n) {
+  if (n < 0 || n >= PASSOS.length) { if (n >= PASSOS.length) encerrarTour(); return; }
+  tour.i = n;
+  const p = PASSOS[n], balao = $("tour-balao");
+  balao.classList.add("carregando");
+  await irParaTela(p.tela);
+  if (!tour.ativo || tour.i !== n) return;
+  const alvo = p.alvo ? p.alvo() : null;
+  tour.alvo = alvo && alvo.getClientRects().length ? alvo : null;
+  if (tour.alvo) tour.alvo.scrollIntoView({ block: tour.alvo.offsetHeight > innerHeight * .6 ? "start" : "center", behavior: "instant" });
+  const ultimo = n === PASSOS.length - 1;
+  balao.replaceChildren(
+    el("div", { class: "tour-topo" },
+      el("span", { class: "tour-contador num", text: `${n + 1} de ${PASSOS.length}` }),
+      el("button", { type: "button", class: "tour-fechar", "aria-label": "Fechar passo a passo", text: "Fechar", onclick: encerrarTour })),
+    el("div", { class: "tour-pontos", "aria-hidden": "true" }, PASSOS.map((_, i) => el("i", { class: i === n ? "atual" : i < n ? "feito" : "" }))),
+    el("h2", { id: "tour-titulo", text: p.titulo }),
+    el("p", { text: p.texto() }),
+    p.extra ? p.extra() : null,
+    el("div", { class: "tour-acoes" },
+      n > 0 ? el("button", { type: "button", class: "btn", text: "Anterior", onclick: () => mostrarPasso(n - 1) }) : el("span"),
+      el("button", { type: "button", class: "btn btn-primario", id: "tour-proximo", text: ultimo ? "Começar" : n === 0 ? "Mostrar o caminho" : "Próximo",
+        onclick: () => mostrarPasso(n + 1) })));
+  balao.classList.remove("carregando");
+  posicionarTour();
+  $("tour-proximo").focus({ preventScroll: true });
+}
+
+function posicionarTour() {
+  if (!tour.ativo) return;
+  const d = $("tour-destaque"), b = $("tour-balao"), m = 8;
+  if (!tour.alvo) {
+    d.hidden = true; $("tour-bloqueio").classList.add("escuro");
+    b.classList.add("centro"); b.style.top = b.style.left = ""; return;
+  }
+  $("tour-bloqueio").classList.remove("escuro"); b.classList.remove("centro");
+  const r = tour.alvo.getBoundingClientRect();
+  const top = Math.max(r.top - m, 4), alt = Math.min(r.bottom + m, innerHeight - 4) - top;
+  Object.assign(d.style, { top: `${top}px`, left: `${Math.max(r.left - m, 4)}px`,
+    width: `${Math.min(r.width + 2 * m, innerWidth - 8)}px`, height: `${Math.max(alt, 24)}px` });
+  d.hidden = false;
+  if (innerWidth <= 560) { b.style.top = b.style.left = ""; return; }   // no celular o balão fica preso embaixo (CSS)
+  const bw = b.offsetWidth, bh = b.offsetHeight, gap = 14;
+  let y, x;
+  if (r.right + gap + bw < innerWidth - 8 && r.width < innerWidth * .55) {          // ao lado direito
+    x = r.right + gap; y = Math.min(Math.max(r.top, 12), innerHeight - bh - 12);
+  } else if (r.left - gap - bw > 8 && r.width < innerWidth * .55) {                 // ao lado esquerdo
+    x = r.left - gap - bw; y = Math.min(Math.max(r.top, 12), innerHeight - bh - 12);
+  } else {                                                                            // embaixo ou em cima
+    x = Math.min(Math.max(r.left, 12), innerWidth - bw - 12);
+    y = r.bottom + gap + bh < innerHeight ? r.bottom + gap : Math.max(12, r.top - gap - bh);
+    if (y + bh > innerHeight - 12) y = innerHeight - bh - 12;
+  }
+  b.style.left = `${x}px`; b.style.top = `${y}px`;
+}
+
+$("btn-tour").addEventListener("click", iniciarTour);
+iniciar().then(async () => {
+  if (location.hash) rota();
+  let visto = false;
+  try { visto = localStorage.getItem("tour-visto") === "1"; } catch (e) { visto = true; }
+  if (!visto && !naFicha() && await esperar(() => document.querySelector(".cartao") || document.querySelector(".vazio"))) iniciarTour();
+});
 </script>
 </body>
 </html>
