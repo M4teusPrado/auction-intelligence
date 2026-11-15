@@ -4,6 +4,7 @@
   python -m captacao coletar --uf SP --arquivo x.csv usa um arquivo baixado pelo navegador
   python -m captacao coletar --fonte caixa --recorte SP   forma geral, para qualquer fonte
   python -m captacao coletar --fonte megaleiloes --recorte SP   coleta diária da Mega Leilões
+  python -m captacao coletar --fonte soleon --recorte todos     todos os sites de uma fonte, um por vez
   python -m captacao importar <link da oferta>      importa um imóvel avulso (sites suportados)
   python -m captacao listar --uf SP --cidade campinas --tipo terreno --desconto-min 30
   python -m captacao listar --categoria terreno       tipo agrupado (terreno inclui gleba)
@@ -41,6 +42,18 @@ def cmd_coletar(a, repo):
     if a.arquivo:
         with open(a.arquivo, "rb") as arq:
             arquivo = arq.read()
+    if recorte.lower() == "todos" and not arquivo:          # um recorte por vez; erro num não para os outros
+        total = 0
+        for r_ in f.recortes():
+            try:
+                r = coletar(f, repo, r_, limite=a.limite)
+                total += r["total"]
+                print(f"  {r_}: {r['total']} imóveis, {r['novos']} novos, {r['saidos']} saíram"
+                      + ("" if r["completa"] else " (coleta incompleta)") + (f", {r['avisos']} avisos" if r["avisos"] else ""))
+            except ErroDeFonte as e:
+                print(f"  {r_}: erro: {e}")
+        print(f"Fonte {f.nome}: {total} imóveis em {len(f.recortes())} recortes.")
+        return 0
     r = coletar(f, repo, recorte, arquivo, a.arquivo or "", limite=a.limite)
     rotulo = f"{f.nome} {r['recorte']}".strip()
     print(f"Coleta {r['coleta']} ({rotulo}): {r['total']} imóveis lidos, {r['novos']} novos, "

@@ -9,6 +9,7 @@ from typing import Dict
 
 from .adaptadores.fontes.caixa import FonteCaixa
 from .adaptadores.fontes.megaleiloes import FonteMegaLeiloes
+from .adaptadores.fontes.soleon import FonteSoleon
 from .adaptadores.persistencia.sqlite import RepositorioSQLite
 from .adaptadores.web import ClienteWeb
 from .aplicacao.portas import ErroDeFonte, FonteDeImoveis
@@ -24,6 +25,7 @@ def _relatar(msg: str) -> None:
 FONTES: Dict[str, FonteDeImoveis] = {f.nome: f for f in (
     FonteCaixa(),
     FonteMegaLeiloes(CLIENTE_WEB, relatar=_relatar),
+    FonteSoleon(CLIENTE_WEB, relatar=_relatar),
 )}
 
 
