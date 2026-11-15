@@ -85,6 +85,11 @@ def _area(texto: str, nomes: str) -> Optional[float]:
     return None
 
 
+def _bairro(titulo: str) -> str:
+    m = re.search(r"\bBairro\s+([A-ZÀ-Ú][\wÀ-ú'. ]+?)(?=\s+-|\s+em\s|\s*\(|\s*,|$)", titulo)
+    return m.group(1).strip() if m else ""
+
+
 def interpretar_lote(pagina: str, url: str, dominio: str, hoje: Optional[str] = None) -> Optional[ImovelCaptado]:
     """Lê a página de um lote. Devolve None se o lote não for imóvel. Formato estranho: ErroDeFonte."""
     if "soleon" not in (re.search(r'<meta name="author" content="([^"]*)"', pagina) or [None, ""])[1].lower():
@@ -93,14 +98,18 @@ def interpretar_lote(pagina: str, url: str, dominio: str, hoje: Optional[str] = 
     desc_meta = htmlmod.unescape((re.search(r'<meta name="description" content="([^"]*)"', pagina) or [None, ""])[1])
     titulo = re.sub(r"^\s*lote\s*\d+\s*-\s*", "", desc_meta, flags=re.I).strip()
     cidade_uf = _rotulo(pagina, "Cidade")
-    if not (m_id and titulo and cidade_uf):
-        raise ErroDeFonte("lote Soleon sem número, título ou cidade (formato mudou?)")
+    if not (m_id and titulo):
+        raise ErroDeFonte("lote Soleon sem número ou título (formato mudou?)")
     matricula = _rotulo(pagina, "Matrícula")
     md = re.search(r"<b>\s*Descrição:\s*</b>(.*?)</div>", pagina, re.S)
     descricao = _texto(md.group(1))[:4000] if md else ""
     tipo = _tipo(titulo) or (_tipo(descricao[:200]) if matricula else None)
+    if tipo == "outros" and descricao:                # título genérico ("Imóvel em ..."): a descrição diz o tipo
+        tipo = _tipo(descricao[:300]) or tipo
     if tipo is None:
-        return None                                   # veículo, máquina ou outro bem: não é imóvel
+        return None                                   # veículo, máquina, "lote diverso"...: não é imóvel
+    if not cidade_uf:
+        raise ErroDeFonte("lote de imóvel sem cidade (formato mudou?)")
     partes = [p.strip() for p in cidade_uf.split("/") if p.strip()]
     uf = partes[-1].upper() if partes and partes[-1].upper() in UFS else ""
     if not uf:
@@ -151,7 +160,7 @@ def interpretar_lote(pagina: str, url: str, dominio: str, hoje: Optional[str] = 
                       comissao_pct=numero_br(comissao.group(1)) if comissao else None, incremento=incremento,
                       pracas=pracas, documentos=docs)
     return ImovelCaptado(
-        fonte=FONTE, id_fonte=f"{dominio}:{item_id}", uf=uf, cidade=cidade, bairro="", endereco=endereco,
+        fonte=FONTE, id_fonte=f"{dominio}:{item_id}", uf=uf, cidade=cidade, bairro=_bairro(titulo), endereco=endereco,
         preco=preco, valor_avaliacao=avaliacao,
         desconto_pct=round((1 - preco / avaliacao) * 100, 2) if preco and avaliacao and preco <= avaliacao else None,
         modalidade=tipo_venda or "Leilão", tipo=tipo, area_privativa=privativa, area_terreno=terreno, area_total=total,

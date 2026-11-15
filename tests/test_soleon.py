@@ -50,6 +50,18 @@ class Leitor(unittest.TestCase):
             'content="Lote 001 - Terreno', 'content="Lote 001 - Veículo VW Gol 2015').replace("<b>Matrícula:</b>", "<b>Placa:</b>")
         self.assertIsNone(so.interpretar_lote(pagina, URL_BEST, "bestleiloes.com.br"))
 
+    def test_lote_diverso_sem_cidade_e_ignorado(self):
+        pagina = ler("soleon_item_aberto_best.html").decode().replace(
+            'content="Lote 001 - Terreno - Bairro Velha - Blumenau/SC - 40.750,0m²', 'content="Lote 001 - Lote Diverso').replace(
+            "<b>Cidade:</b>", "<b>X:</b>").replace("<b>Matrícula:</b>", "<b>Y:</b>")      # como o lote 4050 real
+        self.assertIsNone(so.interpretar_lote(pagina, URL_BEST, "bestleiloes.com.br"))
+
+    def test_titulo_generico_usa_descricao_e_bairro(self):
+        pagina = ler("soleon_item_aberto_best.html").decode().replace(
+            'content="Lote 001 - Terreno - Bairro Velha - Blumenau/SC - 40.750,0m²', 'content="Lote 001 - Imóvel em Blumenau - Bairro Velha')
+        im = so.interpretar_lote(pagina, URL_BEST, "bestleiloes.com.br")
+        self.assertEqual((im.tipo, im.bairro), ("terreno", "Velha"))
+
     def test_pagina_de_outra_plataforma(self):
         with self.assertRaises(ErroDeFonte):
             so.interpretar_lote(ler("megaleiloes_judicial_j129393.html").decode(), URL_BEST, "bestleiloes.com.br")
