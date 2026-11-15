@@ -49,9 +49,10 @@ def cmd_coletar(a, repo):
                 r = coletar(f, repo, r_, limite=a.limite)
                 total += r["total"]
                 print(f"  {r_}: {r['total']} imóveis, {r['novos']} novos, {r['saidos']} saíram"
-                      + ("" if r["completa"] else " (coleta incompleta)") + (f", {r['avisos']} avisos" if r["avisos"] else ""))
+                      + ("" if r["completa"] else " (coleta incompleta)") + (f", {r['avisos']} avisos" if r["avisos"] else ""),
+                      flush=True)
             except ErroDeFonte as e:
-                print(f"  {r_}: erro: {e}")
+                print(f"  {r_}: erro: {e}", flush=True)
         print(f"Fonte {f.nome}: {total} imóveis em {len(f.recortes())} recortes.")
         return 0
     r = coletar(f, repo, recorte, arquivo, a.arquivo or "", limite=a.limite)
