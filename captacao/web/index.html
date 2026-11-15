@@ -173,6 +173,92 @@
     .aba .contagem { font-size: 20px; }
     .preco { font-size: 20px; }
   }
+  /* link do cartão para a ficha */
+  .local a { color: inherit; text-decoration: none; }
+  .local a:hover { text-decoration: underline; text-decoration-color: var(--borda-forte); }
+  .rodape-cartao .links { display: flex; gap: 14px; }
+
+  /* ficha */
+  .ficha { max-width: 1320px; margin: 0 auto; padding: 16px 20px 40px; }
+  .voltar { display: inline-block; color: var(--destaque-escuro); font-weight: 600; text-decoration: none; padding: 4px 0; }
+  .voltar:hover { text-decoration: underline; }
+  .ficha-topo { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio);
+                padding: 16px 18px; margin: 10px 0 18px; display: grid; gap: 6px; }
+  .ficha-topo h2 { margin: 0; font-size: 21px; letter-spacing: -.01em; }
+  .ficha-topo .linha-acoes { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-top: 6px; }
+  .pilula { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12.5px; font-weight: 650;
+            background: var(--destaque-claro); color: var(--destaque-escuro); }
+  .ficha-grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 18px; align-items: start; }
+  .secao { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px 18px; margin-bottom: 18px; }
+  .secao h3 { margin: 0 0 4px; font-size: 16px; }
+  .secao .sub { color: var(--texto-3); font-size: 13px; margin: 0 0 12px; }
+  .dados { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; font-size: 14px; margin: 0; }
+  .dados dt { color: var(--texto-3); }
+  .dados dd { margin: 0; overflow-wrap: anywhere; }
+
+  .check { display: grid; gap: 6px; padding: 10px 0 10px 12px; border-top: 1px solid var(--borda); border-left: 4px solid var(--borda); }
+  .check:first-of-type { border-top: 0; }
+  .check[data-status="ok"] { border-left-color: #2f8a5b; }
+  .check[data-status="atencao"] { border-left-color: #c98a12; }
+  .check[data-status="impeditivo"] { border-left-color: var(--erro); }
+  .check[data-status="nao_se_aplica"] { border-left-color: #b9beb8; }
+  .check .titulo { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .check .titulo b { font-weight: 600; }
+  .check .ajuda { color: var(--texto-3); font-size: 12.5px; }
+  .check .campos { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px; }
+  .check .salvo { color: var(--texto-3); font-size: 12px; }
+  .resumo-check { font-size: 13.5px; color: var(--texto-2); margin-bottom: 4px; }
+
+  .anexo-form { display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+  .anexo-lista { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+  .anexo-lista li { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 14px;
+                    border: 1px solid var(--borda); border-radius: 6px; padding: 8px 10px; }
+  .anexo-lista a { color: var(--destaque-escuro); font-weight: 600; overflow-wrap: anywhere; }
+  .anexo-lista .meta { color: var(--texto-3); font-size: 12.5px; }
+
+  .linha-tempo { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+  .linha-tempo li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; }
+  .linha-tempo time { color: var(--texto-3); font-size: 13px; }
+
+  .aviso-premissas { background: var(--alerta-fundo); color: var(--alerta); border: 1px solid #f0d3a3; border-radius: 6px;
+                     padding: 8px 12px; font-size: 13.5px; margin-bottom: 12px; }
+  .grupo-premissas { border-top: 1px solid var(--borda); padding-top: 10px; margin-top: 10px; }
+  .grupo-premissas h4 { margin: 0 0 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); }
+  .premissa { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 2px 12px; padding: 5px 0; align-items: center; }
+  .premissa label { font-size: 14px; }
+  .premissa .exemplo { font-size: 11.5px; font-weight: 650; color: var(--alerta); background: var(--alerta-fundo);
+                       border-radius: 4px; padding: 0 5px; margin-left: 6px; white-space: nowrap; }
+  .premissa .explica { grid-column: 1 / -1; color: var(--texto-3); font-size: 12px; }
+  .entrada-unidade { display: flex; align-items: center; border: 1px solid var(--borda-forte); border-radius: 6px; background: var(--superficie); }
+  .entrada-unidade:focus-within { outline: 3px solid var(--foco); outline-offset: 1px; }
+  .entrada-unidade input { border: 0; background: none; width: 100%; padding: 7px 8px; text-align: right; min-width: 0; }
+  .entrada-unidade input:focus-visible { outline: none; }
+  .entrada-unidade span { color: var(--texto-3); font-size: 12.5px; padding-right: 8px; white-space: nowrap; }
+  .entrada-unidade.invalida { border-color: var(--erro); background: var(--erro-fundo); }
+  .resultado { margin-top: 14px; border-top: 2px solid var(--texto); padding-top: 10px; }
+  .resultado table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .resultado td { padding: 3px 0; }
+  .resultado td:last-child { text-align: right; }
+  .resultado tr.total td { font-weight: 700; border-top: 1px solid var(--borda-forte); padding-top: 6px; }
+  .resultado tr.destaque td { font-size: 17px; font-weight: 700; }
+  .resultado .negativo { color: var(--erro); }
+  .resultado .vazio-sim { color: var(--texto-2); background: #f0f2ef; border-radius: 6px; padding: 10px 12px; font-size: 14px; margin-top: 8px; }
+  .lance-max { margin-top: 10px; background: var(--destaque-claro); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+  .lance-max b { font-size: 17px; }
+  .avisos-sim { margin: 10px 0 0; padding-left: 18px; color: var(--alerta); font-size: 13.5px; }
+  .erro-sim { color: var(--erro); font-size: 13.5px; margin-top: 8px; }
+  .acoes-sim { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+  .acoes-sim .estado-salvo { color: var(--texto-3); font-size: 13px; }
+
+  @media (max-width: 980px) {
+    .ficha-grade { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .ficha { padding: 12px 16px 32px; }
+    .check .campos, .anexo-form { grid-template-columns: minmax(0, 1fr); }
+    .premissa { grid-template-columns: minmax(0, 1fr) 130px; }
+    .linha-tempo li { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -185,10 +271,12 @@
     </div>
     <div class="coleta-info num" id="coleta-info"></div>
     <div class="abas" role="tablist" aria-label="Estágios da triagem" id="abas"></div>
+    <div id="espaco-ficha" style="height:14px" hidden></div>
   </div>
 </header>
 
-<div class="corpo">
+<div class="ficha" id="vista-ficha" hidden></div>
+<div class="corpo" id="vista-triagem">
   <div class="veu" id="veu"></div>
   <aside class="filtros" id="filtros" aria-label="Filtros">
     <div class="filtros-topo">
@@ -398,7 +486,8 @@ function cartao(im) {
     el("div", { class: "cartao-topo" },
       el("span", { class: "categoria" }, im.categoria || "?", el("span", { class: "tipo", text: im.tipo && im.tipo !== im.categoria ? ` · ${im.tipo}` : "" })),
       el("span", { class: "id-fonte num", text: `nº ${im.id_fonte}` })),
-    el("div", { class: "local" }, im.cidade, im.bairro ? el("span", { class: "bairro", text: ` · ${im.bairro}` }) : null),
+    el("div", { class: "local" }, el("a", { href: `#/imovel/${im.id}` }, im.cidade,
+      im.bairro ? el("span", { class: "bairro", text: ` · ${im.bairro}` }) : null)),
     el("div", { class: "endereco", text: im.endereco || "endereço não informado" }),
     el("div", { class: "preco num" }, im.preco == null ? "preço não informado" : brl.format(im.preco), " ", el("small", { text: "preço na Caixa" })),
     valores,
@@ -408,7 +497,9 @@ function cartao(im) {
     im.nota && im.estagio !== "identificado" ? el("div", { class: "nota-triagem" }, el("b", { text: "Nota: " }), im.nota) : null,
     el("div", { class: "rodape-cartao num" },
       el("span", { text: `Visto pela primeira vez em ${dataBR(im.primeira_vez)}` }),
-      /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", text: "Abrir na Caixa" }) : null),
+      el("span", { class: "links" },
+        el("a", { href: `#/imovel/${im.id}`, text: "Ficha e simulação" }),
+        /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", text: "Abrir na Caixa" }) : null)),
     acoes(im));
   return card;
 }
@@ -589,7 +680,299 @@ async function iniciar() {
   }
   carregarLista();
 }
-iniciar();
+
+/* ---------- ficha do imóvel ---------- */
+const NOME_ESTAGIO = { identificado: "Na fila", analisar: "Para analisar", depois: "Depois", descartado: "Descartado" };
+const ROTULO_CAMPO = { preco: "Preço", valor_avaliacao: "Avaliação", desconto_pct: "Desconto", modalidade: "Modalidade" };
+const fichaEstado = { id: null, dados: null, timerSim: null, seqSim: 0, salvas: null };
+
+function dataHoraBR(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || "");
+  return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : dataBR(iso);
+}
+function tamanhoArquivo(n) { return n >= 1048576 ? `${dec.format(n / 1048576)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`; }
+function secao(titulo, sub, ...conteudo) {
+  return el("section", { class: "secao" }, el("h3", { text: titulo }), sub ? el("p", { class: "sub", text: sub }) : null, ...conteudo);
+}
+
+async function abrirFicha(id) {
+  fichaEstado.id = id;
+  const vista = $("vista-ficha");
+  vista.replaceChildren(el("a", { class: "voltar", href: "#/" , text: "← Voltar para a triagem" }), el("p", { text: "Carregando ficha…" }));
+  try {
+    const dados = await api(`/api/imoveis/${id}`);
+    if (fichaEstado.id !== id) return;
+    fichaEstado.dados = dados;
+    desenharFicha(dados);
+  } catch (e) {
+    vista.replaceChildren(el("a", { class: "voltar", href: "#/", text: "← Voltar para a triagem" }),
+      el("div", { class: "erro-caixa", role: "alert" }, el("p", { text: `Não foi possível abrir a ficha. ${e.message}` }),
+        el("button", { type: "button", class: "btn", text: "Tentar de novo", onclick: () => abrirFicha(id) })));
+  }
+}
+
+function desenharFicha(d) {
+  const im = d.imovel;
+  document.title = `${im.tipo || im.categoria} em ${im.cidade} · Auction Intelligence`;
+  const moverPara = Object.keys(NOME_ESTAGIO).filter((e) => e !== im.estagio).map((e) =>
+    el("button", { type: "button", class: "btn", text: e === "identificado" ? "Voltar para a fila" : NOME_ESTAGIO[e],
+      onclick: async (ev) => {
+        ev.currentTarget.disabled = true;
+        try { await api(`/api/imoveis/${im.id}/triagem`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ para: e }) });
+              triagemSuja = true; await abrirFicha(im.id); }
+        catch (err) { mostrarErro(err.message); ev.currentTarget.disabled = false; }
+      } }));
+  const topo = el("header", { class: "ficha-topo" },
+    el("span", { class: "categoria" }, im.categoria || "?", el("span", { class: "tipo", text: im.tipo && im.tipo !== im.categoria ? ` · ${im.tipo}` : "" })),
+    el("h2", {}, im.cidade, im.bairro ? el("span", { class: "bairro", style: "font-weight:400;color:var(--texto-2)", text: ` · ${im.bairro}` }) : null),
+    el("div", { class: "endereco", text: im.endereco || "endereço não informado" }),
+    el("div", { class: "preco num" }, im.preco == null ? "preço não informado" : brl.format(im.preco), " ", el("small", { text: "preço na Caixa" })),
+    el("div", { class: "linha-acoes" },
+      el("span", { class: "pilula", text: NOME_ESTAGIO[im.estagio] }),
+      el("span", { class: "rotulo-campo", style: "margin:0", text: "Mover para:" }), ...moverPara,
+      /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", class: "btn btn-texto", text: "Abrir na Caixa" }) : null));
+
+  const esquerda = el("div", {}, secaoDados(im), secaoInvestigacao(d), secaoAnexos(d), secaoHistorico(d));
+  const direita = el("div", { class: "sim" }, secaoSimulador(d));
+  $("vista-ficha").replaceChildren(el("a", { class: "voltar", href: "#/", text: "← Voltar para a triagem" }), topo,
+    el("div", { class: "ficha-grade" }, esquerda, direita));
+  simularAgora();
+}
+
+function secaoDados(im) {
+  const linhas = [
+    ["Nº na Caixa", im.id_fonte], ["Modalidade", im.modalidade],
+    ["Avaliação da Caixa", im.valor_avaliacao == null ? "não informada" : `${brl.format(im.valor_avaliacao)} (não é valor de mercado)`],
+    ["Desconto sobre a avaliação", im.desconto_pct == null ? "-" : `${pct.format(im.desconto_pct)}%`],
+    ["Área privativa", m2(im.area_privativa) || "não informada"], ["Área do terreno", m2(im.area_terreno) || "não informada"],
+    ["Área total", m2(im.area_total) || "não informada"],
+    ["Alertas", im.alertas.length ? im.alertas.map((a) => ALERTAS[a] || a).join("; ") : "nenhum"],
+    ["Lista da fonte", im.data_fonte || "-"], ["Visto pela primeira vez", dataBR(im.primeira_vez)],
+    ["Visto pela última vez", dataBR(im.ultima_vez)], ["Situação na lista", im.situacao === "ativo" ? "na lista" : "saiu da lista"],
+  ];
+  return secao("Dados da fonte", "Como vieram da lista da Caixa. Nada aqui foi alterado.",
+    el("dl", { class: "dados num" }, linhas.flatMap(([a, b]) => [el("dt", { text: a }), el("dd", { text: b })])));
+}
+
+function resumoChecklist(itens) {
+  const feitos = itens.filter((i) => i.status !== "pendente").length;
+  const imp = itens.filter((i) => i.status === "impeditivo").length, at = itens.filter((i) => i.status === "atencao").length;
+  return `${feitos} de ${itens.length} conferidos` + (imp ? ` · ${imp} impeditivo${imp > 1 ? "s" : ""}` : "") + (at ? ` · ${at} com atenção` : "");
+}
+function secaoInvestigacao(d) {
+  const resumo = el("div", { class: "resumo-check", text: resumoChecklist(d.investigacao) });
+  const lista = el("div", {}, d.investigacao.map((it) => itemChecklist(d, it, resumo)));
+  return secao("Investigação", "Preenchido por quem analisa. Cada mudança fica registrada.", resumo, lista);
+}
+function itemChecklist(d, it, resumo) {
+  const idSel = `st-${it.item}`, idNota = `nt-${it.item}`;
+  const sel = el("select", { class: "campo", id: idSel, "aria-label": `Situação: ${it.rotulo}` },
+    Object.entries(d.status).map(([v, r]) => el("option", { value: v, selected: v === it.status, text: r })));
+  const nota = el("input", { class: "campo", id: idNota, maxlength: "2000", placeholder: "Anotação (opcional)", "aria-label": `Anotação: ${it.rotulo}` });
+  nota.value = it.nota || "";
+  const salvo = el("span", { class: "salvo", text: it.quando ? `atualizado em ${dataHoraBR(it.quando)}` : "" });
+  const linha = el("div", { class: "check", "data-status": it.status },
+    el("div", { class: "titulo" }, el("b", { text: it.rotulo }), salvo),
+    el("div", { class: "ajuda", text: it.ajuda }), el("div", { class: "campos" }, sel, nota));
+  let ultimo = { status: it.status, nota: it.nota || "" };
+  async function salvar() {
+    const atual = { status: sel.value, nota: nota.value.trim() };
+    if (atual.status === ultimo.status && atual.nota === ultimo.nota) return;
+    salvo.textContent = "salvando…";
+    try {
+      const r = await api(`/api/imoveis/${d.imovel.id}/investigacao`, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item: it.item, status: atual.status, nota: atual.nota || null }) });
+      ultimo = atual; d.investigacao = r.investigacao;
+      const novo = r.investigacao.find((x) => x.item === it.item);
+      linha.dataset.status = novo.status; salvo.textContent = `salvo em ${dataHoraBR(novo.quando)}`;
+      resumo.textContent = resumoChecklist(r.investigacao);
+    } catch (e) { salvo.textContent = "não salvo"; mostrarErro(e.message); }
+  }
+  sel.addEventListener("change", salvar);
+  nota.addEventListener("change", salvar);
+  nota.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); salvar(); } });
+  return linha;
+}
+
+function secaoAnexos(d) {
+  const lista = el("ul", { class: "anexo-lista" });
+  const desenhar = (anexos) => lista.replaceChildren(...(anexos.length ? anexos.map((a) => el("li", {},
+    el("a", { href: `/anexos/${a.id}`, target: "_blank", rel: "noopener", text: a.nome_original }),
+    el("span", { class: "meta num", text: `${d.tipos_anexo[a.tipo] || a.tipo} · ${tamanhoArquivo(a.tamanho)} · ${dataHoraBR(a.quando)}` })))
+    : [el("li", { class: "meta", text: "Nenhum arquivo anexado ainda." })]));
+  desenhar(d.anexos);
+  const tipo = el("select", { class: "campo", "aria-label": "Tipo do arquivo" },
+    Object.entries(d.tipos_anexo).map(([v, r]) => el("option", { value: v, text: r })));
+  const arquivo = el("input", { type: "file", class: "campo", accept: ".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg", "aria-label": "Arquivo" });
+  const botao = el("button", { type: "submit", class: "btn btn-primario", text: "Anexar" });
+  const form = el("form", { class: "anexo-form", onsubmit: async (ev) => {
+    ev.preventDefault();
+    const f = arquivo.files[0];
+    if (!f) { mostrarErro("Escolha um arquivo."); return; }
+    const mime = f.type || (/\.pdf$/i.test(f.name) ? "application/pdf" : "");
+    if (!["application/pdf", "image/png", "image/jpeg"].includes(mime)) { mostrarErro("Envie PDF, PNG ou JPG."); return; }
+    if (f.size > 25 * 1048576) { mostrarErro("Arquivo maior que 25 MB."); return; }
+    botao.disabled = true; botao.textContent = "Enviando…";
+    try {
+      const r = await api(`/api/imoveis/${d.imovel.id}/anexos?tipo=${encodeURIComponent(tipo.value)}`, {
+        method: "POST", headers: { "Content-Type": mime, "X-Nome-Arquivo": encodeURIComponent(f.name) }, body: f });
+      d.anexos = r.anexos; desenhar(r.anexos); form.reset();
+      if (r.duplicado) mostrarErro("Esse arquivo já estava anexado a este imóvel.");
+    } catch (e) { mostrarErro(`Não foi possível anexar: ${e.message}`); }
+    finally { botao.disabled = false; botao.textContent = "Anexar"; }
+  } }, tipo, arquivo, botao);
+  return secao("Matrícula, edital e outros arquivos",
+    "Baixe pela página da Caixa (Abrir na Caixa) e anexe aqui. PDF, PNG ou JPG até 25 MB. O sistema não busca nada na internet.",
+    form, lista);
+}
+
+function secaoHistorico(d) {
+  const eventos = [];
+  for (const h of d.historico) {
+    let texto = { novo: "Apareceu na lista da Caixa", saiu_da_lista: "Saiu da lista da Caixa", voltou: "Voltou para a lista da Caixa" }[h.evento];
+    if (h.evento === "alterado") {
+      const f = (v) => (["preco", "valor_avaliacao"].includes(h.campo) && v != null && !isNaN(v) ? brl.format(Number(v)) : v ?? "-");
+      texto = `${ROTULO_CAMPO[h.campo] || h.campo} mudou: ${f(h.valor_antigo)} → ${f(h.valor_novo)}`;
+    }
+    eventos.push({ quando: h.quando, texto: texto || h.evento });
+  }
+  for (const t of d.triagens) eventos.push({ quando: t.quando, texto: `Triagem: ${NOME_ESTAGIO[t.de]} → ${NOME_ESTAGIO[t.para]}${t.nota ? ` (“${t.nota}”)` : ""}` });
+  eventos.sort((a, b) => (a.quando < b.quando ? -1 : a.quando > b.quando ? 1 : 0));
+  return secao("Histórico", null, el("ol", { class: "linha-tempo num" },
+    eventos.map((e) => el("li", {}, el("time", { datetime: e.quando, text: dataHoraBR(e.quando) }), el("span", { text: e.texto })))));
+}
+
+/* simulador: a conta é feita no servidor (regra única, testada) */
+const GRUPOS = { compra: "Compra", custos: "Custos até vender", venda: "Venda e retorno" };
+function numeroBR(txt) {
+  const s = txt.trim().replace(/\s/g, "");
+  if (!s) return null;
+  let n = s.includes(",") ? s.replace(/\./g, "").replace(",", ".") : /^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, "") : s;
+  const v = Number(n);
+  return Number.isFinite(v) ? v : NaN;
+}
+function textoNumero(v) { return v == null ? "" : String(Math.round(v * 100) / 100).replace(".", ","); }
+
+function secaoSimulador(d) {
+  const inicial = { ...d.premissas_padrao, ...(d.simulacao_salva ? d.simulacao_salva.premissas : {}) };
+  fichaEstado.salvas = d.simulacao_salva ? JSON.stringify(d.simulacao_salva.premissas) : null;
+  const campos = {};
+  const grupos = Object.entries(GRUPOS).map(([g, titulo]) => el("div", { class: "grupo-premissas" }, el("h4", { text: titulo }),
+    d.premissas.filter((p) => p.grupo === g).map((p) => {
+      const id = `pr-${p.chave}`;
+      const input = el("input", { id, inputmode: "decimal", autocomplete: "off", class: "num" });
+      input.value = textoNumero(inicial[p.chave]);
+      const caixa = el("div", { class: "entrada-unidade" }, input, el("span", { text: p.unidade }));
+      const etiqueta = el("span", { class: "exemplo", text: "exemplo" });
+      const label = el("label", { for: id }, p.rotulo, etiqueta);
+      campos[p.chave] = { input, caixa, etiqueta, padrao: d.premissas_padrao[p.chave], temPadrao: p.padrao != null };
+      input.addEventListener("input", () => {
+        marcarExemplos();
+        if (Number.isNaN(numeroBR(input.value))) simularAgora(); else agendarSimulacao();   // erro aparece na hora
+      });
+      let explicacao = p.explicacao;
+      if (p.chave === "valor_venda" && d.imovel.valor_avaliacao) explicacao += ` Avaliação da Caixa: ${brl.format(d.imovel.valor_avaliacao)}.`;
+      return el("div", { class: "premissa" }, label, caixa, el("div", { class: "explica", text: explicacao }));
+    })));
+  fichaEstado.campos = campos;
+  const resultado = el("div", { class: "resultado", id: "sim-resultado", "aria-live": "polite" });
+  const estadoSalvo = el("span", { class: "estado-salvo", id: "sim-estado" });
+  const salvar = el("button", { type: "button", class: "btn btn-primario", text: "Salvar simulação", onclick: salvarSimulacao });
+  const restaurar = el("button", { type: "button", class: "btn", text: "Restaurar exemplos", onclick: () => {
+    for (const [k, c] of Object.entries(campos)) c.input.value = textoNumero(d.premissas_padrao[k]);
+    marcarExemplos(); simularAgora(); } });
+  setTimeout(marcarExemplos);
+  return secao("Simulador de custos e retorno", null,
+    el("div", { class: "aviso-premissas", text: "Conta fixa com premissas de exemplo, a confirmar com o Ruan. Os campos marcados “exemplo” ainda não foram ajustados. Não é recomendação de compra." }),
+    ...grupos, resultado, el("div", { class: "acoes-sim" }, salvar, restaurar, estadoSalvo));
+}
+function lerPremissas() {
+  const p = {}; let ok = true;
+  for (const [k, c] of Object.entries(fichaEstado.campos)) {
+    const v = numeroBR(c.input.value);
+    const invalido = Number.isNaN(v);
+    c.caixa.classList.toggle("invalida", invalido); c.input.setAttribute("aria-invalid", String(invalido));
+    if (invalido) ok = false; else p[k] = v;
+  }
+  return ok ? p : null;
+}
+function marcarExemplos() {
+  for (const c of Object.values(fichaEstado.campos)) {
+    const v = numeroBR(c.input.value);
+    c.etiqueta.hidden = !(c.temPadrao && v === c.padrao);
+  }
+  const p = lerPremissas();
+  const atual = p ? JSON.stringify(normalizar(p)) : null;
+  const est = $("sim-estado");
+  if (est) est.textContent = fichaEstado.salvas == null ? "Ainda não salva" :
+    atual === JSON.stringify(normalizar(JSON.parse(fichaEstado.salvas))) ? `Salva em ${dataHoraBR(fichaEstado.dados.simulacao_salva.quando)}` : "Alterações não salvas";
+}
+function normalizar(p) { const o = {}; for (const k of Object.keys(fichaEstado.campos)) o[k] = p[k] ?? null; return o; }
+function agendarSimulacao() { clearTimeout(fichaEstado.timerSim); fichaEstado.timerSim = setTimeout(simularAgora, 250); }
+
+async function simularAgora() {
+  const alvo = $("sim-resultado"); if (!alvo) return;
+  const p = lerPremissas();
+  if (!p) { alvo.replaceChildren(el("div", { class: "erro-sim", text: "Há um número inválido nas premissas (campo em vermelho)." })); return; }
+  const meu = ++fichaEstado.seqSim;
+  try {
+    const r = await api("/api/simular", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ premissas: p }) });
+    if (meu === fichaEstado.seqSim) desenharResultado(r);
+  } catch (e) { if (meu === fichaEstado.seqSim) alvo.replaceChildren(el("div", { class: "erro-sim", role: "alert", text: e.message })); }
+}
+function desenharResultado(r) {
+  const linha = (a, b, cls) => el("tr", { class: cls }, el("td", { text: a }), el("td", { class: "num" + (typeof b === "number" && b < 0 ? " negativo" : ""), text: typeof b === "number" ? brl.format(b) : b }));
+  const t = el("table", {}, el("tbody", {}, r.custos.filter((c) => c.valor || c.rotulo.startsWith("Lance")).map((c) => linha(c.rotulo, c.valor)),
+    linha("Investimento total", r.investimento, "total")));
+  const partes = [el("h4", { style: "margin:0 0 6px", text: "Resultado" }), t];
+  if (r.venda) {
+    const v = r.venda;
+    partes.push(el("table", { style: "margin-top:10px" }, el("tbody", {},
+      linha("Valor de venda estimado", v.valor_venda), linha("Corretagem", v.corretagem ? -v.corretagem : 0),
+      linha("Lucro antes do imposto", v.lucro_antes_ir), linha("Imposto sobre o ganho", v.ir ? -v.ir : 0),
+      linha("Lucro líquido", v.lucro, "total destaque"),
+      linha("Retorno sobre o investimento", v.roi_pct == null ? "-" : `${pct.format(v.roi_pct)}%`, "destaque"),
+      linha("Retorno ao mês (equivalente)", v.roi_mes_pct == null ? "-" : `${pct.format(v.roi_mes_pct)}%`))));
+  } else {
+    partes.push(el("div", { class: "vazio-sim", text: "Informe o valor de venda estimado para ver lucro e retorno. A avaliação da Caixa não serve como valor de mercado." }));
+  }
+  if (r.lance_maximo != null) {
+    partes.push(el("div", { class: "lance-max num" }, "Lance máximo para atingir ", `${pct.format(r.premissas.meta_roi_pct)}%`, " de retorno: ",
+      el("b", { text: brl.format(r.lance_maximo) })));
+  }
+  const avisos = r.avisos.filter((a) => !a.startsWith("Informe o valor de venda"));
+  if (avisos.length) partes.push(el("ul", { class: "avisos-sim" }, avisos.map((a) => el("li", { text: a }))));
+  $("sim-resultado").replaceChildren(...partes);
+}
+async function salvarSimulacao(ev) {
+  const p = lerPremissas(); if (!p) { mostrarErro("Corrija os campos em vermelho antes de salvar."); return; }
+  const b = ev.currentTarget; b.disabled = true;
+  try {
+    const r = await api(`/api/imoveis/${fichaEstado.id}/simulacao`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ premissas: p }) });
+    fichaEstado.salvas = JSON.stringify(r.resultado.premissas);
+    fichaEstado.dados.simulacao_salva = { premissas: r.resultado.premissas, quando: r.quando };
+    marcarExemplos();
+  } catch (e) { mostrarErro(`Não foi possível salvar: ${e.message}`); }
+  finally { b.disabled = false; }
+}
+
+/* ---------- rotas: #/imovel/<id> abre a ficha ---------- */
+let rolagemTriagem = 0, triagemSuja = false;
+function rota() {
+  const m = /^#\/imovel\/(\d+)$/.exec(location.hash);
+  const naFicha = !!m;
+  if (naFicha && $("vista-ficha").hidden) rolagemTriagem = window.scrollY;
+  $("vista-triagem").hidden = naFicha; $("abas").hidden = naFicha; $("vista-ficha").hidden = !naFicha;
+  $("espaco-ficha").hidden = !naFicha;
+  if (naFicha) { abrirFicha(Number(m[1])); window.scrollTo({ top: 0 }); }
+  else {
+    document.title = "Auction Intelligence · Triagem";
+    if (triagemSuja) { triagemSuja = false; carregarResumo().catch(() => {}); carregarLista().then(() => window.scrollTo({ top: rolagemTriagem })); }
+    else requestAnimationFrame(() => window.scrollTo({ top: rolagemTriagem }));
+  }
+}
+window.addEventListener("hashchange", rota);
+iniciar().then(() => { if (location.hash) rota(); });
 </script>
 </body>
 </html>

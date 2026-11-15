@@ -3,7 +3,13 @@
 Rotas:
   GET  /                              captacao/web/index.html
   GET  /api/resumo | /api/opcoes | /api/imoveis?...
-  POST /api/imoveis/<id>/triagem      {"para": "...", "nota": "..."} ou {"desfazer": true}
+  GET  /api/imoveis/<id>                       ficha do imóvel
+  POST /api/imoveis/<id>/triagem               {"para": "...", "nota": "..."} ou {"desfazer": true}
+  POST /api/imoveis/<id>/investigacao          {"item": "...", "status": "...", "nota": "..."}
+  POST /api/imoveis/<id>/simulacao             {"premissas": {...}}  (salva)
+  POST /api/simular                            {"premissas": {...}}  (só calcula)
+  POST /api/imoveis/<id>/anexos?tipo=matricula corpo = o arquivo (PDF, PNG ou JPG)
+  GET  /anexos/<id>                            abre um anexo
 """
 import json
 import os
@@ -13,16 +19,19 @@ import sys
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import repositorio, triagem
+from . import ficha, repositorio, triagem
 
 HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
 CORPO_MAX = 16 * 1024
-ROTA_TRIAGEM = re.compile(r"^/api/imoveis/(\d{1,12})/triagem$")
+ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos))?$")
+ROTA_ANEXO = re.compile(r"^/anexos/(\d{1,12})$")
+TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
 
 
 def _criar_handler(caminho_base: str, porta: int):
+    pasta_anexos = os.path.join(os.path.dirname(os.path.abspath(caminho_base)), "anexos")
     hosts_validos = {f"127.0.0.1:{porta}", f"localhost:{porta}"}
 
     class Handler(BaseHTTPRequestHandler):
@@ -89,31 +98,81 @@ def _criar_handler(caminho_base: str, porta: int):
             elif url.path == "/api/imoveis":
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
+            elif (m := ROTA_IMOVEL.match(url.path)) and m.group(2) is None:
+                self._executar(ficha.ficha, int(m.group(1)))
+            elif m := ROTA_ANEXO.match(url.path):
+                self._enviar_anexo(int(m.group(1)))
             else:
                 self._json(404, {"erro": "rota não encontrada"})
 
         do_HEAD = do_GET
 
-        def do_POST(self):
-            if not self._host_ok():
-                return
-            m = ROTA_TRIAGEM.match(urlsplit(self.path).path)
-            if not m:
-                return self._json(404, {"erro": "rota não encontrada"})
-            # exigir JSON impede envio por formulário de outro site (CSRF)
-            if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
-                return self._json(415, {"erro": "envie Content-Type: application/json"})
+        def _enviar_anexo(self, anexo_id: int):
+            con = self._con()
+            try:
+                caminho, nome, mime = ficha.arquivo_anexo(con, pasta_anexos, anexo_id)
+            except triagem.NaoEncontrado as e:
+                return self._json(404, {"erro": str(e)})
+            finally:
+                con.close()
+            with open(caminho, "rb") as f:
+                dados = f.read()
+            nome_ascii = re.sub(r"[^A-Za-z0-9._ -]", "_", nome)
+            self.send_response(200)
+            self.send_header("Content-Type", mime)
+            self.send_header("Content-Length", str(len(dados)))
+            self.send_header("Content-Disposition", f'inline; filename="{nome_ascii}"')
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(dados)
+
+        def _ler_corpo(self, maximo: int):
             try:
                 tamanho = int(self.headers.get("Content-Length", "0"))
             except ValueError:
-                return self._json(400, {"erro": "Content-Length inválido"})
-            if not 0 < tamanho <= CORPO_MAX:
-                return self._json(413 if tamanho > CORPO_MAX else 400, {"erro": "corpo vazio ou grande demais"})
+                self._json(400, {"erro": "Content-Length inválido"}); return None
+            if tamanho <= 0:
+                self._json(400, {"erro": "corpo vazio"}); return None
+            if tamanho > maximo:
+                self._json(413, {"erro": f"corpo maior que {maximo // 1024 // 1024 or 1} MB"}); return None
+            return self.rfile.read(tamanho)
+
+        def do_POST(self):
+            if not self._host_ok():
+                return
+            url = urlsplit(self.path)
+            tipo_corpo = self.headers.get("Content-Type", "").split(";")[0].strip().lower()
+            m = ROTA_IMOVEL.match(url.path)
+            if m and m.group(2) == "anexos":
+                # tipos não-"simples" exigem preflight CORS: outro site não consegue enviar
+                if tipo_corpo not in TIPOS_UPLOAD:
+                    return self._json(415, {"erro": "envie o arquivo com Content-Type PDF, PNG ou JPG"})
+                dados = self._ler_corpo(ficha.ANEXO_MAX)
+                if dados is None:
+                    return
+                q = parse_qs(url.query)
+                nome = unquote(self.headers.get("X-Nome-Arquivo", ""))
+                return self._executar(lambda con: ficha.anexar(
+                    con, pasta_anexos, int(m.group(1)), (q.get("tipo") or [""])[0], nome, dados))
+            if url.path != "/api/simular" and not (m and m.group(2)):
+                return self._json(404, {"erro": "rota não encontrada"})
+            # exigir JSON impede envio por formulário de outro site (CSRF)
+            if tipo_corpo != "application/json":
+                return self._json(415, {"erro": "envie Content-Type: application/json"})
+            bruto = self._ler_corpo(CORPO_MAX)
+            if bruto is None:
+                return
             try:
-                corpo = json.loads(self.rfile.read(tamanho).decode("utf-8"))
+                corpo = json.loads(bruto.decode("utf-8"))
             except (ValueError, UnicodeDecodeError):
                 return self._json(400, {"erro": "JSON inválido"})
-            self._executar(triagem.triar, int(m.group(1)), corpo)
+            if url.path == "/api/simular":
+                return self._executar(lambda con: ficha.simular(corpo))
+            acao = {"triagem": triagem.triar, "investigacao": ficha.investigar,
+                    "simulacao": ficha.salvar_simulacao}[m.group(2)]
+            self._executar(acao, int(m.group(1)), corpo)
 
     return Handler
 

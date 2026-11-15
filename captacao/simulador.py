@@ -112,9 +112,11 @@ def _lance_maximo(p: dict) -> Optional[float]:
     def atinge(lance):
         roi = _conta(p, lance).get("roi")
         return roi is not None and roi >= meta
-    if not atinge(0.0):
+    # parte de R$ 1, não de zero: com lance zero e sem outros custos o investimento
+    # seria zero e o retorno ficaria indefinido
+    if not atinge(1.0):
         return None
-    lo, hi = 0.0, p["valor_venda"]
+    lo, hi = 1.0, p["valor_venda"]
     for _ in range(80):
         meio = (lo + hi) / 2
         lo, hi = (meio, hi) if atinge(meio) else (lo, meio)

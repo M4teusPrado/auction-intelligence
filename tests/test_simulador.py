@@ -46,6 +46,13 @@ class Conta(unittest.TestCase):
         no_limite = simulador.simular({**EXEMPLO, "lance": r["lance_maximo"]})
         self.assertGreaterEqual(no_limite["venda"]["roi_pct"], 19.99)
 
+    def test_lance_maximo_sem_outros_custos(self):
+        # só percentuais: investimento = 1,095 L; lucro = 0,85 x (150.400 - 1,095 L)
+        # 0,85 x (150.400 - 1,095 L) = 0,20 x 1,095 L  =>  127.840 = 1,14975 L  =>  L = 111.189,4
+        r = simulador.simular({"lance": 98000, "valor_venda": 160000, "meta_roi_pct": 20})
+        self.assertAlmostEqual(r["lance_maximo"], 111189, delta=1)
+        self.assertEqual(r["avisos"], [])
+
     def test_meta_impossivel(self):
         r = simulador.simular({**EXEMPLO, "meta_roi_pct": 900})
         self.assertIsNone(r["lance_maximo"])
