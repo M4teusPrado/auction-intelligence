@@ -59,6 +59,14 @@ class Leitor(unittest.TestCase):
         self.assertIn("Votorantim", lei.vara)
         self.assertEqual(sorted(d.tipo for d in lei.documentos), ["edital", "laudo", "matricula"])   # sem "modelo de proposta"
 
+    def test_tres_pracas(self):
+        pagina = ler("megaleiloes_judicial_j129393.html").decode()
+        terceira = ('<div class="instance"> <span class="card-second-instance-date"> <b>3ª Praça:</b> 15/12/2026 às 10:00 </span> '
+                    '<span class="card-instance-value"> R$ 8.503,68 </span> </div>')
+        pagina = pagina.replace('<div class="timer"', terceira + '</div><div class="timer"', 1)
+        pr = mega.interpretar_oferta(pagina, URL_J).leilao.pracas
+        self.assertEqual([(p.numero, p.valor) for p in pr], [(1, 170073.59), (2, 85036.79), (3, 8503.68)])
+
     def test_listagem(self):
         links, tem_proxima = mega.links_da_listagem(ler("megaleiloes_lista_apartamentos_sp.html").decode())
         self.assertEqual(len(links), 48)

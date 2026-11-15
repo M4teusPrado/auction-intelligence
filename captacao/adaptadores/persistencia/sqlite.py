@@ -140,7 +140,7 @@ def _gravar_leilao(con, imovel_id: int, lei) -> None:
                 f"VALUES ({', '.join('?' * (len(_CAMPOS_LEILAO) + 1))})",
                 [imovel_id] + [getattr(lei, c) for c in _CAMPOS_LEILAO])
     con.execute("DELETE FROM pracas WHERE imovel_id=?", (imovel_id,))
-    con.executemany("INSERT INTO pracas (imovel_id, numero, data, valor) VALUES (?,?,?,?)",
+    con.executemany("INSERT OR REPLACE INTO pracas (imovel_id, numero, data, valor) VALUES (?,?,?,?)",
                     [(imovel_id, p.numero, p.data, p.valor) for p in lei.pracas])
     con.execute("DELETE FROM documentos_fonte WHERE imovel_id=?", (imovel_id,))
     con.executemany("INSERT OR IGNORE INTO documentos_fonte (imovel_id, tipo, url, rotulo) VALUES (?,?,?,?)",

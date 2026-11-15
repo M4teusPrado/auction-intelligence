@@ -80,7 +80,10 @@ def _pracas(pagina: str) -> List[Praca]:
             r = _texto(rotulo).lower()
             if r.startswith("início"):
                 continue
-            numero = 2 if r.startswith("2") else 1
+            m_num = re.match(r"(\d+)", r)                 # "1ª Praça", "2ª Praça", "3ª Praça"...; "Data:" = única
+            numero = int(m_num.group(1)) if m_num else 1
+            while numero in {p.numero for p in pracas}:    # nunca repetir o número no mesmo lote
+                numero += 1
             pracas.append(Praca(numero=numero, data=_data_iso(dia, hora), valor=valor))
     return pracas
 
