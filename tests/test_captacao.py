@@ -47,23 +47,23 @@ class Caixa(unittest.TestCase):
 
 class Base(unittest.TestCase):
     def test_ciclo(self):
-        con = repositorio.conectar(":memory:")
+        repo = repositorio.RepositorioSQLite(":memory:"); con = repo.con
         ims, _ = ler()
-        r1 = repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims)
+        r1 = repo.gravar_coleta( "caixa", "SP", "teste", ims)
         self.assertEqual((r1["novos"], r1["alterados"], r1["saidos"]), (3, 0, 0))
         # segunda coleta: preço do 1º muda, 2º some
         ims2, _ = ler(); ims2[0].preco = 140000.0; del ims2[1]
-        r2 = repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims2)
+        r2 = repo.gravar_coleta("caixa", "SP", "teste", ims2)
         self.assertEqual((r2["novos"], r2["alterados"], r2["saidos"]), (0, 1, 1))
         h = con.execute("SELECT campo, valor_antigo, valor_novo FROM historico WHERE evento='alterado'").fetchone()
         self.assertEqual(tuple(h), ("preco", "150000.0", "140000.0"))
         # terceira: o 2º volta; coleta vazia não derruba nada
         ims3, _ = ler()
-        r3 = repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims3)
+        r3 = repo.gravar_coleta("caixa", "SP", "teste", ims3)
         self.assertEqual(con.execute("SELECT COUNT(*) FROM historico WHERE evento='voltou'").fetchone()[0], 1)
-        r4 = repositorio._gravar_coleta(con, "caixa", "SP", "teste", [])
+        r4 = repo.gravar_coleta("caixa", "SP", "teste", [])
         self.assertEqual(r4["saidos"], 0)
-        self.assertEqual(len(repositorio._possiveis_duplicados(con)), 1)
+        self.assertEqual(len(repo.possiveis_duplicados()), 1)
 
 
 class AreaTotal(unittest.TestCase):
@@ -122,9 +122,9 @@ class Categoria(unittest.TestCase):
         self.assertEqual(ims[2].categoria, "terreno")
 
     def test_grava_categoria(self):
-        con = repositorio.conectar(":memory:")
+        repo = repositorio.RepositorioSQLite(":memory:"); con = repo.con
         ims, _ = ler(); classifica.classificar(ims)
-        repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims)
+        repo.gravar_coleta("caixa", "SP", "teste", ims)
         self.assertEqual([r[0] for r in con.execute("SELECT categoria FROM imoveis ORDER BY id")],
                          ["casa", "apartamento", "terreno"])
 
@@ -169,9 +169,9 @@ class Alertas(unittest.TestCase):
     def test_listar_sem_alertas(self):
         import io, contextlib, tempfile
         caminho = os.path.join(tempfile.mkdtemp(), "b.db")
-        con = repositorio.conectar(caminho)
+        repo = repositorio.RepositorioSQLite(caminho)
         ims, _ = ler(); ims[0].area_terreno = 1.0; classifica.classificar(ims)
-        repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims); con.close()
+        repo.gravar_coleta("caixa", "SP", "teste", ims); repo.close()
         from captacao import cli
         def rodar(*args):
             out = io.StringIO()

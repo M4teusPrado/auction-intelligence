@@ -19,6 +19,6 @@ def fonte(nome: str) -> FonteDeImoveis:
         raise ErroDeFonte(f"fonte desconhecida: {nome}. Disponíveis: " + ", ".join(sorted(FONTES)))
 
 
-def repositorio(caminho_base: str) -> RepositorioSQLite:
+def repositorio(caminho_base: str, migrar: bool = True) -> RepositorioSQLite:
     """Abre a base (migrando o esquema, com cópia, se preciso). Use com `with`."""
-    return RepositorioSQLite(caminho_base)
+    return RepositorioSQLite(caminho_base, migrar)

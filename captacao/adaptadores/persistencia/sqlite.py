@@ -2,12 +2,13 @@
 
 Único lugar do sistema com SQL. Implementa as portas de repositório (aplicacao/portas.py).
 """
+import json
 import sqlite3
 from datetime import datetime
 from typing import Iterable, List, Optional
 
 from ...dominio.modelo import ImovelCaptado
-from ...dominio.normaliza import chave_endereco
+from ...dominio.normaliza import chave, chave_endereco
 
 ESQUEMA = """
 CREATE TABLE IF NOT EXISTS imoveis (
@@ -60,7 +61,6 @@ CREATE TABLE IF NOT EXISTS coletas (
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
 );
 """
-ESTAGIOS = ("identificado", "analisar", "depois", "descartado")
 CAMPOS = ("uf", "cidade", "bairro", "endereco", "preco", "valor_avaliacao", "desconto_pct",
           "modalidade", "tipo", "area_privativa", "area_terreno", "area_total", "descricao", "link", "data_fonte",
           "categoria", "alertas")
@@ -190,9 +190,14 @@ def _possiveis_duplicados(con) -> List[list]:
 class RepositorioSQLite:
     """Implementa as portas de repositório sobre um arquivo SQLite. Use com `with`."""
 
-    def __init__(self, caminho: str):
+    def __init__(self, caminho: str, migrar: bool = True):
+        """migrar=False abre sem conferir o esquema (para requisições, depois de migrado na partida)."""
         self.caminho = caminho
-        self.con = conectar(caminho)
+        if migrar:
+            self.con = conectar(caminho)
+        else:
+            self.con = sqlite3.connect(caminho, timeout=10)
+            self.con.row_factory = sqlite3.Row
 
     def close(self) -> None:
         self.con.close()
@@ -211,3 +216,186 @@ class RepositorioSQLite:
 
     def possiveis_duplicados(self) -> List[list]:
         return _possiveis_duplicados(self.con)
+
+    # ------------------------------------------------------------------ consulta
+    # Colunas devolvidas para a tela; a nota é a da triagem mais recente.
+    _COLUNAS_IMOVEL = """
+      id, fonte, id_fonte, recorte, uf, cidade, bairro, endereco, preco, valor_avaliacao, desconto_pct,
+      modalidade, tipo, categoria, area_privativa, area_terreno, area_total, link, data_fonte,
+      alertas, situacao, estagio, primeira_vez, ultima_vez,
+      (SELECT nota FROM triagens t WHERE t.imovel_id = imoveis.id ORDER BY t.id DESC LIMIT 1) AS nota
+    """
+    _ORDENS = {   # nulos sempre no fim; id desempata para a paginação ser estável
+        "desconto": "desconto_pct IS NULL, desconto_pct DESC, id",
+        "preco": "preco IS NULL, preco ASC, id",
+        "area_terreno": "area_terreno IS NULL, area_terreno DESC, id",
+        "recente": "primeira_vez DESC, id DESC",
+    }
+
+    @staticmethod
+    def _imovel(r) -> dict:
+        d = dict(r)
+        d["alertas"] = [a for a in (d.get("alertas") or "").split(",") if a]
+        return d
+
+    def listar_imoveis(self, f) -> tuple:
+        """(total, página de imóveis) para um FiltroImoveis. Só imóveis ativos."""
+        self.con.create_function("chave", 1, chave, deterministic=True)
+        where, args = ["situacao = 'ativo'"], []
+        def em(coluna, valores):
+            where.append(f"{coluna} IN ({','.join('?' * len(valores))})"); args.extend(valores)
+        if f.estagio:
+            where.append("estagio = ?"); args.append(f.estagio)
+        if f.uf:
+            where.append("uf = ?"); args.append(f.uf)
+        if f.modalidades:
+            em("modalidade", f.modalidades)
+        if f.categorias:
+            em("categoria", f.categorias)
+        if f.cidade:
+            where.append("chave(cidade) LIKE ?"); args.append(f"%{chave(f.cidade)}%")
+        if f.tipo:
+            where.append("chave(COALESCE(tipo, '')) LIKE ?"); args.append(f"%{chave(f.tipo)}%")
+        for valor, expr in ((f.preco_min, "preco >= ?"), (f.preco_max, "preco <= ?"),
+                            (f.desconto_min, "desconto_pct >= ?"), (f.area_terreno_min, "area_terreno >= ?")):
+            if valor is not None:
+                where.append(expr); args.append(valor)
+        if f.sem_alertas:
+            where.append("COALESCE(alertas, '') = ''")
+        cond = " AND ".join(where)
+        total = self.con.execute(f"SELECT COUNT(*) FROM imoveis WHERE {cond}", args).fetchone()[0]
+        linhas = self.con.execute(
+            f"SELECT {self._COLUNAS_IMOVEL} FROM imoveis WHERE {cond} ORDER BY {self._ORDENS[f.ordem]} "
+            "LIMIT ? OFFSET ?", args + [f.limite, f.deslocamento]).fetchall()
+        return total, [self._imovel(r) for r in linhas]
+
+    def buscar_imovel(self, imovel_id: int) -> Optional[dict]:
+        r = self.con.execute(f"SELECT {self._COLUNAS_IMOVEL} FROM imoveis WHERE id=?", (imovel_id,)).fetchone()
+        return self._imovel(r) if r else None
+
+    def contar_por_estagio(self) -> dict:
+        return dict(self.con.execute("SELECT estagio, COUNT(*) FROM imoveis WHERE situacao='ativo' GROUP BY estagio"))
+
+    def ultima_coleta(self) -> Optional[dict]:
+        ult = self.con.execute("SELECT * FROM coletas ORDER BY id DESC LIMIT 1").fetchone()
+        if not ult:
+            return None
+        quedas = self.con.execute(
+            "SELECT COUNT(*) FROM historico WHERE coleta_id=? AND evento='alterado' "
+            "AND campo='preco' AND CAST(valor_novo AS REAL) < CAST(valor_antigo AS REAL)", (ult["id"],)).fetchone()[0]
+        data_fonte = self.con.execute(
+            "SELECT data_fonte FROM imoveis WHERE fonte=? AND recorte=? ORDER BY ultima_vez DESC LIMIT 1",
+            (ult["fonte"], ult["recorte"])).fetchone()
+        return {**dict(ult), "quedas_preco": quedas, "data_fonte": data_fonte[0] if data_fonte else None}
+
+    def eventos_da_coleta(self, coleta_id: int, limite: int) -> List[dict]:
+        """Mudanças de uma coleta, exceto imóveis novos."""
+        return [dict(r) for r in self.con.execute(
+            "SELECT h.evento, h.campo, h.valor_antigo, h.valor_novo, i.id_fonte, i.cidade FROM historico h "
+            "JOIN imoveis i ON i.id=h.imovel_id WHERE h.coleta_id=? AND h.evento<>'novo' ORDER BY h.id LIMIT ?",
+            (coleta_id, limite))]
+
+    def opcoes(self) -> dict:
+        def contar(coluna, ordem):
+            return [{"valor": v, "n": n} for v, n in self.con.execute(
+                f"SELECT {coluna}, COUNT(*) FROM imoveis WHERE situacao='ativo' AND {coluna} IS NOT NULL "
+                f"AND {coluna} <> '' GROUP BY {coluna} ORDER BY {ordem}")]
+        return {"modalidades": contar("modalidade", "2 DESC, 1"), "categorias": contar("categoria", "2 DESC, 1"),
+                "cidades": contar("cidade", "1")}
+
+    def historico(self, imovel_id: int) -> List[dict]:
+        return [dict(r) for r in self.con.execute(
+            "SELECT quando, evento, campo, valor_antigo, valor_novo FROM historico WHERE imovel_id=? ORDER BY id",
+            (imovel_id,))]
+
+    def exportar(self) -> tuple:
+        """(nomes das colunas, linhas) de todos os imóveis."""
+        cur = self.con.execute("SELECT * FROM imoveis ORDER BY uf, cidade")
+        return [c[0] for c in cur.description], cur
+
+    # ------------------------------------------------------------------ triagem
+    def triagens(self, imovel_id: int) -> List[dict]:
+        return [dict(r) for r in self.con.execute(
+            "SELECT id, de, para, nota, quando FROM triagens WHERE imovel_id=? ORDER BY id", (imovel_id,))]
+
+    def ultima_triagem(self, imovel_id: int) -> Optional[dict]:
+        r = self.con.execute("SELECT id, de, para, nota, quando FROM triagens WHERE imovel_id=? "
+                             "ORDER BY id DESC LIMIT 1", (imovel_id,)).fetchone()
+        return dict(r) if r else None
+
+    def registrar_triagem(self, imovel_id: int, de: str, para: str, nota: Optional[str], quando: str) -> int:
+        """Grava a mudança de estágio (nunca apaga) e atualiza o estágio do imóvel."""
+        cur = self.con.execute("INSERT INTO triagens (imovel_id, de, para, nota, quando) VALUES (?,?,?,?,?)",
+                               (imovel_id, de, para, nota, quando))
+        self.con.execute("UPDATE imoveis SET estagio=? WHERE id=?", (para, imovel_id))
+        self.con.commit()
+        return cur.lastrowid
+
+    # ------------------------------------------------------------------ investigação
+    def investigacao_atual(self, imovel_id: int) -> dict:
+        """Situação mais recente de cada item: {item: {status, nota, quando}}."""
+        return {r["item"]: dict(r) for r in self.con.execute(
+            "SELECT item, status, nota, quando FROM investigacao WHERE id IN "
+            "(SELECT MAX(id) FROM investigacao WHERE imovel_id=? GROUP BY item)", (imovel_id,))}
+
+    def registrar_investigacao(self, imovel_id: int, item: str, status: str, nota: Optional[str], quando: str) -> None:
+        self.con.execute("INSERT INTO investigacao (imovel_id, item, status, nota, quando) VALUES (?,?,?,?,?)",
+                         (imovel_id, item, status, nota, quando))
+        self.con.commit()
+
+    # ------------------------------------------------------------------ anexos
+    def anexos(self, imovel_id: int) -> List[dict]:
+        return [dict(r) for r in self.con.execute(
+            "SELECT id, tipo, nome_original, tamanho, quando, leitura FROM anexos WHERE imovel_id=? ORDER BY id DESC",
+            (imovel_id,))]
+
+    def anexo_por_conteudo(self, imovel_id: int, sha256: str) -> Optional[int]:
+        r = self.con.execute("SELECT id FROM anexos WHERE imovel_id=? AND sha256=?", (imovel_id, sha256)).fetchone()
+        return r[0] if r else None
+
+    def inserir_anexo(self, imovel_id: int, tipo: str, nome: str, arquivo: str, tamanho: int,
+                      sha256: str, quando: str) -> int:
+        cur = self.con.execute("INSERT INTO anexos (imovel_id, tipo, nome_original, arquivo, tamanho, sha256, quando) "
+                               "VALUES (?,?,?,?,?,?,?)", (imovel_id, tipo, nome, arquivo, tamanho, sha256, quando))
+        self.con.commit()
+        return cur.lastrowid
+
+    def anexo(self, anexo_id: int) -> Optional[dict]:
+        r = self.con.execute("SELECT id, imovel_id, arquivo, nome_original, tipo FROM anexos WHERE id=?",
+                             (anexo_id,)).fetchone()
+        return dict(r) if r else None
+
+    def anexos_sem_leitura(self, imovel_id: int) -> List[dict]:
+        return [dict(r) for r in self.con.execute(
+            "SELECT id, arquivo FROM anexos WHERE imovel_id=? AND (leitura IS NULL OR leitura='desligada')",
+            (imovel_id,))]
+
+    def gravar_leitura(self, anexo_id: int, situacao: str, paginas: Optional[List[str]] = None) -> None:
+        """Situação da leitura; com `paginas`, substitui o texto guardado do anexo."""
+        if paginas is not None:
+            self.con.execute("DELETE FROM anexo_paginas WHERE anexo_id=?", (anexo_id,))
+            self.con.executemany("INSERT INTO anexo_paginas (anexo_id, pagina, texto) VALUES (?,?,?)",
+                                 [(anexo_id, i, t) for i, t in enumerate(paginas, start=1)])
+        self.con.execute("UPDATE anexos SET leitura=? WHERE id=?", (situacao, anexo_id))
+        self.con.commit()
+
+    def textos_lidos(self, imovel_id: int) -> List[dict]:
+        """Anexos lidos com o texto de cada página: [{id, nome_original, paginas: [...]}]."""
+        saida = []
+        for a in self.con.execute("SELECT id, nome_original FROM anexos WHERE imovel_id=? AND leitura='lido' "
+                                  "ORDER BY id", (imovel_id,)).fetchall():
+            paginas = [r[0] for r in self.con.execute(
+                "SELECT texto FROM anexo_paginas WHERE anexo_id=? ORDER BY pagina", (a["id"],))]
+            saida.append({"id": a["id"], "nome_original": a["nome_original"], "paginas": paginas})
+        return saida
+
+    # ------------------------------------------------------------------ simulações
+    def ultima_simulacao(self, imovel_id: int) -> Optional[dict]:
+        r = self.con.execute("SELECT premissas, quando FROM simulacoes WHERE imovel_id=? ORDER BY id DESC LIMIT 1",
+                             (imovel_id,)).fetchone()
+        return {"premissas": json.loads(r["premissas"]), "quando": r["quando"]} if r else None
+
+    def salvar_simulacao(self, imovel_id: int, premissas: dict, resultado: dict, quando: str) -> None:
+        self.con.execute("INSERT INTO simulacoes (imovel_id, premissas, resultado, quando) VALUES (?,?,?,?)",
+                         (imovel_id, json.dumps(premissas), json.dumps(resultado, ensure_ascii=False), quando))
+        self.con.commit()

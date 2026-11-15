@@ -1,10 +1,10 @@
 import os, sys, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import triagem
+from captacao.aplicacao import triagem
 from captacao.dominio import classifica
-from captacao.adaptadores.persistencia import sqlite as repositorio
+from captacao.adaptadores.persistencia.sqlite import RepositorioSQLite
 from captacao.dominio.modelo import ImovelCaptado
-from captacao.triagem import EntradaInvalida, NaoEncontrado
+from captacao.aplicacao.portas import EntradaInvalida, NaoEncontrado
 
 SFI = "Leilão SFI - Edital Único"
 
@@ -28,9 +28,9 @@ def base_teste():
     ims += [imovel(i, tipo="apartamento", cidade="SOROCABA", area_terreno=None) for i in range(110, 120)]
     ims[115].area_terreno = 1.0                      # alerta area_terreno_suspeita
     classifica.classificar(ims)
-    con = repositorio.conectar(":memory:")
-    repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims, agora="2026-11-14T10:00:00")
-    return con
+    repo = RepositorioSQLite(":memory:")
+    repo.gravar_coleta("caixa", "SP", "teste", ims, agora="2026-11-14T10:00:00")
+    return repo
 
 
 def q(**k):
@@ -99,7 +99,7 @@ class Resumo(unittest.TestCase):
         ims = [imovel(i) for i in range(100)]          # segunda coleta: 2 quedas, 1 alta, 20 saem
         ims[0].preco = 50000.0; ims[1].preco = 60000.0; ims[2].preco = 999999.0
         classifica.classificar(ims)
-        repositorio._gravar_coleta(con, "caixa", "SP", "teste", ims, agora="2026-11-15T10:00:00")
+        con.gravar_coleta("caixa", "SP", "teste", ims, agora="2026-11-15T10:00:00")
         r = triagem.resumo(con)
         self.assertEqual(r["total_ativo"], 100)
         self.assertEqual(r["por_estagio"], {"identificado": 100, "analisar": 0, "depois": 0, "descartado": 0})
@@ -113,7 +113,7 @@ class Resumo(unittest.TestCase):
         self.assertEqual([c["valor"] for c in o["cidades"]], ["CAMPINAS", "SOROCABA", "SÃO JOSÉ DO RIO PRETO"])
 
     def test_base_vazia(self):
-        con = repositorio.conectar(":memory:"); self.addCleanup(con.close)
+        con = RepositorioSQLite(":memory:"); self.addCleanup(con.close)
         r = triagem.resumo(con)
         self.assertEqual((r["total_ativo"], r["ultima_coleta"]), (0, None))
 
@@ -124,7 +124,7 @@ class Triar(unittest.TestCase):
         self.id = triagem.listar(self.con, q(ordem="preco"))["itens"][0]["id"]
 
     def linhas(self):
-        return [tuple(r) for r in self.con.execute(
+        return [tuple(r) for r in self.con.con.execute(
             "SELECT de, para, nota FROM triagens WHERE imovel_id=? ORDER BY id", (self.id,))]
 
     def test_triagem_e_desfazer(self):

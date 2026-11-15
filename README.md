@@ -24,7 +24,7 @@ https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_SP.csv e rode:
 
     python -m captacao coletar --uf SP --arquivo Lista_imoveis_SP.csv
 
-Testes: `for t in tests/test_*.py; do python3 $t; done`
+Testes: `for t in tests/test_*.py; do .venv/bin/python $t; done`
 
 ## Tela de triagem
 
@@ -57,19 +57,37 @@ lista do que procurar e, quando há PDF anexado, os trechos encontrados por busc
 - Tipo e áreas são extraídos da descrição por melhor esforço.
 - Antes de automatizar coletas frequentes, confira os termos de uso do site da Caixa. Uma coleta por dia por estado é suficiente.
 
-## Estrutura
+## Arquitetura (hexagonal, um monolito só)
 
-    captacao/modelo.py        formato comum de imóvel, igual para toda fonte
-    captacao/normaliza.py     limpeza de números e endereços
-    captacao/fontes/caixa.py  download e leitura da lista da Caixa
-    captacao/repositorio.py   base SQLite, histórico e duplicados
-    captacao/classifica.py    categoria e alertas derivados (não alteram a fonte)
-    captacao/triagem.py       funções da API da tela (filtros, resumo, triagem)
-    captacao/ficha.py         ficha do imóvel: investigação, anexos, simulações salvas
-    captacao/simulador.py     conta de custos e retorno (regra fixa)
-    captacao/tela.py          servidor local da tela
-    captacao/web/index.html   a tela (HTML, CSS e JS num arquivo só)
-    captacao/cli.py           comandos
-    ferramentas/              scripts de manutenção da base
+As regras ficam no centro e não conhecem banco, rede, arquivo nem tela. O resto se liga
+por portas (interfaces Python), e `montagem.py` é o único lugar que escolhe as peças.
 
-Para adicionar outra fonte: criar `captacao/fontes/<nome>.py` que devolva uma lista de `ImovelCaptado`.
+    captacao/dominio/          regras puras: modelo do imóvel, normalização, categoria e
+                               alertas, simulador, vocabulário da análise (estágios, itens)
+    captacao/aplicacao/        casos de uso: coletar, triagem, ficha
+      portas.py                FonteDeImoveis, RepositorioDeImoveis, RepositorioDeAnalise...
+    captacao/adaptadores/
+      fontes/caixa.py          a lista da Caixa como FonteDeImoveis
+      persistencia/sqlite.py   único lugar com SQL; migração com cópia da base
+    captacao/montagem.py       registro das fontes (FONTES) e abertura do banco
+    captacao/cli.py            comandos (entrada)
+    captacao/tela.py + web/    tela local (entrada)
+    captacao/documentos.py     leitura de PDF e busca de trechos (vira porta na próxima etapa)
+    ferramentas/               scripts de manutenção da base
+
+Regra de dependência: `dominio` não importa nada do projeto; `aplicacao` importa só
+`dominio` e as portas; adaptadores e entradas podem importar tudo.
+
+### Como criar uma fonte nova
+
+1. Crie `captacao/adaptadores/fontes/<nome>.py` com uma classe que tenha `nome`, `descricao`,
+   `recortes()`, `coletar(recorte, arquivo, nome_arquivo)` e `descrever_modalidade(modalidade)`
+   (veja a porta `FonteDeImoveis` em `aplicacao/portas.py` e o exemplo `FonteCaixa`).
+   Devolva `Coleta` com imóveis no formato `ImovelCaptado`; linha com problema vira aviso;
+   falha de acesso ou formato vira `ErroDeFonte`.
+2. Registre em `montagem.FONTES`.
+3. Salve um arquivo de exemplo em `tests/` e acrescente em `AMOSTRAS` de
+   `tests/test_contrato_fontes.py`. O teste de contrato roda para toda fonte registrada.
+4. Antes de coletar de um site, confira os termos de uso. Uma coleta por dia por recorte.
+
+Coleta de qualquer fonte: `python -m captacao coletar --fonte <nome> --recorte <recorte>`.

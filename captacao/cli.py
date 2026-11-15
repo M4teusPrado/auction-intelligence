@@ -16,8 +16,7 @@ import sys
 
 from . import montagem
 from .aplicacao.coletar import coletar
-from .aplicacao.portas import ErroDeFonte
-from .dominio.normaliza import chave
+from .aplicacao.portas import ErroDeFonte, FiltroImoveis
 
 
 def _brl(v):
@@ -49,40 +48,27 @@ def cmd_coletar(a, repo):
 
 
 def cmd_listar(a, repo):
-    con = repo.con
-    sql, p = "SELECT * FROM imoveis WHERE situacao='ativo'", []
-    if a.uf:
-        sql += " AND uf=?"; p.append(a.uf.upper())
-    if a.categoria:
-        sql += " AND categoria=?"; p.append(a.categoria.lower())
-    if a.sem_alertas:
-        sql += " AND COALESCE(alertas,'')=''"
-    if a.desconto_min is not None:
-        sql += " AND desconto_pct>=?"; p.append(a.desconto_min)
-    if a.preco_max is not None:
-        sql += " AND preco<=?"; p.append(a.preco_max)
-    linhas = [r for r in con.execute(sql + " ORDER BY desconto_pct DESC", p)
-              if (not a.cidade or chave(a.cidade) in chave(r["cidade"]))
-              and (not a.tipo or chave(a.tipo) in (r["tipo"] or ""))]
-    for r in linhas[:a.limite]:
-        marca = "!" if r["alertas"] else " "
+    f = FiltroImoveis(uf=a.uf.upper() if a.uf else None, categorias=[a.categoria.lower()] if a.categoria else [],
+                      cidade=a.cidade, tipo=a.tipo, desconto_min=a.desconto_min, preco_max=a.preco_max,
+                      sem_alertas=a.sem_alertas, ordem="desconto", limite=a.limite)
+    total, linhas = repo.listar_imoveis(f)
+    for r in linhas:
+        alertas = ",".join(r["alertas"])
+        marca = "!" if alertas else " "
         print(f"{marca}{r['id_fonte']:>15} | {r['cidade'][:22]:<22} | {(r['tipo'] or '?')[:12]:<12} | "
               f"{_brl(r['preco']):>14} | aval. {_brl(r['valor_avaliacao']):>14} | "
               f"{(r['desconto_pct'] or 0):5.1f}% | {r['modalidade'][:24]}"
-              + (f" | alertas: {r['alertas']}" if r["alertas"] else ""))
-    print(f"{len(linhas)} imóveis (mostrando até {a.limite}). '!' = imóvel com alerta.")
+              + (f" | alertas: {alertas}" if alertas else ""))
+    print(f"{total} imóveis (mostrando até {a.limite}). '!' = imóvel com alerta.")
 
 
 def cmd_novidades(a, repo):
-    con = repo.con
-    ult = con.execute("SELECT * FROM coletas ORDER BY id DESC LIMIT 1").fetchone()
+    ult = repo.ultima_coleta()
     if not ult:
         print("Nenhuma coleta registrada."); return
     print(f"Coleta {ult['id']} em {ult['quando']} ({ult['fonte']} {ult['recorte']}): "
           f"{ult['novos']} novos, {ult['alterados']} alterados, {ult['saidos']} saíram.")
-    for h in con.execute("SELECT h.*, i.id_fonte, i.cidade FROM historico h JOIN imoveis i "
-                         "ON i.id=h.imovel_id WHERE h.coleta_id=? AND h.evento<>'novo' "
-                         "ORDER BY h.id LIMIT ?", (ult["id"], a.limite)):
+    for h in repo.eventos_da_coleta(ult["id"], a.limite):
         det = f" {h['campo']}: {h['valor_antigo']} -> {h['valor_novo']}" if h["campo"] else ""
         print(f"  {h['evento']:<14} {h['id_fonte']} ({h['cidade']}){det}")
 
@@ -97,13 +83,12 @@ def cmd_duplicados(a, repo):
 
 
 def cmd_exportar(a, repo):
-    con = repo.con
-    cur = con.execute("SELECT * FROM imoveis ORDER BY uf, cidade")
+    colunas, linhas = repo.exportar()
     with open(a.destino, "w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f, delimiter=";")
-        w.writerow([c[0] for c in cur.description])
+        w.writerow(colunas)
         n = 0
-        for r in cur:
+        for r in linhas:
             w.writerow(list(r)); n += 1
     print(f"{n} imóveis exportados para {a.destino}.")
 

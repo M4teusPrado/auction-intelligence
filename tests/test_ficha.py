@@ -1,7 +1,8 @@
 import json, os, sys, tempfile, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import ficha
-from captacao.triagem import EntradaInvalida, NaoEncontrado
+from captacao.aplicacao import ficha
+from captacao.dominio.analise import ITENS_INVESTIGACAO
+from captacao.aplicacao.portas import EntradaInvalida, NaoEncontrado
 from test_triagem import base_teste
 
 PDF = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"
@@ -11,14 +12,14 @@ PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 20
 class Ficha(unittest.TestCase):
     def setUp(self):
         self.con = base_teste(); self.addCleanup(self.con.close)
-        self.id = self.con.execute("SELECT id FROM imoveis ORDER BY id LIMIT 1").fetchone()[0]
+        self.id = self.con.con.execute("SELECT id FROM imoveis ORDER BY id LIMIT 1").fetchone()[0]
         self.pasta = tempfile.mkdtemp()
 
     def test_ficha_completa(self):
         f = ficha.ficha(self.con, self.id)
         self.assertEqual(f["imovel"]["id"], self.id)
         self.assertEqual([h["evento"] for h in f["historico"]], ["novo"])
-        self.assertEqual(len(f["investigacao"]), len(ficha.ITENS))
+        self.assertEqual(len(f["investigacao"]), len(ITENS_INVESTIGACAO))
         self.assertTrue(all(i["status"] == "pendente" for i in f["investigacao"]))
         self.assertEqual(f["premissas_padrao"]["lance"], f["imovel"]["preco"])
         self.assertIsNone(f["premissas_padrao"]["valor_venda"])
@@ -31,7 +32,7 @@ class Ficha(unittest.TestCase):
         r = ficha.investigar(self.con, self.id, {"item": "ocupacao", "status": "ok", "nota": "desocupou"})
         oc = next(i for i in r["investigacao"] if i["item"] == "ocupacao")
         self.assertEqual((oc["status"], oc["nota"]), ("ok", "desocupou"))
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM investigacao").fetchone()[0], 2)
+        self.assertEqual(self.con.con.execute("SELECT COUNT(*) FROM investigacao").fetchone()[0], 2)
         for corpo in ({"item": "x", "status": "ok"}, {"item": "ocupacao", "status": "talvez"},
                       {"item": "ocupacao", "status": "ok", "nota": 3}, {"item": "ocupacao", "status": "ok", "y": 1},
                       {"item": "ocupacao", "status": "ok", "nota": "x" * 2001}, []):
@@ -69,7 +70,7 @@ class Ficha(unittest.TestCase):
             ficha.salvar_simulacao(self.con, self.id, {"premissas": {"lance": -5}})
         with self.assertRaises(EntradaInvalida):
             ficha.simular({"outra": 1})
-        self.assertEqual(self.con.execute("SELECT COUNT(*) FROM simulacoes").fetchone()[0], 1)
+        self.assertEqual(self.con.con.execute("SELECT COUNT(*) FROM simulacoes").fetchone()[0], 1)
 
 
 if __name__ == "__main__":

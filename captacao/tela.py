@@ -14,14 +14,15 @@ Rotas:
 import json
 import os
 import re
-import sqlite3
 import sys
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from . import ficha, montagem, triagem
+from . import montagem
+from .aplicacao import ficha, triagem
+from .aplicacao.portas import EntradaInvalida, NaoEncontrado
 
 HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
 CORPO_MAX = 16 * 1024
@@ -41,10 +42,9 @@ def _criar_handler(caminho_base: str, porta: int):
         def log_message(self, fmt, *args):            # log curto no terminal
             sys.stderr.write(f"  {self.command} {self.path[:120]} -> {args[1] if len(args) > 1 else ''}\n")
 
-        def _con(self):
-            con = sqlite3.connect(caminho_base, timeout=10)
-            con.row_factory = sqlite3.Row
-            return con
+        def _repo(self):
+            # esquema já migrado na partida; cada requisição abre e fecha sua conexão
+            return montagem.repositorio(caminho_base, migrar=False)
 
         def _enviar(self, status: int, corpo: bytes, tipo: str):
             self.send_response(status)
@@ -71,18 +71,18 @@ def _criar_handler(caminho_base: str, porta: int):
             return False
 
         def _executar(self, funcao, *args):
-            con = self._con()
+            repo = self._repo()
             try:
-                self._json(200, funcao(con, *args))
-            except triagem.EntradaInvalida as e:
+                self._json(200, funcao(repo, *args))
+            except EntradaInvalida as e:
                 self._json(400, {"erro": str(e)})
-            except triagem.NaoEncontrado as e:
+            except NaoEncontrado as e:
                 self._json(404, {"erro": str(e)})
             except Exception as e:                    # erro inesperado: mensagem genérica
                 sys.stderr.write(f"  ERRO: {e!r}\n")
                 self._json(500, {"erro": "erro interno; veja o terminal"})
             finally:
-                con.close()
+                repo.close()
 
         def do_GET(self):
             if not self._host_ok():
@@ -99,7 +99,7 @@ def _criar_handler(caminho_base: str, porta: int):
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
             elif (m := ROTA_IMOVEL.match(url.path)) and m.group(2) is None:
-                self._executar(lambda con: ficha.ficha(con, int(m.group(1)), pasta_anexos, montagem.FONTES))
+                self._executar(lambda repo: ficha.ficha(repo, int(m.group(1)), pasta_anexos, montagem.FONTES))
             elif m := ROTA_ANEXO.match(url.path):
                 self._enviar_anexo(int(m.group(1)))
             else:
@@ -108,13 +108,13 @@ def _criar_handler(caminho_base: str, porta: int):
         do_HEAD = do_GET
 
         def _enviar_anexo(self, anexo_id: int):
-            con = self._con()
+            repo = self._repo()
             try:
-                caminho, nome, mime = ficha.arquivo_anexo(con, pasta_anexos, anexo_id)
-            except triagem.NaoEncontrado as e:
+                caminho, nome, mime = ficha.arquivo_anexo(repo, pasta_anexos, anexo_id)
+            except NaoEncontrado as e:
                 return self._json(404, {"erro": str(e)})
             finally:
-                con.close()
+                repo.close()
             with open(caminho, "rb") as f:
                 dados = f.read()
             nome_ascii = re.sub(r"[^A-Za-z0-9._ -]", "_", nome)
@@ -154,8 +154,8 @@ def _criar_handler(caminho_base: str, porta: int):
                     return
                 q = parse_qs(url.query)
                 nome = unquote(self.headers.get("X-Nome-Arquivo", ""))
-                return self._executar(lambda con: ficha.anexar(
-                    con, pasta_anexos, int(m.group(1)), (q.get("tipo") or [""])[0], nome, dados))
+                return self._executar(lambda repo: ficha.anexar(
+                    repo, pasta_anexos, int(m.group(1)), (q.get("tipo") or [""])[0], nome, dados))
             if url.path != "/api/simular" and not (m and m.group(2)):
                 return self._json(404, {"erro": "rota não encontrada"})
             # exigir JSON impede envio por formulário de outro site (CSRF)
@@ -169,7 +169,7 @@ def _criar_handler(caminho_base: str, porta: int):
             except (ValueError, UnicodeDecodeError):
                 return self._json(400, {"erro": "JSON inválido"})
             if url.path == "/api/simular":
-                return self._executar(lambda con: ficha.simular(corpo))
+                return self._executar(lambda repo: ficha.simular(corpo))
             acao = {"triagem": triagem.triar, "investigacao": ficha.investigar,
                     "simulacao": ficha.salvar_simulacao}[m.group(2)]
             self._executar(acao, int(m.group(1)), corpo)

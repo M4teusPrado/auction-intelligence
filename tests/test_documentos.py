@@ -1,6 +1,7 @@
 import os, sys, tempfile, unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from captacao import documentos, ficha
+from captacao import documentos
+from captacao.aplicacao import ficha
 from test_triagem import base_teste
 
 
@@ -64,7 +65,7 @@ class LeituraPdf(unittest.TestCase):
 
     def test_ficha_mostra_trechos_por_item(self):
         con = base_teste(); self.addCleanup(con.close)
-        iid = con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
+        iid = con.con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
         pasta = tempfile.mkdtemp()
         r = ficha.anexar(con, pasta, iid, "edital", "edital.pdf",
                          pdf_com_texto(["O imovel encontra-se ocupado.", "Debitos de condominio por conta do adquirente."]))
@@ -76,7 +77,7 @@ class LeituraPdf(unittest.TestCase):
 
     def test_pdf_sem_texto(self):
         con = base_teste(); self.addCleanup(con.close)
-        iid = con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
+        iid = con.con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
         r = ficha.anexar(con, tempfile.mkdtemp(), iid, "matricula", "scan.pdf", pdf_com_texto([""]))
         self.assertEqual(r["anexos"][0]["leitura"], "sem_texto")
         self.assertEqual(r["achados"], {})
@@ -88,7 +89,7 @@ class SemPypdf(unittest.TestCase):
         documentos.pypdf = None
         try:
             con = base_teste(); self.addCleanup(con.close)
-            iid = con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
+            iid = con.con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
             r = ficha.anexar(con, tempfile.mkdtemp(), iid, "edital", "e.pdf", pdf_com_texto(["ocupado"]))
             self.assertEqual(r["anexos"][0]["leitura"], "desligada")
             self.assertFalse(ficha.ficha(con, iid)["leitura_pdf"])
