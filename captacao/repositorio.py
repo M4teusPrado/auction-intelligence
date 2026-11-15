@@ -40,9 +40,13 @@ CREATE INDEX IF NOT EXISTS ix_investigacao_imovel ON investigacao (imovel_id, it
 CREATE TABLE IF NOT EXISTS anexos (              -- arquivos enviados à mão (matrícula, edital...)
   id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
   tipo TEXT NOT NULL, nome_original TEXT NOT NULL, arquivo TEXT NOT NULL,
-  tamanho INTEGER NOT NULL, sha256 TEXT NOT NULL, quando TEXT NOT NULL
+  tamanho INTEGER NOT NULL, sha256 TEXT NOT NULL, quando TEXT NOT NULL, leitura TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_anexos_imovel ON anexos (imovel_id);
+CREATE TABLE IF NOT EXISTS anexo_paginas (       -- texto extraído de cada página dos PDFs
+  anexo_id INTEGER NOT NULL REFERENCES anexos(id), pagina INTEGER NOT NULL, texto TEXT NOT NULL,
+  PRIMARY KEY (anexo_id, pagina)
+);
 CREATE TABLE IF NOT EXISTS simulacoes (          -- simulações salvas; a mais recente vale
   id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
   premissas TEXT NOT NULL, resultado TEXT NOT NULL, quando TEXT NOT NULL
@@ -66,11 +70,12 @@ COLUNAS_NOVAS = [
     ("imoveis", "area_total", "REAL"),
     ("imoveis", "categoria", "TEXT"),
     ("imoveis", "alertas", "TEXT"),
+    ("anexos", "leitura", "TEXT"),        # lido | sem_texto | erro | desligada | imagem
 ]
 
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
-TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes")
+TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:

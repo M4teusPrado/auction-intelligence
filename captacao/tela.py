@@ -99,7 +99,7 @@ def _criar_handler(caminho_base: str, porta: int):
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
             elif (m := ROTA_IMOVEL.match(url.path)) and m.group(2) is None:
-                self._executar(ficha.ficha, int(m.group(1)))
+                self._executar(lambda con: ficha.ficha(con, int(m.group(1)), pasta_anexos))
             elif m := ROTA_ANEXO.match(url.path):
                 self._enviar_anexo(int(m.group(1)))
             else:

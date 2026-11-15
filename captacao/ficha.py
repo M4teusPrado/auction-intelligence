@@ -8,7 +8,7 @@ import os
 import re
 from datetime import datetime
 
-from . import simulador
+from . import documentos, simulador
 from .triagem import COLUNAS_IMOVEL, EntradaInvalida, NaoEncontrado, _imovel
 
 ITENS = [  # (chave, rótulo, o que conferir)
@@ -53,11 +53,54 @@ def _checklist(con, imovel_id: int) -> list:
 
 def _anexos(con, imovel_id: int) -> list:
     return [dict(r) for r in con.execute(
-        "SELECT id, tipo, nome_original, tamanho, quando FROM anexos WHERE imovel_id=? ORDER BY id DESC",
+        "SELECT id, tipo, nome_original, tamanho, quando, leitura FROM anexos WHERE imovel_id=? ORDER BY id DESC",
         (imovel_id,))]
 
 
-def ficha(con, imovel_id: int) -> dict:
+def _ler_pdf(con, anexo_id: int, dados: bytes) -> str:
+    """Extrai e guarda o texto das páginas. Devolve a situação da leitura."""
+    if not dados.startswith(b"%PDF-"):
+        situacao = "imagem"
+    elif not documentos.leitura_ligada():
+        situacao = "desligada"
+    else:
+        try:
+            paginas = documentos.extrair_paginas(dados)
+        except Exception:
+            paginas, situacao = [], "erro"
+        else:
+            situacao = "lido" if any(p.strip() for p in paginas) else "sem_texto"
+        con.execute("DELETE FROM anexo_paginas WHERE anexo_id=?", (anexo_id,))   # releitura do mesmo anexo
+        con.executemany("INSERT INTO anexo_paginas (anexo_id, pagina, texto) VALUES (?,?,?)",
+                        [(anexo_id, i, t) for i, t in enumerate(paginas, start=1)])
+    con.execute("UPDATE anexos SET leitura=? WHERE id=?", (situacao, anexo_id))
+    return situacao
+
+
+def _achados(con, imovel_id: int, pasta: str = None) -> dict:
+    """Trechos encontrados nos PDFs do imóvel, agrupados por item da investigação."""
+    if pasta:   # anexos enviados antes da leitura existir (ou com ela desligada): lê agora
+        for r in con.execute("SELECT id, arquivo FROM anexos WHERE imovel_id=? AND "
+                             "(leitura IS NULL OR leitura='desligada')", (imovel_id,)).fetchall():
+            if not documentos.leitura_ligada() and r["arquivo"].endswith(".pdf"):
+                continue
+            caminho = os.path.join(pasta, r["arquivo"])
+            if os.path.isfile(caminho):
+                with open(caminho, "rb") as f:
+                    _ler_pdf(con, r["id"], f.read())
+        con.commit()
+    por_item = {}
+    for a in con.execute("SELECT id, nome_original, tipo FROM anexos WHERE imovel_id=? AND leitura='lido' ORDER BY id",
+                         (imovel_id,)).fetchall():
+        paginas = [r["texto"] for r in con.execute(
+            "SELECT texto FROM anexo_paginas WHERE anexo_id=? ORDER BY pagina", (a["id"],))]
+        for ach in documentos.buscar(paginas):
+            ach.update(anexo_id=a["id"], documento=a["nome_original"])
+            por_item.setdefault(ach.pop("item"), []).append(ach)
+    return por_item
+
+
+def ficha(con, imovel_id: int, pasta: str = None) -> dict:
     im = _buscar_imovel(con, imovel_id)
     historico = [dict(r) for r in con.execute(
         "SELECT h.quando, h.evento, h.campo, h.valor_antigo, h.valor_novo FROM historico h "
@@ -68,7 +111,8 @@ def ficha(con, imovel_id: int) -> dict:
                         (imovel_id,)).fetchone()
     return {"imovel": im, "historico": historico, "triagens": triagens,
             "investigacao": _checklist(con, imovel_id), "status": STATUS,
-            "anexos": _anexos(con, imovel_id), "tipos_anexo": TIPOS_ANEXO,
+            "achados": _achados(con, imovel_id, pasta), "anexos": _anexos(con, imovel_id), "tipos_anexo": TIPOS_ANEXO,
+            "leitura_pdf": documentos.leitura_ligada(), "sugestao_leilao": documentos.sugestao_leilao(im.get("modalidade")),
             "premissas": simulador.descricao_premissas(),
             "premissas_padrao": simulador.padrao_para(im),
             "simulacao_salva": {"premissas": json.loads(salva["premissas"]), "quando": salva["quando"]} if salva else None}
@@ -111,16 +155,17 @@ def anexar(con, pasta: str, imovel_id: int, tipo: str, nome: str, dados: bytes, 
     sha = hashlib.sha256(dados).hexdigest()
     igual = con.execute("SELECT id FROM anexos WHERE imovel_id=? AND sha256=?", (imovel_id, sha)).fetchone()
     if igual:
-        return {"anexos": _anexos(con, imovel_id), "duplicado": True}
+        return {"anexos": _anexos(con, imovel_id), "achados": _achados(con, imovel_id), "duplicado": True}
     relativo = os.path.join(str(imovel_id), sha[:24] + ext)       # nome no disco nunca vem do usuário
     destino = os.path.join(pasta, relativo)
     os.makedirs(os.path.dirname(destino), exist_ok=True)
     with open(destino, "wb") as f:
         f.write(dados)
-    con.execute("INSERT INTO anexos (imovel_id, tipo, nome_original, arquivo, tamanho, sha256, quando) "
-                "VALUES (?,?,?,?,?,?,?)", (imovel_id, tipo, nome, relativo, len(dados), sha, _agora(agora)))
+    cur = con.execute("INSERT INTO anexos (imovel_id, tipo, nome_original, arquivo, tamanho, sha256, quando) "
+                      "VALUES (?,?,?,?,?,?,?)", (imovel_id, tipo, nome, relativo, len(dados), sha, _agora(agora)))
+    _ler_pdf(con, cur.lastrowid, dados)
     con.commit()
-    return {"anexos": _anexos(con, imovel_id), "duplicado": False}
+    return {"anexos": _anexos(con, imovel_id), "achados": _achados(con, imovel_id), "duplicado": False}
 
 
 def arquivo_anexo(con, pasta: str, anexo_id: int):
