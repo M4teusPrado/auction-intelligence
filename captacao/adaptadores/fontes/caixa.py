@@ -135,6 +135,7 @@ def interpretar(texto: str) -> Tuple[List[ImovelCaptado], List[str]]:
 class FonteCaixa:
     """Adaptador da porta FonteDeImoveis para a lista pública da Caixa."""
     nome = FONTE
+    rotulo = "Caixa"
     descricao = "Lista pública de imóveis da Caixa, um arquivo CSV por estado"
 
     def __init__(self, baixar_lista: Callable[[str], bytes] = baixar):

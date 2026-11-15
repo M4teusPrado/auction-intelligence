@@ -35,7 +35,7 @@ def importar_link(fontes: dict, repo: RepositorioDeImoveis, url, agora: Optional
     capazes = [f for f in fontes.values() if isinstance(f, ImportadorDeLink)]
     fonte = next((f for f in capazes if f.aceita_url(url)), None)
     if fonte is None:
-        nomes = ", ".join(sorted(f.descricao.split(":")[0] for f in capazes)) or "nenhum"
+        nomes = ", ".join(sorted(f.rotulo for f in capazes)) or "nenhum"
         raise EntradaInvalida(f"este site ainda não é suportado. Hoje: {nomes}.")
     im = fonte.importar_url(url)
     if im.fonte != fonte.nome:

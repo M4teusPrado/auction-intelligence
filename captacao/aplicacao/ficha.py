@@ -81,6 +81,7 @@ def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes:
             "leitura_pdf": documentos.leitura_ligada(), "sugestao_leilao": _descrever_modalidade(fontes, im),
             "premissas": simulador.descricao_premissas(),
             "premissas_padrao": simulador.padrao_para(im),
+            "premissas_da_fonte": ["comissao_leiloeiro_pct"] if (im.get("leilao") or {}).get("comissao_pct") is not None else [],
             "simulacao_salva": repo.ultima_simulacao(imovel_id)}
 
 

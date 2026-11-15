@@ -138,11 +138,15 @@ def interpretar_oferta(pagina: str, url: str = "", hoje: Optional[str] = None) -
         incremento=_dinheiro(_texto(_campo(pagina, "Incremento"))),
         pracas=_pracas(pagina), documentos=docs)
     desconto = round((1 - preco / avaliacao) * 100, 2) if preco and avaliacao else None
+    privativa, terreno, total = _area(descricao, "privativa"), _area(descricao, r"do\s*terreno"), _area(descricao, "total")
+    if not (privativa or terreno or total):      # a descrição não traz área: usa a do título ("Apartamento 55 m²")
+        m_tit = re.search(r"(\d+(?:[.,]\d+)?)\s*m²", titulo)
+        total = numero_br(m_tit.group(1)) if m_tit else None
     return ImovelCaptado(
         fonte=FONTE, id_fonte=codigo, uf=uf, cidade=cidade, bairro=bairro, endereco=endereco,
         preco=preco, valor_avaliacao=avaliacao, desconto_pct=desconto, modalidade=lei.tipo_venda or "Leilão",
-        tipo=tipo, area_privativa=_area(descricao, "privativa"), area_terreno=_area(descricao, r"do\s*terreno"),
-        area_total=_area(descricao, "total"), descricao=f"{titulo}. {descricao}"[:4000],
+        tipo=tipo, area_privativa=privativa, area_terreno=terreno,
+        area_total=total, descricao=f"{titulo}. {descricao}"[:4000],
         link=f"{BASE}{caminho}" if caminho else "", data_fonte=hoje or datetime.now().strftime("%d/%m/%Y"),
         leilao=lei)
 
@@ -171,7 +175,8 @@ def categorias(pagina_imoveis: str) -> List[str]:
 class FonteMegaLeiloes:
     """Adaptador da porta FonteDeImoveis (e importação por link) para a Mega Leilões."""
     nome = FONTE
-    descricao = "Mega Leilões: leilões judiciais e extrajudiciais (bancos), lidos do site"
+    rotulo = "Mega Leilões"
+    descricao = "Leilões judiciais e extrajudiciais (bancos) da Mega Leilões, lidos do site"
 
     def __init__(self, cliente, relatar: Callable[[str], None] = None):
         self.cliente = cliente                         # ClienteWeb: robots, ritmo e cópia local

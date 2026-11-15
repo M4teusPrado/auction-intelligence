@@ -44,6 +44,12 @@ class Leitor(unittest.TestCase):
         self.assertEqual(im.link, URL_X)
         self.assertNotIn("id=", im.descricao[:200])
 
+    def test_area_do_titulo_quando_descricao_nao_traz(self):
+        pagina = ler("megaleiloes_extrajudicial_x131551.html").decode().replace("55,26 m² de área privativa", "")
+        pagina = pagina.replace("55,26 m² de área construída", "")
+        im = mega.interpretar_oferta(pagina, URL_X)
+        self.assertEqual((im.area_privativa, im.area_total), (None, 55.0))
+
     def test_judicial_duas_pracas(self):
         im = mega.interpretar_oferta(ler("megaleiloes_judicial_j129393.html").decode(), URL_J)
         lei = im.leilao

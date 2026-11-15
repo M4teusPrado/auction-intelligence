@@ -10,6 +10,8 @@ Rotas:
   POST /api/simular                            {"premissas": {...}}  (só calcula)
   POST /api/imoveis/<id>/anexos?tipo=matricula corpo = o arquivo (PDF, PNG ou JPG)
   GET  /anexos/<id>                            abre um anexo
+  POST /api/importar                           {"url": "..."}  importa uma oferta pelo link
+  POST /api/imoveis/<id>/documentos-fonte      baixa edital/matrícula publicados pela fonte
 """
 import json
 import os
@@ -22,11 +24,12 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 from . import montagem
 from .aplicacao import ficha, triagem
-from .aplicacao.portas import EntradaInvalida, NaoEncontrado
+from .aplicacao.coletar import importar_link
+from .aplicacao.portas import EntradaInvalida, ErroDeFonte, NaoEncontrado
 
 HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
 CORPO_MAX = 16 * 1024
-ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos))?$")
+ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte))?$")
 ROTA_ANEXO = re.compile(r"^/anexos/(\d{1,12})$")
 TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
 
@@ -78,6 +81,8 @@ def _criar_handler(caminho_base: str, porta: int):
                 self._json(400, {"erro": str(e)})
             except NaoEncontrado as e:
                 self._json(404, {"erro": str(e)})
+            except ErroDeFonte as e:                  # site da fonte fora do ar, bloqueio, formato mudou
+                self._json(502, {"erro": f"Não foi possível ler a fonte: {e}"})
             except Exception as e:                    # erro inesperado: mensagem genérica
                 sys.stderr.write(f"  ERRO: {e!r}\n")
                 self._json(500, {"erro": "erro interno; veja o terminal"})
@@ -94,7 +99,8 @@ def _criar_handler(caminho_base: str, porta: int):
             elif url.path == "/api/resumo":
                 self._executar(triagem.resumo)
             elif url.path == "/api/opcoes":
-                self._executar(triagem.opcoes)
+                nomes = {f.nome: f.rotulo for f in montagem.FONTES.values()}
+                self._executar(lambda repo: {**triagem.opcoes(repo), "nomes_fontes": nomes})
             elif url.path == "/api/imoveis":
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
@@ -156,7 +162,7 @@ def _criar_handler(caminho_base: str, porta: int):
                 nome = unquote(self.headers.get("X-Nome-Arquivo", ""))
                 return self._executar(lambda repo: ficha.anexar(
                     repo, pasta_anexos, int(m.group(1)), (q.get("tipo") or [""])[0], nome, dados))
-            if url.path != "/api/simular" and not (m and m.group(2)):
+            if url.path not in ("/api/simular", "/api/importar") and not (m and m.group(2)):
                 return self._json(404, {"erro": "rota não encontrada"})
             # exigir JSON impede envio por formulário de outro site (CSRF)
             if tipo_corpo != "application/json":
@@ -170,6 +176,13 @@ def _criar_handler(caminho_base: str, porta: int):
                 return self._json(400, {"erro": "JSON inválido"})
             if url.path == "/api/simular":
                 return self._executar(lambda repo: ficha.simular(corpo))
+            if url.path == "/api/importar":
+                if not isinstance(corpo, dict) or set(corpo) != {"url"}:
+                    return self._json(400, {"erro": "envie {\"url\": \"...\"}"})
+                return self._executar(lambda repo: importar_link(montagem.FONTES, repo, corpo["url"]))
+            if m.group(2) == "documentos-fonte":
+                return self._executar(lambda repo: ficha.baixar_documentos_fonte(
+                    repo, pasta_anexos, int(m.group(1)), montagem.CLIENTE_WEB))
             acao = {"triagem": triagem.triar, "investigacao": ficha.investigar,
                     "simulacao": ficha.salvar_simulacao}[m.group(2)]
             self._executar(acao, int(m.group(1)), corpo)

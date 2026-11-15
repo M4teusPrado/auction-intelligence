@@ -28,7 +28,7 @@ def _brl(v):
 def cmd_fontes(a, repo):
     for f in montagem.FONTES.values():
         rec = f.recortes()
-        print(f"{f.nome:<12} {f.descricao}")
+        print(f"{f.nome:<12} {f.rotulo}: {f.descricao}")
         print(f"{'':<12} recortes: {', '.join(rec) if rec else '(um só)'}")
 
 

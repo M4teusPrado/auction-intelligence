@@ -33,6 +33,7 @@ class FonteDeImoveis(Protocol):
     montagem.FONTES e uma amostra em tests/test_contrato_fontes.py.
     """
     nome: str                     # identificador curto e estável, gravado em cada imóvel ("caixa")
+    rotulo: str                   # nome curto para a tela ("Caixa", "Mega Leilões")
     descricao: str                # texto para pessoas
 
     def recortes(self) -> List[str]:

@@ -284,6 +284,32 @@
   .ach-fonte { font-size: 12px; color: var(--destaque-escuro); }
   .sem-achado { margin: 0; font-size: 12.5px; color: var(--texto-3); }
 
+  .botoes-topo { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .botoes-topo .btn-tour { margin-left: 0; }
+  .importar-painel { margin: 10px 0 0; padding: 12px 14px; background: var(--destaque-claro); border-radius: 8px; display: grid; gap: 6px; max-width: 760px; }
+  .importar-linha { display: flex; gap: 8px; }
+  .importar-linha .campo { flex: 1; min-width: 0; }
+  .importar-dica { margin: 0; font-size: 13px; color: var(--texto-2); }
+  .importar-dica.erro { color: var(--erro); font-weight: 600; }
+  .fonte-tag { font-weight: 650; color: var(--texto-2); }
+  .valores dt.praca, .valores dd.praca { color: var(--destaque-escuro); font-weight: 600; }
+  .bloco-leilao { margin-top: 16px; border: 1px solid var(--borda); border-radius: 8px; padding: 12px 14px; display: grid; gap: 10px; }
+  .t-leilao { margin: 0; font-size: 15px; }
+  .pracas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pracas li { background: var(--destaque-claro); border-radius: 8px; padding: 8px 12px; display: grid; gap: 1px; font-size: 14px; min-width: 150px; }
+  .pracas li b { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--destaque-escuro); }
+  .pracas li span:last-of-type { font-weight: 700; font-size: 16px; }
+  .pracas li.passou { background: #f0f2ef; color: var(--texto-3); }
+  .pracas li.passou b { color: var(--texto-3); }
+  .pracas li small { font-size: 11.5px; }
+  .docs-fonte { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-bottom: 14px; padding: 10px 12px; border: 1px dashed var(--borda-forte); border-radius: 8px; }
+  .docs-fonte .dica { font-size: 13px; color: var(--texto-3); margin: 0; }
+  .docs-fonte b { width: 100%; font-size: 14px; }
+  .docs-links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .docs-links .btn { text-decoration: none; min-height: 32px; padding: 4px 12px; font-size: 13.5px; }
+  .docs-msg.erro { color: var(--alerta); font-weight: 600; }
+  .exemplo.da-fonte { background: var(--destaque-claro); color: var(--destaque-escuro); }
+
   /* passo 3: perguntas à esquerda, resultado à direita */
   .sim-grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 28px; align-items: start; }
   .perguntas { display: grid; gap: 18px; }
@@ -423,9 +449,20 @@
     <div class="marca">
       <h1>Auction Intelligence <span>· Triagem</span></h1>
       <div class="fonte-info" id="fonte-info">Carregando…</div>
-      <button type="button" class="btn btn-tour" id="btn-tour">Como funciona</button>
+      <span class="botoes-topo">
+        <button type="button" class="btn btn-tour" id="btn-importar" aria-expanded="false" aria-controls="importar-painel">Importar por link</button>
+        <button type="button" class="btn btn-tour" id="btn-tour">Como funciona</button>
+      </span>
     </div>
     <div class="coleta-info num" id="coleta-info"></div>
+    <form class="importar-painel" id="importar-painel" hidden autocomplete="off">
+      <label for="importar-url" class="rotulo-campo">Link da oferta</label>
+      <div class="importar-linha">
+        <input class="campo" id="importar-url" type="url" placeholder="https://www.megaleiloes.com.br/imoveis/..." maxlength="1000" required>
+        <button type="submit" class="btn btn-primario" id="importar-enviar">Importar</button>
+      </div>
+      <p class="importar-dica" id="importar-msg">Cole o link de um imóvel de um site suportado. O sistema lê só essa página e abre a ficha.</p>
+    </form>
     <div class="abas" role="tablist" aria-label="Estágios da triagem" id="abas"></div>
     <div id="espaco-ficha" style="height:14px" hidden></div>
   </div>
@@ -443,6 +480,7 @@
       </span>
     </div>
     <form id="form-filtros" autocomplete="off">
+      <fieldset><legend>Fonte</legend><div id="f-fonte"></div></fieldset>
       <fieldset><legend>Modalidade</legend><div id="f-modalidade"></div></fieldset>
       <fieldset><legend>Categoria</legend><div id="f-categoria"></div></fieldset>
       <div class="bloco">
@@ -471,6 +509,7 @@
           <option value="desconto">Maior desconto sobre a avaliação</option>
           <option value="area_terreno">Maior área de terreno</option>
           <option value="recente">Mais recentes</option>
+          <option value="leilao">Leilão mais próximo</option>
         </select>
       </div>
     </form>
@@ -513,7 +552,13 @@ const ALERTAS = {
   sem_area: "nenhuma área informada",
   preco_ausente: "preço não informado",
 };
-const ORDEM_TEXTO = { preco: "menor preço", desconto: "maior desconto", area_terreno: "maior área de terreno", recente: "mais recentes" };
+const ORDEM_TEXTO = { preco: "menor preço", desconto: "maior desconto", area_terreno: "maior área de terreno", recente: "mais recentes", leilao: "leilão mais próximo" };
+const NOMES_FONTE = {};                       // preenchido por /api/opcoes (registro de fontes do servidor)
+const nomeFonte = (f) => NOMES_FONTE[f] || f || "fonte";
+function dataHora(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || "");
+  return m ? `${m[3]}/${m[2]}/${m[1]} ${m[4]}:${m[5]}` : (iso || "-");
+}
 
 const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 const dec = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
@@ -559,6 +604,7 @@ function marcados(nome) {
 function parametros() {
   const p = new URLSearchParams();
   p.set("estagio", estado.estagio);
+  marcados("fonte").forEach((f) => p.append("fonte", f));
   marcados("modalidade").forEach((m) => p.append("modalidade", m));
   marcados("categoria").forEach((c) => p.append("categoria", c));
   const cidade = $("f-cidade").value.trim();
@@ -574,7 +620,7 @@ function parametros() {
   return p;
 }
 function contarFiltrosAtivos() {
-  let n = marcados("modalidade").length + marcados("categoria").length;
+  let n = marcados("fonte").length + marcados("modalidade").length + marcados("categoria").length;
   for (const id of ["f-cidade", "f-preco-min", "f-preco-max", "f-desconto", "f-area"]) if ($(id).value.trim()) n++;
   if ($("f-sem-alertas").checked) n++;
   return n;
@@ -592,7 +638,7 @@ const NOME_CATEGORIA = { casa: "Casa", apartamento: "Apartamento", terreno: "Ter
 function desenharTopo() {
   const r = estado.resumo, c = r && r.ultima_coleta;
   if (c) {
-    const fonte = c.fonte === "caixa" ? "Caixa" : c.fonte;
+    const fonte = nomeFonte(c.fonte);
     $("fonte-info").textContent = `${fonte} ${c.recorte}, lista de ${c.data_fonte || "data não informada"}`;
     $("coleta-info").textContent =
       `${r.total_ativo.toLocaleString("pt-BR")} imóveis ativos · coleta de ${dataBR(c.quando)}: ` +
@@ -628,8 +674,8 @@ function cartao(im) {
   if (!areas.length) ddAreas.textContent = "não informadas";
   areas.forEach(([n, v], i) => ddAreas.append(i ? " · " : "", el("span", { class: "area", text: `${n} ${m2(v)}` })));
   const valores = el("dl", { class: "valores num" },
-    el("dt", { text: "Avaliação da Caixa" }), el("dd", { text: im.valor_avaliacao == null ? "não informada" : brl.format(im.valor_avaliacao) }),
-    el("dt", { text: "Desconto sobre a avaliação da Caixa" }), el("dd", { text: im.desconto_pct == null ? "-" : `${pct.format(im.desconto_pct)}%` }));
+    el("dt", { text: `Avaliação da ${nomeFonte(im.fonte)}` }), el("dd", { text: im.valor_avaliacao == null ? "não informada" : brl.format(im.valor_avaliacao) }),
+    el("dt", { text: `Desconto sobre a avaliação da ${nomeFonte(im.fonte)}` }), el("dd", { text: im.desconto_pct == null ? "-" : `${pct.format(im.desconto_pct)}%` }));
   if (im.preco != null && im.valor_avaliacao && im.preco > im.valor_avaliacao) {
     const acima = (im.preco / im.valor_avaliacao - 1) * 100;
     valores.append(el("dt", { class: "acima", text: "Preço acima da avaliação" }),
@@ -637,17 +683,22 @@ function cartao(im) {
   }
   valores.append(el("dt", { text: "Áreas" }), ddAreas,
                  el("dt", { text: "Modalidade" }), el("dd", { text: im.modalidade || "-" }));
+  if (im.proxima_praca) valores.append(el("dt", { class: "praca", text: "Próxima praça" }),
+    el("dd", { class: "praca", text: `${dataHora(im.proxima_praca)} · ${im.proxima_praca_valor == null ? "-" : brl.format(im.proxima_praca_valor)}` }));
+  if (im.ocupacao) valores.append(el("dt", { text: "Ocupação" }), el("dd", { class: im.ocupacao === "ocupado" ? "acima" : "", text: im.ocupacao }));
+  if (im.comitente) valores.append(el("dt", { text: "Vendedor" }), el("dd", { text: im.comitente }));
 
   const card = el("article", { class: "cartao", "data-id": im.id, "aria-label": `${im.tipo || im.categoria} em ${im.cidade}` },
     el("div", { class: "cartao-topo" },
       el("span", { class: "categoria" }, im.categoria || "?", el("span", { class: "tipo", text: im.tipo && im.tipo !== im.categoria ? ` · ${im.tipo}` : "" })),
-      el("span", { class: "id-fonte num", text: `nº ${im.id_fonte}` })),
+      el("span", { class: "id-fonte num" }, el("b", { class: `fonte-tag fonte-${im.fonte}`, text: nomeFonte(im.fonte) }), ` · ${im.id_fonte}`)),
     el("div", { class: "local" }, el("a", { href: `#/imovel/${im.id}` }, im.cidade,
       im.bairro ? el("span", { class: "bairro", text: ` · ${im.bairro}` }) : null)),
     el("div", { class: "endereco", text: im.endereco || "endereço não informado" }),
-    el("div", { class: "preco num" }, im.preco == null ? "preço não informado" : brl.format(im.preco), " ", el("small", { text: "preço na Caixa" })),
+    el("div", { class: "preco num" }, im.preco == null ? "preço não informado" : brl.format(im.preco), " ",
+      el("small", { text: im.tipo_venda ? "lance mínimo atual" : `preço na ${nomeFonte(im.fonte)}` })),
     valores,
-    el("div", { class: "nota-fonte", text: "Avaliação e desconto são os informados pela Caixa, não valor de mercado." }),
+    el("div", { class: "nota-fonte", text: "Avaliação e desconto são os informados pela fonte, não valor de mercado." }),
     im.alertas.length ? el("div", { class: "alertas", "aria-label": "Alertas" },
       im.alertas.map((a) => el("span", { class: "etiqueta-alerta", text: ALERTAS[a] || a }))) : null,
     im.nota && im.estagio !== "identificado" ? el("div", { class: "nota-triagem" }, el("b", { text: "Nota: " }), im.nota) : null,
@@ -655,7 +706,7 @@ function cartao(im) {
       el("span", { text: `Visto pela primeira vez em ${dataBR(im.primeira_vez)}` }),
       el("span", { class: "links" },
         el("a", { href: `#/imovel/${im.id}`, text: "Ficha e simulação" }),
-        /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", text: "Abrir na Caixa" }) : null)),
+        /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", text: `Abrir na ${nomeFonte(im.fonte)}` }) : null)),
     acoes(im));
   return card;
 }
@@ -723,7 +774,7 @@ function mostrarAviso(texto, imovel) {
   clearTimeout(timerAviso);
   ultimoAviso = imovel;
   const a = $("aviso"); a.classList.remove("erro");
-  $("aviso-texto").textContent = texto; $("aviso-desfazer").hidden = false; a.hidden = false;
+  $("aviso-texto").textContent = texto; $("aviso-desfazer").hidden = !imovel; a.hidden = false;
   timerAviso = setTimeout(esconderAviso, 7000);
 }
 function mostrarErro(texto) {
@@ -826,7 +877,11 @@ async function iniciar() {
   try {
     const [, opcoes] = await Promise.all([carregarResumo(), api("/api/opcoes")]);
     estado.opcoes = opcoes;
-    montarOpcoes($("f-modalidade"), "modalidade", opcoes.modalidades, (v) => v === SFI);
+    Object.assign(NOMES_FONTE, opcoes.nomes_fontes || {});
+    desenharTopo();                               // redesenha o topo já com os nomes das fontes
+    montarOpcoes($("f-fonte"), "fonte", opcoes.fontes || [], () => false, nomeFonte);
+    // extrajudicial é o foco do Ruan: Leilão SFI (Caixa) e Extrajudicial (leiloeiros)
+    montarOpcoes($("f-modalidade"), "modalidade", opcoes.modalidades, (v) => v === SFI || v === "Extrajudicial");
     montarOpcoes($("f-categoria"), "categoria", opcoes.categorias, () => false, (v) => NOME_CATEGORIA[v] || v);
     $("lista-cidades").replaceChildren(...opcoes.cidades.map((c) => el("option", { value: c.valor })));
   } catch (e) {
@@ -886,7 +941,7 @@ function desenharFicha(d) {
     el("div", { class: "ft-dir" },
       el("div", { class: "preco num" }, im.preco == null ? "preço não informado" : brl.format(im.preco)),
       el("div", { class: "ft-linha" }, el("span", { class: "pilula", id: "pilula-estagio", text: NOME_ESTAGIO[im.estagio] }),
-        /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", class: "link-caixa", text: "Abrir na Caixa" }) : null)));
+        /^https:\/\//.test(im.link || "") ? el("a", { href: im.link, target: "_blank", rel: "noopener noreferrer", class: "link-caixa", text: `Abrir na ${nomeFonte(im.fonte)}` }) : null)));
   const abas = el("div", { class: "ficha-abas", role: "tablist", "aria-label": "Passos da análise", id: "ficha-abas" },
     ABAS_FICHA.map((a, i) => el("button", { type: "button", role: "tab", class: "ficha-aba", id: `fa-${a.id}`, "aria-controls": `painel-${a.id}`,
       onclick: () => abaFicha(a.id) },
@@ -916,7 +971,9 @@ function abaFicha(id, rolar) {
 function atualizarStatusAbas() {
   const d = fichaEstado.dados; if (!d) return;
   const st = (id, t, cls) => { const e = $(`fa-st-${id}`); if (e) { e.textContent = t; e.className = cls || ""; } };
-  st("imovel", d.imovel.alertas.length ? `${d.imovel.alertas.length} alerta${d.imovel.alertas.length > 1 ? "s" : ""}` : "dados da Caixa", d.imovel.alertas.length ? "atencao" : "");
+  st("imovel", d.imovel.alertas.length ? `${d.imovel.alertas.length} alerta${d.imovel.alertas.length > 1 ? "s" : ""}`
+     : d.imovel.proxima_praca ? `leilão em ${dataHora(d.imovel.proxima_praca).slice(0, 10)}` : `dados da ${nomeFonte(d.imovel.fonte)}`,
+     d.imovel.alertas.length ? "atencao" : "");
   const inv = d.investigacao, feitos = inv.filter((i) => i.status !== "pendente").length, imp = inv.filter((i) => i.status === "impeditivo").length;
   st("investigar", imp ? `${imp} impeditivo${imp > 1 ? "s" : ""}` : `${feitos} de ${inv.length} conferidos`, imp ? "ruim" : feitos === inv.length ? "bom" : "");
   const r = fichaEstado.ultimo;
@@ -931,7 +988,10 @@ function painelImovel(d) {
   const area = im.area_privativa || im.area_total;
   const frase = `${(im.tipo || im.categoria || "Imóvel").replace(/^./, (c) => c.toUpperCase())}` +
     (area ? ` de ${dec.format(area)} m²` : "") + (im.area_terreno ? ` em terreno de ${dec.format(im.area_terreno)} m²` : "") +
-    `, em ${im.cidade}${im.bairro ? ` (${im.bairro})` : ""}, vendido pela Caixa em ${im.modalidade || "modalidade não informada"}.`;
+    `, em ${im.cidade}${im.bairro ? ` (${im.bairro})` : ""}` +
+    (im.leilao ? `, em leilão ${(im.leilao.tipo_venda || "").toLowerCase()} da ${nomeFonte(im.fonte)}` +
+                 (im.leilao.comitente ? `, vendido por ${im.leilao.comitente}` : "") + "."
+               : `, vendido pela ${nomeFonte(im.fonte)} em ${im.modalidade || "modalidade não informada"}.`);
   const acima = im.preco && im.valor_avaliacao && im.preco > im.valor_avaliacao ? (im.preco / im.valor_avaliacao - 1) * 100 : null;
   const fato = (rot, val, nota, cls) => el("div", { class: "fato " + (cls || "") }, el("small", { text: rot }), el("b", { class: "num", text: val }), nota ? el("span", { text: nota }) : null);
   const linhas = [
@@ -943,16 +1003,33 @@ function painelImovel(d) {
   return el("section", { class: "painel", id: "painel-imovel", role: "tabpanel", "aria-labelledby": "fa-imovel" },
     el("p", { class: "frase-imovel", text: frase }),
     el("div", { class: "fatos" },
-      fato("Preço na Caixa", im.preco == null ? "-" : rs(im.preco), "é o ponto de partida do lance"),
-      fato("Avaliação da Caixa", im.valor_avaliacao == null ? "-" : rs(im.valor_avaliacao), acima != null ? `preço ${pct.format(acima)}% acima dela` : "não é valor de mercado", acima != null ? "aviso" : ""),
+      fato(im.leilao ? "Lance mínimo atual" : `Preço na ${nomeFonte(im.fonte)}`, im.preco == null ? "-" : rs(im.preco), "é o ponto de partida do lance"),
+      fato(`Avaliação da ${nomeFonte(im.fonte)}`, im.valor_avaliacao == null ? "-" : rs(im.valor_avaliacao), acima != null ? `preço ${pct.format(acima)}% acima dela` : "não é valor de mercado", acima != null ? "aviso" : ""),
       fato("Área privativa", m2(im.area_privativa) || "-"),
       fato("Área do terreno", m2(im.area_terreno) || "-")),
+    im.leilao ? blocoLeilao(im) : null,
     im.alertas.length ? el("div", { class: "alertas-ficha" }, el("b", { text: "Atenção aos dados: " }), im.alertas.map((a) => ALERTAS[a] || a).join("; ")) : null,
     el("details", { class: "dobra" }, el("summary", { text: "Histórico do imóvel" }), linhaDoTempo(d)),
-    el("details", { class: "dobra" }, el("summary", { text: "Todos os dados da Caixa" }),
+    el("details", { class: "dobra" }, el("summary", { text: `Todos os dados da ${nomeFonte(im.fonte)}` }),
       el("dl", { class: "dados num" }, linhas.flatMap(([a, b]) => [el("dt", { text: a }), el("dd", { text: b })]))),
     proximo("investigar", "Próximo: investigar →"));
 }
+function blocoLeilao(im) {
+  const L = im.leilao, agora = new Date().toISOString().slice(0, 16);
+  const pracas = el("ol", { class: "pracas num" }, L.pracas.map((p) => el("li", { class: p.data && p.data < agora ? "passou" : "" },
+    el("b", { text: L.pracas.length > 1 ? `${p.numero}ª praça` : "Praça única" }),
+    el("span", { text: dataHora(p.data) }), el("span", { text: p.valor == null ? "-" : rs(p.valor) }),
+    p.data && p.data < agora ? el("small", { text: "já passou" }) : null)));
+  const linhas = [["Tipo", L.tipo_venda], ["Vendedor (comitente)", L.comitente], ["Leiloeiro", L.leiloeiro],
+    ["Leilão / lote", [L.leilao, L.lote].filter(Boolean).join(" · ")], ["Processo", L.processo], ["Vara", L.vara],
+    ["Ocupação", L.ocupacao], ["Matrícula", [L.matricula, L.cartorio].filter(Boolean).join(" · ")],
+    ["Incremento mínimo", L.incremento == null ? "" : rs(L.incremento)],
+    ["Comissão do leiloeiro", L.comissao_pct == null ? "" : `${dec.format(L.comissao_pct)}%`]].filter(([, v]) => v);
+  return el("div", { class: "bloco-leilao" }, el("h3", { class: "t-leilao", text: "Leilão" }), pracas,
+    el("dl", { class: "dados" }, linhas.flatMap(([a, b]) => [el("dt", { text: a }), el("dd", { class: a === "Ocupação" && b === "ocupado" ? "acima" : "", text: b })])),
+    el("p", { class: "nota-fonte", text: `Dados como publicados pela ${nomeFonte(im.fonte)}. Confira no edital.` }));
+}
+
 function linhaDoTempo(d) {
   const eventos = [];
   for (const h of d.historico) {
@@ -974,7 +1051,7 @@ const PROCURAR = {
   leilao: ["No edital: se é 1º ou 2º leilão, com data e hora", "Se é alienação fiduciária (Lei 9.514) ou leilão judicial", "Valor mínimo de cada leilão"],
   edital: ["Quem paga IPTU, condomínio e outros débitos", "Formas de pagamento: à vista, financiamento, FGTS", "Prazo para pagar e para assinar a escritura",
            "Comissão do leiloeiro", "Regras sobre desocupação"],
-  matricula: ["Se a última averbação mostra a propriedade consolidada em nome da Caixa", "Ônus ativos: penhora, indisponibilidade, hipoteca, usufruto",
+  matricula: ["Se a última averbação mostra a propriedade consolidada em nome do banco credor", "Ônus ativos: penhora, indisponibilidade, hipoteca, usufruto",
               "Se algum ônus foi cancelado depois (averbação de cancelamento)", "Se área e endereço batem com os da Caixa"],
   ocupacao: ["O que o edital diz sobre ocupação", "Se há ação de imissão ou reintegração de posse", "Na vistoria: sinais de moradores, luz e água ligadas"],
   iptu: ["Valor em aberto no site da prefeitura (pelo endereço ou número do contribuinte)", "Quem assume a dívida, segundo o edital"],
@@ -986,8 +1063,8 @@ function atalhos(item, im) {
   const mapa = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa)}`;
   const caixa = /^https:\/\//.test(im.link || "") ? im.link : null;
   const L = {
-    leilao: [caixa && ["Página do imóvel na Caixa", caixa]],
-    edital: [caixa && ["Baixar o edital na página da Caixa", caixa]],
+    leilao: [caixa && [`Página do imóvel na ${nomeFonte(im.fonte)}`, caixa]],
+    edital: [caixa && [`Página do imóvel na ${nomeFonte(im.fonte)} (edital)`, caixa]],
     matricula: [["Pedir matrícula online (ONR)", "https://registradores.onr.org.br/"]],
     ocupacao: [["Ver o endereço no mapa", mapa]],
     iptu: [["Procurar o site de IPTU da prefeitura", `https://www.google.com/search?q=${encodeURIComponent(`consulta débitos IPTU prefeitura ${im.cidade} ${im.uf || ""}`)}`]],
@@ -1037,8 +1114,39 @@ function painelInvestigar(d) {
   return el("section", { class: "painel", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
     el("p", { class: "intro", text: "Confira cada ponto antes de decidir. Marque o que encontrou; matrícula e edital podem ser anexados no próprio item." }),
     el("p", { class: "intro-ajuda", text: "Ao anexar um PDF, o sistema procura trechos sobre cada item (penhora, ocupação, condomínio...) e mostra onde estão. São trechos para você ler, não conclusões: um ônus pode ter sido cancelado depois, e PDF escaneado não tem texto para ler." }),
-    avisoLeitura(d), progresso, itens, outros, proximo("simular", "Próximo: simular →"));
+    avisoLeitura(d), botaoDocumentosFonte(d), progresso, itens, outros, proximo("simular", "Próximo: simular →"));
 }
+function botaoDocumentosFonte(d) {
+  const docs = (d.imovel.leilao || {}).documentos || [];
+  if (!docs.length) return null;
+  const fonte = nomeFonte(d.imovel.fonte);
+  const msg = el("p", { class: "dica docs-msg" });
+  const links = el("div", { class: "docs-links" }, docs.map((x) =>
+    el("a", { href: x.url, target: "_blank", rel: "noopener noreferrer", class: "btn", text: `Abrir ${x.rotulo || x.tipo} ↗` })));
+  const b = el("button", { type: "button", class: "btn btn-texto", text: "Tentar baixar automaticamente",
+    onclick: async () => {
+      b.disabled = true; b.textContent = "Baixando…"; msg.textContent = ""; msg.classList.remove("erro");
+      try {
+        const r = await api(`/api/imoveis/${d.imovel.id}/documentos-fonte`, POST_JSON({}));
+        const novos = r.baixados.filter((x) => !x.duplicado).length;
+        if (r.baixados.length) {
+          await abrirFicha(d.imovel.id);            // redesenha com os anexos e os trechos encontrados
+          mostrarAviso(`${novos} documento(s) baixado(s) e lido(s)` + (r.erros.length ? `; ${r.erros.length} não` : ""), null);
+          return;
+        }
+        msg.classList.add("erro");
+        msg.textContent = r.erros.every((e) => e.includes("robots.txt"))
+          ? `A ${fonte} não permite download automático desses arquivos. Abra pelos botões acima, salve e anexe no item.`
+          : `Não foi possível baixar: ${r.erros.join(" · ")}`;
+      } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; }
+      b.disabled = false; b.textContent = "Tentar baixar automaticamente";
+    } });
+  return el("div", { class: "docs-fonte" },
+    el("b", { text: `Documentos publicados pela ${fonte}` }), links,
+    el("span", { class: "dica", text: "Abra, salve no computador e anexe no item (matrícula, edital). O sistema lê o PDF e mostra os trechos." }),
+    b, msg);
+}
+
 function atualizarProgresso() {
   const d = fichaEstado.dados, alvo = $("inv-progresso"); if (!alvo) return;
   const inv = d.investigacao, n = inv.length, conta = (s) => inv.filter((i) => i.status === s).length;
@@ -1108,7 +1216,7 @@ function blocoAnexos(d, tipoFixo) {
     finally { botao.disabled = false; botao.textContent = tipoFixo ? `Anexar ${d.tipos_anexo[tipoFixo].toLowerCase()}` : "Anexar arquivo"; arquivo.value = ""; }
   });
   return el("div", { class: "bloco-anexos" }, el("div", { class: "linha-anexar" }, tipoSel, botao,
-    el("span", { class: "dica", text: tipoFixo ? "Baixe em Abrir na Caixa. PDF, PNG ou JPG." : "PDF, PNG ou JPG até 25 MB." })), arquivo, lista);
+    el("span", { class: "dica", text: tipoFixo ? "Baixe na página da fonte. PDF, PNG ou JPG." : "PDF, PNG ou JPG até 25 MB." })), arquivo, lista);
 }
 
 /* passo 3: simular com perguntas diretas. A conta é feita no servidor (regra única, testada). */
@@ -1138,7 +1246,9 @@ function entradaPremissa(d, p, inicial, campos, grande) {
   const caixa = el("div", { class: "entrada-unidade" + (grande ? " grande" : "") },
     p.unidade === "R$" ? el("span", { class: "pre", text: "R$" }) : null, input, p.unidade !== "R$" ? el("span", { text: p.unidade }) : null);
   const etiqueta = el("span", { class: "exemplo", text: "exemplo" });
-  campos[p.chave] = { input, caixa, etiqueta, padrao: d.premissas_padrao[p.chave], temPadrao: p.padrao != null };
+  const daFonte = (d.premissas_da_fonte || []).includes(p.chave);
+  if (daFonte) { etiqueta.textContent = "da fonte"; etiqueta.classList.add("da-fonte"); }
+  campos[p.chave] = { input, caixa, etiqueta, daFonte, padrao: d.premissas_padrao[p.chave], temPadrao: p.padrao != null };
   input.addEventListener("input", () => {
     marcarExemplos();
     if (Number.isNaN(numeroBR(input.value))) simularAgora(); else agendarSimulacao();
@@ -1160,8 +1270,10 @@ function painelSimular(d) {
   fichaEstado.salvas = d.simulacao_salva ? JSON.stringify(d.simulacao_salva.premissas) : null;
   const campos = {}, porChave = Object.fromEntries(d.premissas.map((p) => [p.chave, p]));
   const dicas = {
-    lance: im.preco ? `Preço na Caixa: ${rs(im.preco)}. Em leilão, o lance pode subir.` : "",
-    valor_venda: `Pesquise imóveis parecidos na região.${im.valor_avaliacao ? ` A avaliação da Caixa (${rs(im.valor_avaliacao)}) não é valor de mercado.` : ""}`,
+    lance: im.leilao && im.leilao.pracas.length
+      ? im.leilao.pracas.map((p) => `${im.leilao.pracas.length > 1 ? p.numero + "ª praça" : "Praça"} ${dataHora(p.data).slice(0, 10)}: ${p.valor == null ? "-" : rs(p.valor)}`).join(" · ") + ". O lance pode subir na disputa."
+      : im.preco ? `Preço na ${nomeFonte(im.fonte)}: ${rs(im.preco)}. Em leilão, o lance pode subir.` : "",
+    valor_venda: `Pesquise imóveis parecidos na região.${im.valor_avaliacao ? ` A avaliação da ${nomeFonte(im.fonte)} (${rs(im.valor_avaliacao)}) não é valor de mercado.` : ""}`,
     meta_roi_pct: "Em % sobre tudo o que você investir. Com isso, a conta mostra até quanto vale dar de lance.",
   };
   const perguntas = el("div", { class: "perguntas" }, PERGUNTAS.map((q, i) => {
@@ -1196,7 +1308,10 @@ function lerPremissas() {
 }
 function marcarExemplos() {
   let n = 0;
-  for (const c of Object.values(fichaEstado.campos)) { c.etiqueta.hidden = !(c.temPadrao && numeroBR(c.input.value) === c.padrao); if (!c.etiqueta.hidden) n++; }
+  for (const c of Object.values(fichaEstado.campos)) {
+    c.etiqueta.hidden = !(c.temPadrao && numeroBR(c.input.value) === c.padrao);
+    if (!c.etiqueta.hidden && !c.daFonte) n++;            // "da fonte" não é exemplo a confirmar
+  }
   fichaEstado.exemplos = n;
   const p = lerPremissas(), est = $("sim-estado");
   if (est) est.textContent = fichaEstado.salvas == null ? "Ainda não salva" :
@@ -1502,6 +1617,27 @@ function posicionarTour() {
 }
 
 $("btn-tour").addEventListener("click", iniciarTour);
+$("btn-importar").addEventListener("click", () => {
+  const p = $("importar-painel"), abrir = p.hidden;
+  p.hidden = !abrir; $("btn-importar").setAttribute("aria-expanded", String(abrir));
+  if (abrir) $("importar-url").focus();
+});
+$("importar-painel").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const b = $("importar-enviar"), msg = $("importar-msg");
+  b.disabled = true; b.textContent = "Lendo a página…"; msg.className = "importar-dica";
+  msg.textContent = "Lendo a oferta no site (pode levar alguns segundos).";
+  try {
+    const r = await api("/api/importar", POST_JSON({ url: $("importar-url").value.trim() }));
+    $("importar-url").value = ""; $("importar-painel").hidden = true; $("btn-importar").setAttribute("aria-expanded", "false");
+    msg.textContent = "Cole o link de um imóvel de um site suportado. O sistema lê só essa página e abre a ficha.";
+    triagemSuja = true;
+    try { const o = await api("/api/opcoes"); Object.assign(NOMES_FONTE, o.nomes_fontes || {});
+          montarOpcoes($("f-fonte"), "fonte", o.fontes || [], (v) => marcados("fonte").includes(v), nomeFonte); } catch (e) { /* filtros voltam na próxima carga */ }
+    location.hash = `#/imovel/${r.id}`;
+  } catch (e) { msg.className = "importar-dica erro"; msg.textContent = e.message; }
+  finally { b.disabled = false; b.textContent = "Importar"; }
+});
 iniciar().then(async () => {
   if (location.hash) rota();
   let visto = false;

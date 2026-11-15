@@ -15,7 +15,8 @@ def imovel(fonte, id_fonte, cidade="CAMPINAS", tipo="casa", preco=100000.0):
 
 class FonteFalsa:
     def __init__(self, nome, imoveis, recortes=("SP", "RJ"), avisos=()):
-        self.nome, self.descricao, self._imoveis, self._recortes, self._avisos = nome, "falsa", imoveis, list(recortes), list(avisos)
+        self.nome, self.rotulo, self.descricao = nome, nome, "falsa"
+        self._imoveis, self._recortes, self._avisos = imoveis, list(recortes), list(avisos)
         self.pedidos = []
 
     def recortes(self):

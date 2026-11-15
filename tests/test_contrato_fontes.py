@@ -35,6 +35,7 @@ class ContratoDeFonte(unittest.TestCase):
                 self.assertEqual(fonte.nome, nome)
                 self.assertRegex(nome, r"^[a-z][a-z0-9_]*$")
                 self.assertTrue(fonte.descricao.strip())
+                self.assertTrue(0 < len(fonte.rotulo) <= 30)
                 recortes = fonte.recortes()
                 self.assertTrue(all(isinstance(r, str) and r for r in recortes))
                 recorte, conteudo = AMOSTRAS[nome]
