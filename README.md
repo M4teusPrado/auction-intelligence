@@ -63,6 +63,14 @@ Na investigação, cada item tem atalhos (mapa, página da Caixa, matrícula onl
 lista do que procurar e, quando há PDF anexado, os trechos encontrados por busca de palavras
 (`captacao/documentos.py`), com documento e página. São trechos para ler, não conclusões.
 
+**Parecer preliminar com IA** (botão na etapa Investigar, aprovado em 15/11/2026): a IA (Claude,
+`adaptadores/ia/claude.py`) lê a descrição do lote e os PDFs anexados e sugere a situação de cada
+item, os riscos e o que falta apurar, sempre com documento, página e trecho. O trecho é conferido
+no texto por regra fixa (`dominio/parecer.py`); o que não existir aparece como "não confirmado".
+CPF e RG são mascarados antes do envio. Nada é marcado sozinho: a pessoa usa ou não a sugestão.
+Custa cerca de US$ 0,15 por análise. Precisa de credencial da Anthropic (`ANTHROPIC_API_KEY`
+ou `ant auth login`); sem ela, a tela mostra o motivo.
+
 ## O que ele faz
 
 - Guarda cada imóvel com a fonte, o identificador na fonte, o link e as datas da primeira e da última vez em que apareceu.

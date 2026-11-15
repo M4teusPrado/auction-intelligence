@@ -310,6 +310,36 @@
   .docs-msg.erro { color: var(--alerta); font-weight: 600; }
   .exemplo.da-fonte { background: var(--destaque-claro); color: var(--destaque-escuro); }
 
+  .parecer-ia { border: 2px solid #c9d8f2; background: #f6f9ff; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: grid; gap: 8px; }
+  .parecer-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .parecer-cab h3 { margin: 0; font-size: 16px; }
+  .parecer-ia .dica { margin: 0; font-size: 13px; color: var(--texto-3); }
+  .parecer-ia .dica.erro, .parecer-msg.erro { color: var(--erro); font-weight: 600; }
+  .resumo-ia { margin: 0; font-size: 15px; }
+  .parecer-ia h4 { margin: 6px 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); }
+  .riscos-ia, .perguntas-ia { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+  .riscos-ia > li { background: var(--superficie); border-left: 4px solid var(--borda-forte); border-radius: 6px; padding: 8px 10px; display: grid; gap: 4px; }
+  .riscos-ia > li.nivel-alto { border-left-color: var(--erro); } .riscos-ia > li.nivel-medio { border-left-color: #d39a2a; } .riscos-ia > li.nivel-baixo { border-left-color: #8b9690; }
+  .riscos-ia p { margin: 0; font-size: 14px; color: var(--texto-2); }
+  .risco-cab { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  .risco-cab .nivel { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-3); }
+  .nivel-alto .nivel { color: var(--erro); } .nivel-medio .nivel { color: var(--alerta); }
+  .perguntas-ia li { font-size: 14px; padding-left: 14px; position: relative; }
+  .perguntas-ia li::before { content: "?"; position: absolute; left: 0; font-weight: 700; color: #22426e; }
+  .aviso-ia { margin: 4px 0 0; font-size: 12.5px; color: var(--alerta); }
+  .citacoes { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .citacoes li { display: grid; gap: 2px; font-size: 13.5px; }
+  .citacoes q { color: var(--texto-2); font-style: italic; overflow-wrap: anywhere; }
+  .citacoes small { font-size: 12px; color: #1f7a4d; }
+  .citacoes small a { color: var(--destaque-escuro); }
+  .citacoes li.nao-confirmada small { color: var(--alerta); font-weight: 600; }
+  .sugestao-ia { background: #f6f9ff; border: 1px solid #c9d8f2; border-radius: 8px; padding: 8px 10px; display: grid; gap: 4px; }
+  .sugestao-ia p { margin: 0; font-size: 13.5px; }
+  .sug-cab { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: #22426e; }
+  .pill-sit { border-radius: 999px; padding: 1px 9px; font-size: 12px; background: #e6ebf2; color: var(--texto-2); }
+  .sit-ok .pill-sit { background: #2f8a5b; color: #fff; } .sit-atencao .pill-sit { background: #d39a2a; color: #fff; }
+  .sit-impeditivo .pill-sit { background: var(--erro); color: #fff; }
+
   /* passo 3: perguntas à esquerda, resultado à direita */
   .sim-grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 28px; align-items: start; }
   .perguntas { display: grid; gap: 18px; }
@@ -1114,8 +1144,70 @@ function painelInvestigar(d) {
   return el("section", { class: "painel", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
     el("p", { class: "intro", text: "Confira cada ponto antes de decidir. Marque o que encontrou; matrícula e edital podem ser anexados no próprio item." }),
     el("p", { class: "intro-ajuda", text: "Ao anexar um PDF, o sistema procura trechos sobre cada item (penhora, ocupação, condomínio...) e mostra onde estão. São trechos para você ler, não conclusões: um ônus pode ter sido cancelado depois, e PDF escaneado não tem texto para ler." }),
-    avisoLeitura(d), botaoDocumentosFonte(d), progresso, itens, outros, proximo("simular", "Próximo: simular →"));
+    avisoLeitura(d), botaoDocumentosFonte(d), blocoParecer(d), progresso, itens, outros, proximo("simular", "Próximo: simular →"));
 }
+/* parecer preliminar com IA: só sugere; cada afirmação tem trecho conferido no documento */
+const NOME_SITUACAO = { ok: "OK", atencao: "Atenção", impeditivo: "Impeditivo", sem_informacao: "Sem informação" };
+const NOME_NIVEL = { alto: "Risco alto", medio: "Risco médio", baixo: "Risco baixo" };
+function citacao(d, c) {
+  const doc = ((d.parecer || {}).documentos || []).find((x) => x.codigo === c.documento);
+  const nome = c.documento === "DESCRICAO" ? "descrição do lote" : doc ? doc.nome : c.documento;
+  const fonte = doc && doc.anexo_id ? el("a", { href: `/anexos/${doc.anexo_id}#page=${c.pagina}`, target: "_blank", rel: "noopener", text: `${nome} · página ${c.pagina}` })
+                                    : el("span", { text: nome });
+  return el("li", { class: c.confirmada ? "" : "nao-confirmada" },
+    el("span", { text: c.afirmacao }),
+    el("q", { text: c.trecho }),
+    el("small", {}, c.confirmada ? "✓ trecho conferido no texto · " : "⚠ trecho não encontrado no documento: confira · ", fonte));
+}
+function blocoParecer(d) {
+  const p = d.parecer && d.parecer.parecer, ia = d.ia || {};
+  const caixa = el("section", { class: "parecer-ia", id: "parecer-ia" });
+  const msg = el("p", { class: "dica parecer-msg" });
+  const b = el("button", { type: "button", class: "btn btn-primario", disabled: !ia.disponivel,
+    text: p ? "Gerar de novo" : "Gerar parecer com IA",
+    onclick: async () => {
+      b.disabled = true; b.textContent = "Analisando os documentos…"; msg.classList.remove("erro");
+      msg.textContent = "A IA está lendo a descrição e os PDFs anexados. Pode levar de 1 a 3 minutos.";
+      try {
+        await api(`/api/imoveis/${d.imovel.id}/parecer`, POST_JSON({}));
+        await abrirFicha(d.imovel.id);
+      } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = p ? "Gerar de novo" : "Gerar parecer com IA"; }
+    } });
+  const cab = el("div", { class: "parecer-cab" }, el("h3", { text: "Parecer preliminar (IA)" }), b);
+  caixa.append(cab);
+  if (!ia.disponivel) caixa.append(el("p", { class: "dica erro", text: `Indisponível: ${ia.motivo}.` }));
+  if (!p) {
+    caixa.append(el("p", { class: "dica", text: "A IA lê a descrição do lote e os PDFs anexados (edital, matrícula) e organiza ocupação, débitos, ônus e riscos, " +
+      "mostrando o trecho de onde tirou cada informação. Ela só sugere: quem marca cada item é você. Custa cerca de US$ 0,15 por análise." }), msg);
+    return caixa;
+  }
+  const u = d.parecer.uso || {};
+  caixa.append(
+    el("p", { class: "resumo-ia", text: p.resumo_geral }),
+    el("p", { class: "dica num", text: `Gerado em ${dataHoraBR(d.parecer.quando)} · ${p.citacoes_confirmadas} de ${p.citacoes_total} trechos conferidos no texto` +
+      (u.custo_usd != null ? ` · custo US$ ${u.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "") + ` · documentos lidos: ${(d.parecer.documentos || []).map((x) => x.codigo === "DESCRICAO" ? "descrição" : x.nome).join(", ")}` }));
+  const riscos = [...(p.riscos || [])].sort((a, c) => ["alto", "medio", "baixo"].indexOf(a.nivel) - ["alto", "medio", "baixo"].indexOf(c.nivel));
+  if (riscos.length) caixa.append(el("h4", { text: "Pontos de atenção" }), el("ul", { class: "riscos-ia" }, riscos.map((r) => el("li", { class: `nivel-${r.nivel}` },
+    el("div", { class: "risco-cab" }, el("span", { class: "nivel", text: NOME_NIVEL[r.nivel] || r.nivel }), el("b", { text: r.titulo })),
+    el("p", { text: r.explicacao }),
+    r.citacoes.length ? el("ul", { class: "citacoes" }, r.citacoes.map((c) => citacao(d, c))) : null))));
+  if ((p.perguntas || []).length) caixa.append(el("h4", { text: "O que ainda precisa ser apurado" }),
+    el("ul", { class: "perguntas-ia" }, p.perguntas.map((q) => el("li", { text: q }))));
+  caixa.append(el("p", { class: "aviso-ia", text: "Parecer gerado por IA a partir dos documentos. Não é análise jurídica: confira os trechos e decida item por item." }), msg);
+  return caixa;
+}
+function sugestaoIA(d, it, salvar, nota) {
+  const p = d.parecer && d.parecer.parecer;
+  const s = p && (p.itens || []).find((x) => x.item === it.item);
+  if (!s) return null;
+  const usar = s.situacao_sugerida !== "sem_informacao" ? el("button", { type: "button", class: "btn btn-texto", text: "Usar sugestão",
+    onclick: () => { nota.value = s.resumo; salvar(s.situacao_sugerida, s.resumo); } }) : null;
+  return el("div", { class: `sugestao-ia sit-${s.situacao_sugerida}` },
+    el("div", { class: "sug-cab" }, el("span", { text: "IA sugere:" }), el("b", { class: "pill-sit", text: NOME_SITUACAO[s.situacao_sugerida] }), usar),
+    el("p", { text: s.resumo }),
+    s.fatos.length ? el("ul", { class: "citacoes" }, s.fatos.map((c) => citacao(d, c))) : null);
+}
+
 function botaoDocumentosFonte(d) {
   const docs = (d.imovel.leilao || {}).documentos || [];
   if (!docs.length) return null;
@@ -1180,6 +1272,7 @@ function cartaoItem(d, it) {
   }
   nota.addEventListener("change", () => salvar(atual.status, nota.value.trim()));
   card.append(el("div", { class: "cc-cab" }, el("b", { text: it.rotulo }), salvo), el("span", { class: "ajuda", text: it.ajuda }));
+  const sug = sugestaoIA(d, it, salvar, nota); if (sug) card.append(sug);
   if (it.item === "leilao" && d.sugestao_leilao) card.append(el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao));
   card.append(atalhos(it.item, d.imovel) || "",
     el("details", { class: "procurar" }, el("summary", { text: "O que procurar" }), el("ul", {}, PROCURAR[it.item].map((t) => el("li", { text: t })))),
