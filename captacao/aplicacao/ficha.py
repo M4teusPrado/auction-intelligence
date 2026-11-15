@@ -73,7 +73,7 @@ def _descrever_modalidade(fontes, im):
     return f.descrever_modalidade(im.get("modalidade")) if f else None
 
 
-def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes: dict = None) -> dict:
+def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes: dict = None, analisador=None) -> dict:
     im = _buscar_imovel(repo, imovel_id)
     return {"imovel": im, "historico": repo.historico(imovel_id), "triagens": repo.triagens(imovel_id),
             "investigacao": checklist(repo.investigacao_atual(imovel_id)), "status": STATUS_INVESTIGACAO,
@@ -82,7 +82,11 @@ def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes:
             "premissas": simulador.descricao_premissas(),
             "premissas_padrao": simulador.padrao_para(im),
             "premissas_da_fonte": ["comissao_leiloeiro_pct"] if (im.get("leilao") or {}).get("comissao_pct") is not None else [],
-            "simulacao_salva": repo.ultima_simulacao(imovel_id)}
+            "simulacao_salva": repo.ultima_simulacao(imovel_id),
+            "parecer": repo.ultimo_parecer(imovel_id),
+            "ia": {"disponivel": analisador is not None and analisador.disponivel() is None,
+                   "motivo": "a análise com IA não está configurada" if analisador is None else analisador.disponivel(),
+                   "modelo": getattr(analisador, "modelo", None)}}
 
 
 def investigar(repo: RepositorioDeAnalise, imovel_id: int, corpo, agora: str = None) -> dict:

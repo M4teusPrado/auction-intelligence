@@ -70,6 +70,11 @@ CREATE TABLE IF NOT EXISTS documentos_fonte (    -- links de edital/matrícula p
   imovel_id INTEGER NOT NULL REFERENCES imoveis(id), tipo TEXT NOT NULL, url TEXT NOT NULL, rotulo TEXT,
   PRIMARY KEY (imovel_id, url)
 );
+CREATE TABLE IF NOT EXISTS pareceres (           -- pareceres preliminares gerados por IA; nada é apagado
+  id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id), modelo TEXT NOT NULL,
+  parecer TEXT NOT NULL, uso TEXT, documentos TEXT, quando TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_pareceres_imovel ON pareceres (imovel_id);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
@@ -94,7 +99,7 @@ COLUNAS_NOVAS = [
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
 TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas", "leiloes", "pracas",
-                 "documentos_fonte")
+                 "documentos_fonte", "pareceres")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
@@ -461,3 +466,18 @@ class RepositorioSQLite:
         self.con.execute("INSERT INTO simulacoes (imovel_id, premissas, resultado, quando) VALUES (?,?,?,?)",
                          (imovel_id, json.dumps(premissas), json.dumps(resultado, ensure_ascii=False), quando))
         self.con.commit()
+
+    # ------------------------------------------------------------------ pareceres (IA)
+    def salvar_parecer(self, imovel_id: int, modelo: str, parecer: dict, uso: dict, documentos: list, quando: str) -> None:
+        self.con.execute("INSERT INTO pareceres (imovel_id, modelo, parecer, uso, documentos, quando) VALUES (?,?,?,?,?,?)",
+                         (imovel_id, modelo, json.dumps(parecer, ensure_ascii=False), json.dumps(uso),
+                          json.dumps(documentos, ensure_ascii=False), quando))
+        self.con.commit()
+
+    def ultimo_parecer(self, imovel_id: int) -> Optional[dict]:
+        r = self.con.execute("SELECT modelo, parecer, uso, documentos, quando FROM pareceres WHERE imovel_id=? "
+                             "ORDER BY id DESC LIMIT 1", (imovel_id,)).fetchone()
+        if not r:
+            return None
+        return {"modelo": r["modelo"], "parecer": json.loads(r["parecer"]), "uso": json.loads(r["uso"] or "{}"),
+                "documentos": json.loads(r["documentos"] or "[]"), "quando": r["quando"]}

@@ -12,6 +12,7 @@ Rotas:
   GET  /anexos/<id>                            abre um anexo
   POST /api/importar                           {"url": "..."}  importa uma oferta pelo link
   POST /api/imoveis/<id>/documentos-fonte      baixa edital/matrícula publicados pela fonte
+  POST /api/imoveis/<id>/parecer               gera o parecer preliminar com IA (só sugere)
 """
 import json
 import os
@@ -25,11 +26,12 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from . import montagem
 from .aplicacao import ficha, triagem
 from .aplicacao.coletar import importar_link
-from .aplicacao.portas import EntradaInvalida, ErroDeFonte, NaoEncontrado
+from .aplicacao.parecer import gerar_parecer
+from .aplicacao.portas import EntradaInvalida, ErroDeAnalise, ErroDeFonte, NaoEncontrado
 
 HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
 CORPO_MAX = 16 * 1024
-ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte))?$")
+ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte|parecer))?$")
 ROTA_ANEXO = re.compile(r"^/anexos/(\d{1,12})$")
 TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
 
@@ -83,6 +85,8 @@ def _criar_handler(caminho_base: str, porta: int):
                 self._json(404, {"erro": str(e)})
             except ErroDeFonte as e:                  # site da fonte fora do ar, bloqueio, formato mudou
                 self._json(502, {"erro": f"Não foi possível ler a fonte: {e}"})
+            except ErroDeAnalise as e:                # IA sem credencial, recusa, limite...
+                self._json(503, {"erro": f"Análise com IA indisponível: {e}"})
             except Exception as e:                    # erro inesperado: mensagem genérica
                 sys.stderr.write(f"  ERRO: {e!r}\n")
                 self._json(500, {"erro": "erro interno; veja o terminal"})
@@ -105,7 +109,7 @@ def _criar_handler(caminho_base: str, porta: int):
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
             elif (m := ROTA_IMOVEL.match(url.path)) and m.group(2) is None:
-                self._executar(lambda repo: ficha.ficha(repo, int(m.group(1)), pasta_anexos, montagem.FONTES))
+                self._executar(lambda repo: ficha.ficha(repo, int(m.group(1)), pasta_anexos, montagem.FONTES, montagem.ANALISADOR))
             elif m := ROTA_ANEXO.match(url.path):
                 self._enviar_anexo(int(m.group(1)))
             else:
@@ -180,6 +184,8 @@ def _criar_handler(caminho_base: str, porta: int):
                 if not isinstance(corpo, dict) or set(corpo) != {"url"}:
                     return self._json(400, {"erro": "envie {\"url\": \"...\"}"})
                 return self._executar(lambda repo: importar_link(montagem.FONTES, repo, corpo["url"]))
+            if m.group(2) == "parecer":
+                return self._executar(lambda repo: gerar_parecer(repo, montagem.ANALISADOR, int(m.group(1))))
             if m.group(2) == "documentos-fonte":
                 return self._executar(lambda repo: ficha.baixar_documentos_fonte(
                     repo, pasta_anexos, int(m.group(1)), montagem.CLIENTE_WEB))

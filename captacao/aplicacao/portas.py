@@ -128,3 +128,23 @@ class RepositorioDeAnalise(Protocol):
     def textos_lidos(self, imovel_id: int) -> List[dict]: ...
     def ultima_simulacao(self, imovel_id: int) -> Optional[dict]: ...
     def salvar_simulacao(self, imovel_id: int, premissas: dict, resultado: dict, quando: str) -> None: ...
+    def salvar_parecer(self, imovel_id: int, modelo: str, parecer: dict, uso: dict, documentos: list, quando: str) -> None: ...
+    def ultimo_parecer(self, imovel_id: int) -> Optional[dict]: ...
+
+
+# ---------------------------------------------------------------------- IA (parecer preliminar)
+
+class ErroDeAnalise(Exception):
+    """A análise com IA não pôde ser feita (sem credencial, recusa, limite, rede)."""
+
+
+class AnalisadorDeDocumentos(Protocol):
+    """Lê os documentos de um imóvel e devolve um parecer no formato dominio.parecer.ESQUEMA_PARECER.
+    Só sugere: nada é marcado automaticamente na investigação."""
+    modelo: str
+
+    def disponivel(self) -> Optional[str]:
+        """None se pode analisar; senão, o motivo (ex.: sem credencial)."""
+
+    def analisar(self, contexto: str) -> dict:
+        """Devolve {"parecer": {...}, "uso": {"entrada": n, "saida": n, "custo_usd": x}}."""

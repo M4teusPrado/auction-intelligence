@@ -10,6 +10,7 @@ from typing import Dict
 from .adaptadores.fontes.caixa import FonteCaixa
 from .adaptadores.fontes.megaleiloes import FonteMegaLeiloes
 from .adaptadores.fontes.soleon import FonteSoleon
+from .adaptadores.ia.claude import AnalisadorClaude
 from .adaptadores.persistencia.sqlite import RepositorioSQLite
 from .adaptadores.web import ClienteWeb
 from .aplicacao.portas import ErroDeFonte, FonteDeImoveis
@@ -21,6 +22,9 @@ CLIENTE_WEB = ClienteWeb(pasta_cache=os.environ.get("CAPTACAO_CACHE_WEB", "cache
 def _relatar(msg: str) -> None:
     print(msg, file=sys.stderr, flush=True)
 
+
+# Parecer preliminar com IA (aprovado em 15/11/2026; só roda quando a pessoa clica).
+ANALISADOR = AnalisadorClaude()
 
 FONTES: Dict[str, FonteDeImoveis] = {f.nome: f for f in (
     FonteCaixa(),
