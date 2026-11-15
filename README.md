@@ -10,6 +10,22 @@ leitura dos PDFs anexados (matrícula, edital). Para instalar, uma vez, na pasta
 Depois use `.venv/bin/python` no lugar de `python3` nos comandos abaixo. Sem o pypdf tudo
 funciona, só a leitura de PDF fica desligada.
 
+## Fontes
+
+- **caixa**: lista pública da Caixa (CSV por estado).
+- **megaleiloes**: Mega Leilões, leilões judiciais e extrajudiciais (Santander, Bradesco,
+  Itaú...). Coleta diária liberada pelo Mateus em 15/11/2026, depois de conferir robots.txt
+  e regulamento. O servidor de arquivos da Mega (cdn1) proíbe robôs no robots.txt: edital e
+  matrícula são baixados pela pessoa no navegador e anexados na ficha.
+
+    python -m captacao fontes                                      # lista as fontes
+    python -m captacao coletar --fonte megaleiloes --recorte SP    # coleta diária (20-40 min)
+    python -m captacao importar <link de uma oferta>               # imóvel avulso
+
+O acesso à web (`adaptadores/web.py`) respeita robots.txt e Crawl-delay, espera 3 s entre
+pedidos ao mesmo site e guarda cópia local das páginas em `cache_web/` por 20 h.
+Coleta incompleta (limite, página com erro) não marca ninguém como "saiu da lista".
+
 ## Como usar
 
     python -m captacao coletar --uf SP
