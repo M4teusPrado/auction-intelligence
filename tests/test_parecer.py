@@ -102,6 +102,7 @@ class CasoDeUso(unittest.TestCase):
         ctx, fontes, docs = montar_contexto(self.repo, outro)
         self.assertEqual([d["codigo"] for d in docs], ["DESCRICAO"])
         self.assertIn("ainda não foram anexados", ctx)
+        self.assertIn("=== DOCUMENTO DESCRICAO, página 1 ===\nCasa", ctx)          # a descrição vai junto, com texto
 
 
 class Adaptador(unittest.TestCase):

@@ -331,6 +331,7 @@ class RepositorioSQLite:
         if not r:
             return None
         im = self._imovel(r)
+        im["descricao"] = self.con.execute("SELECT descricao FROM imoveis WHERE id=?", (imovel_id,)).fetchone()[0] or ""
         lei = self.con.execute("SELECT * FROM leiloes WHERE imovel_id=?", (imovel_id,)).fetchone()
         im["leilao"] = None if not lei else {
             **{k: lei[k] for k in lei.keys() if k != "imovel_id"},
