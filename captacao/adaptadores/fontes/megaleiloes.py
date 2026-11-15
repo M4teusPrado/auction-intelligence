@@ -133,7 +133,7 @@ def interpretar_oferta(pagina: str, url: str = "", hoje: Optional[str] = None) -
     lei = DadosLeilao(
         tipo_venda=_texto((re.search(r'<div\s+class="batch-type">(.*?)</div>', pagina, re.S) or [None, ""])[1]),
         leilao=_texto(_campo(pagina, "Leilão")), lote=_texto(_campo(pagina, "Número Lote")),
-        comitente=_texto(_campo(pagina, "Comitente")),
+        comitente=re.sub(r"^[\s.\-–]+$", "", _texto(_campo(pagina, "Comitente"))),   # "." no site = não informado
         leiloeiro=_texto(_campo(pagina, "Leiloeiro")).split(" | ")[0],
         ocupacao=ocupacao, matricula=matricula.group(1) if matricula else "",
         cartorio=cartorio.group(1).strip() if cartorio else "",
