@@ -32,6 +32,22 @@ CREATE TABLE IF NOT EXISTS triagens (            -- toda mudança de estágio; n
   de TEXT NOT NULL, para TEXT NOT NULL, nota TEXT, quando TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_triagens_imovel ON triagens (imovel_id);
+CREATE TABLE IF NOT EXISTS investigacao (        -- checklist; cada mudança é uma linha nova
+  id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
+  item TEXT NOT NULL, status TEXT NOT NULL, nota TEXT, quando TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_investigacao_imovel ON investigacao (imovel_id, item);
+CREATE TABLE IF NOT EXISTS anexos (              -- arquivos enviados à mão (matrícula, edital...)
+  id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
+  tipo TEXT NOT NULL, nome_original TEXT NOT NULL, arquivo TEXT NOT NULL,
+  tamanho INTEGER NOT NULL, sha256 TEXT NOT NULL, quando TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_anexos_imovel ON anexos (imovel_id);
+CREATE TABLE IF NOT EXISTS simulacoes (          -- simulações salvas; a mais recente vale
+  id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id),
+  premissas TEXT NOT NULL, resultado TEXT NOT NULL, quando TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_simulacoes_imovel ON simulacoes (imovel_id);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
@@ -54,7 +70,7 @@ COLUNAS_NOVAS = [
 
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
-TABELAS_NOVAS = ("triagens",)
+TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
