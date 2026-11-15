@@ -13,6 +13,8 @@ CATEGORIAS = {
     "comercial": "comercial", "loja": "comercial", "sala": "comercial",
     "galpao": "comercial", "predio": "comercial",
     "imovel rural": "rural",
+    "salao": "comercial",
+    "vaga de garagem": "outros", "outros": "outros",      # tipos conhecidos sem categoria própria
 }
 
 

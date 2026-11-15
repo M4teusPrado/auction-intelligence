@@ -29,7 +29,8 @@ PAGINAS_MAX = 40                 # por categoria e estado; proteção contra la�
 TIPOS = {"apartamentos": "apartamento", "casas": "casa", "terrenos-e-lotes": "terreno", "glebas": "gleba",
          "galpoes--industriais": "galpao", "predios": "predio", "lojas": "loja", "salas": "sala",
          "salas-comerciais": "sala", "imoveis-comerciais": "comercial", "imoveis-rurais": "imovel rural",
-         "terrenos-para-incorporacao": "terreno", "casa-em-terreno-para-incorporacoes": "terreno"}
+         "terrenos-para-incorporacao": "terreno", "casa-em-terreno-para-incorporacoes": "terreno",
+         "vagas-de-garagem": "vaga de garagem", "deposito-de-garagem": "vaga de garagem"}
 DOCUMENTOS = {"edital": "edital", "matricula": "matricula", "laudo de avaliacao": "laudo", "laudo": "laudo"}
 
 
