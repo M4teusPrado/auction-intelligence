@@ -18,7 +18,7 @@ https://venda-imoveis.caixa.gov.br/listaweb/Lista_imoveis_SP.csv e rode:
 
     python -m captacao coletar --uf SP --arquivo Lista_imoveis_SP.csv
 
-Testes: `python tests/test_captacao.py` e `python tests/test_triagem.py`
+Testes: `for t in tests/test_*.py; do python3 $t; done`
 
 ## Tela de triagem
 
@@ -26,6 +26,12 @@ Testes: `python tests/test_captacao.py` e `python tests/test_triagem.py`
 `--porta`) e abre o navegador. Funciona sem internet. Cada imóvel passa pelos estágios
 identificado (na fila), analisar, depois e descartado; toda mudança fica na tabela
 `triagens` e desfazer grava uma linha nova, nada é apagado. Ctrl+C no terminal encerra.
+
+Clicar no imóvel abre a ficha: dados da fonte, checklist de investigação, anexos (PDF/PNG/JPG
+baixados pelo navegador, salvos em `anexos/` ao lado da base), histórico e o simulador de
+custos e retorno. O simulador é conta fixa (`captacao/simulador.py`); as premissas padrão são
+exemplos a confirmar e o valor de venda não tem padrão, porque a avaliação da Caixa não é
+valor de mercado.
 
 ## O que ele faz
 
@@ -49,6 +55,8 @@ identificado (na fila), analisar, depois e descartado; toda mudança fica na tab
     captacao/repositorio.py   base SQLite, histórico e duplicados
     captacao/classifica.py    categoria e alertas derivados (não alteram a fonte)
     captacao/triagem.py       funções da API da tela (filtros, resumo, triagem)
+    captacao/ficha.py         ficha do imóvel: investigação, anexos, simulações salvas
+    captacao/simulador.py     conta de custos e retorno (regra fixa)
     captacao/tela.py          servidor local da tela
     captacao/web/index.html   a tela (HTML, CSS e JS num arquivo só)
     captacao/cli.py           comandos
