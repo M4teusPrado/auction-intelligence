@@ -21,7 +21,7 @@ class FonteFalsa:
     def recortes(self):
         return self._recortes
 
-    def coletar(self, recorte, arquivo=None, nome_arquivo=""):
+    def coletar(self, recorte, arquivo=None, nome_arquivo="", limite=None):
         self.pedidos.append((recorte, arquivo, nome_arquivo))
         return Coleta(imoveis=list(self._imoveis), recorte=recorte, origem=f"falsa:{recorte}", avisos=self._avisos)
 
@@ -33,7 +33,7 @@ class RepoFalso:
     def __init__(self):
         self.chamadas = []
 
-    def gravar_coleta(self, fonte, recorte, origem, imoveis, n_avisos=0, agora=None):
+    def gravar_coleta(self, fonte, recorte, origem, imoveis, n_avisos=0, agora=None, marcar_saidos=True):
         imoveis = list(imoveis)
         self.chamadas.append((fonte, recorte, origem, imoveis, n_avisos))
         return {"coleta": 1, "total": len(imoveis), "novos": len(imoveis), "alterados": 0, "saidos": 0, "avisos": n_avisos}
@@ -75,6 +75,16 @@ class VariasFontes(unittest.TestCase):
             situacao = dict(repo.con.execute("SELECT fonte || ':' || id_fonte, situacao FROM imoveis").fetchall())
             self.assertEqual(situacao, {"caixa:c1": "ativo", "caixa:c2": "ativo",
                                         "banco_x:b1": "saiu_da_lista", "banco_x:b2": "ativo"})
+
+    def test_coleta_incompleta_ou_com_limite_nao_marca_saidos(self):
+        with RepositorioSQLite(":memory:") as repo:
+            coletar(FonteFalsa("banco_x", [imovel("banco_x", "1"), imovel("banco_x", "2")]), repo, "SP")
+            r = coletar(FonteFalsa("banco_x", [imovel("banco_x", "3")]), repo, "SP", limite=1)
+            self.assertEqual((r["saidos"], r["completa"]), (0, False))
+            parcial = FonteFalsa("banco_x", [imovel("banco_x", "3")])
+            parcial.coletar = lambda *a, **k: Coleta([imovel("banco_x", "3")], "SP", "x", completa=False)
+            self.assertEqual(coletar(parcial, repo, "SP")["saidos"], 0)
+            self.assertEqual(coletar(FonteFalsa("banco_x", [imovel("banco_x", "3")]), repo, "SP")["saidos"], 2)
 
     def test_recortes_diferentes_da_mesma_fonte_sao_independentes(self):
         with RepositorioSQLite(":memory:") as repo:

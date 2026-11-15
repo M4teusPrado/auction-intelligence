@@ -13,7 +13,7 @@ from datetime import datetime
 from .. import documentos
 from ..dominio import simulador
 from ..dominio.analise import ITENS_CHAVES, STATUS_INVESTIGACAO, TIPOS_ANEXO, checklist
-from .portas import EntradaInvalida, NaoEncontrado, RepositorioDeAnalise
+from .portas import BaixadorWeb, EntradaInvalida, ErroDeFonte, NaoEncontrado, RepositorioDeAnalise
 
 ANEXO_MAX = 25 * 1024 * 1024
 NOTA_MAX = 2000
@@ -157,3 +157,25 @@ def salvar_simulacao(repo: RepositorioDeAnalise, imovel_id: int, corpo, agora: s
     quando = _agora(agora)
     repo.salvar_simulacao(imovel_id, r["premissas"], r, quando)
     return {"resultado": r, "quando": quando}
+
+
+def baixar_documentos_fonte(repo: RepositorioDeAnalise, pasta: str, imovel_id: int, baixador: BaixadorWeb,
+                            agora: str = None) -> dict:
+    """Baixa edital, matrícula e laudo publicados pela fonte do anúncio e anexa à ficha
+    (a leitura de PDF roda em seguida). Só links gravados na coleta; nada digitado por pessoas."""
+    im = _buscar_imovel(repo, imovel_id)
+    docs = (im.get("leilao") or {}).get("documentos") or []
+    if not docs:
+        raise EntradaInvalida("a fonte deste imóvel não publicou documentos para baixar")
+    baixados, erros = [], []
+    for d in docs:
+        if d["tipo"] not in TIPOS_ANEXO or not d["url"].startswith("https://"):
+            continue
+        try:
+            dados = baixador.baixar(d["url"])
+            r = anexar(repo, pasta, imovel_id, d["tipo"], f"{d['rotulo'] or d['tipo']} ({im['fonte']}).pdf", dados, agora)
+            baixados.append({"tipo": d["tipo"], "duplicado": r["duplicado"]})
+        except (ErroDeFonte, EntradaInvalida) as e:
+            erros.append(f"{d['rotulo'] or d['tipo']}: {e}")
+    return {"baixados": baixados, "erros": erros, "anexos": repo.anexos(imovel_id),
+            "achados": _achados(repo, imovel_id)}

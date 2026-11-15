@@ -19,6 +19,7 @@ def _ler(nome):
 
 AMOSTRAS = {   # nome da fonte: (recorte, conteúdo de exemplo)
     "caixa": ("SP", _ler("exemplo_caixa.csv")),
+    "megaleiloes": ("SP", _ler("amostras/megaleiloes_extrajudicial_x131551.html")),
 }
 
 

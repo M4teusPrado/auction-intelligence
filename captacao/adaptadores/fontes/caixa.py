@@ -143,14 +143,15 @@ class FonteCaixa:
     def recortes(self) -> List[str]:
         return list(UFS)
 
-    def coletar(self, recorte: str, arquivo: Optional[bytes] = None, nome_arquivo: str = "") -> Coleta:
+    def coletar(self, recorte: str, arquivo: Optional[bytes] = None, nome_arquivo: str = "",
+                limite: Optional[int] = None) -> Coleta:
         uf = recorte.upper()
         if arquivo is None:
             dados, origem = self._baixar(uf), URL.format(uf=uf)
         else:
             dados, origem = arquivo, nome_arquivo or "arquivo enviado"
         imoveis, avisos = interpretar(decodificar(dados))
-        return Coleta(imoveis=imoveis, recorte=uf, origem=origem, avisos=avisos)
+        return Coleta(imoveis=imoveis[:limite] if limite else imoveis, recorte=uf, origem=origem, avisos=avisos)
 
     def descrever_modalidade(self, modalidade: str) -> Optional[str]:
         """Hipótese a partir da modalidade da lista. Precisa ser confirmada no edital."""

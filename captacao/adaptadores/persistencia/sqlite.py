@@ -246,10 +246,10 @@ class RepositorioSQLite:
         self.close()
 
     def gravar_coleta(self, fonte: str, recorte: str, origem: str, imoveis: Iterable[ImovelCaptado],
-                      n_avisos: int = 0, agora: Optional[str] = None) -> dict:
+                      n_avisos: int = 0, agora: Optional[str] = None, marcar_saidos: bool = True) -> dict:
         """Compara a coleta com a base. Só imóveis da mesma fonte e do mesmo recorte
-        podem ser marcados como 'saiu_da_lista'."""
-        return _gravar_coleta(self.con, fonte, recorte, origem, imoveis, n_avisos, agora)
+        podem ser marcados como 'saiu_da_lista', e só se a coleta foi completa."""
+        return _gravar_coleta(self.con, fonte, recorte, origem, imoveis, n_avisos, agora, marcar_saidos)
 
     def gravar_avulso(self, imovel: ImovelCaptado, origem: str, agora: Optional[str] = None) -> int:
         """Grava um imóvel importado por link, sem marcar os outros como 'saiu da lista'."""

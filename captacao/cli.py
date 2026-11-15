@@ -3,6 +3,8 @@
   python -m captacao coletar --uf SP                 baixa a lista da Caixa e atualiza a base
   python -m captacao coletar --uf SP --arquivo x.csv usa um arquivo baixado pelo navegador
   python -m captacao coletar --fonte caixa --recorte SP   forma geral, para qualquer fonte
+  python -m captacao coletar --fonte megaleiloes --recorte SP   coleta diária da Mega Leilões
+  python -m captacao importar <link da oferta>      importa um imóvel avulso (sites suportados)
   python -m captacao listar --uf SP --cidade campinas --tipo terreno --desconto-min 30
   python -m captacao listar --categoria terreno       tipo agrupado (terreno inclui gleba)
   python -m captacao novidades                       o que mudou na última coleta
@@ -15,8 +17,8 @@ import csv
 import sys
 
 from . import montagem
-from .aplicacao.coletar import coletar
-from .aplicacao.portas import ErroDeFonte, FiltroImoveis
+from .aplicacao.coletar import coletar, importar_link
+from .aplicacao.portas import EntradaInvalida, ErroDeFonte, FiltroImoveis
 
 
 def _brl(v):
@@ -39,11 +41,21 @@ def cmd_coletar(a, repo):
     if a.arquivo:
         with open(a.arquivo, "rb") as arq:
             arquivo = arq.read()
-    r = coletar(f, repo, recorte, arquivo, a.arquivo or "")
+    r = coletar(f, repo, recorte, arquivo, a.arquivo or "", limite=a.limite)
     rotulo = f"{f.nome} {r['recorte']}".strip()
     print(f"Coleta {r['coleta']} ({rotulo}): {r['total']} imóveis lidos, {r['novos']} novos, "
           f"{r['alterados']} alterados, {r['saidos']} saíram da lista, {r['avisos']} avisos.")
     for av in r["lista_avisos"][:10]:
+        print("  aviso:", av)
+
+
+def cmd_importar(a, repo):
+    r = importar_link(montagem.FONTES, repo, a.url)
+    im = repo.buscar_imovel(r["id"])
+    lei = im.get("leilao") or {}
+    print(f"Importado: {im['fonte']} {im['id_fonte']} | {im['cidade']} | {im['tipo']} | {_brl(im['preco'])} | "
+          f"{lei.get('tipo_venda') or im['modalidade']} | próxima praça {im.get('proxima_praca') or '-'}")
+    for av in r["avisos"]:
         print("  aviso:", av)
 
 
@@ -106,7 +118,9 @@ def main(argv=None):
     s.add_parser("fontes").set_defaults(f=cmd_fontes)
     c = s.add_parser("coletar"); c.add_argument("--fonte", default="caixa")
     c.add_argument("--recorte", help="parte da fonte (ex.: UF)"); c.add_argument("--uf", help="o mesmo que --recorte")
-    c.add_argument("--arquivo"); c.set_defaults(f=cmd_coletar)
+    c.add_argument("--arquivo"); c.add_argument("--limite", type=int, help="no máximo N imóveis (para testar)")
+    c.set_defaults(f=cmd_coletar)
+    imp = s.add_parser("importar"); imp.add_argument("url"); imp.set_defaults(f=cmd_importar)
     l = s.add_parser("listar"); l.add_argument("--uf"); l.add_argument("--cidade"); l.add_argument("--tipo")
     l.add_argument("--categoria", help="casa, apartamento, terreno, comercial, rural, outros")
     l.add_argument("--desconto-min", type=float); l.add_argument("--preco-max", type=float)
@@ -126,7 +140,7 @@ def main(argv=None):
     with montagem.repositorio(a.base) as repo:
         try:
             return a.f(a, repo) or 0
-        except (ErroDeFonte, OSError) as erro:
+        except (ErroDeFonte, EntradaInvalida, OSError) as erro:
             print("Erro:", erro, file=sys.stderr); return 1
 
 

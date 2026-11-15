@@ -21,6 +21,8 @@ class Coleta:
                                   # deste recorte podem ser marcados como "saiu da lista".
     origem: str                   # de onde veio: URL, nome do arquivo...
     avisos: List[str] = field(default_factory=list)   # linhas com problema; nunca viram dado
+    completa: bool = True         # False = parte do recorte não foi lida (limite, página com erro).
+                                  # Coleta incompleta não marca ninguém como "saiu da lista".
 
 
 @runtime_checkable
@@ -36,19 +38,35 @@ class FonteDeImoveis(Protocol):
     def recortes(self) -> List[str]:
         """Partes em que a fonte se divide (ex.: UFs). Lista vazia = um recorte só, ''."""
 
-    def coletar(self, recorte: str, arquivo: Optional[bytes] = None, nome_arquivo: str = "") -> Coleta:
+    def coletar(self, recorte: str, arquivo: Optional[bytes] = None, nome_arquivo: str = "",
+                limite: Optional[int] = None) -> Coleta:
         """Busca os imóveis do recorte. Com `arquivo`, lê o conteúdo dado em vez de buscar
-        (ex.: lista baixada pelo navegador). Problemas de acesso ou formato: ErroDeFonte."""
+        (ex.: lista baixada pelo navegador). `limite` corta o número de imóveis (testes).
+        Problemas de acesso ou formato: ErroDeFonte."""
 
     def descrever_modalidade(self, modalidade: str) -> Optional[str]:
         """Explicação curta da modalidade de venda desta fonte, como hipótese, ou None."""
+
+
+@runtime_checkable
+class ImportadorDeLink(Protocol):
+    """Capacidade opcional de uma fonte: ler um imóvel a partir do link de uma oferta."""
+
+    def aceita_url(self, url: str) -> bool: ...
+    def importar_url(self, url: str) -> ImovelCaptado: ...
+
+
+class BaixadorWeb(Protocol):
+    """Acesso educado à web (robots.txt, intervalo entre pedidos). Falha: ErroDeFonte."""
+
+    def baixar(self, url: str, usar_cache: bool = True) -> bytes: ...
 
 
 class RepositorioDeImoveis(Protocol):
     """Guarda os imóveis captados e o histórico entre coletas."""
 
     def gravar_coleta(self, fonte: str, recorte: str, origem: str, imoveis: Iterable[ImovelCaptado],
-                      n_avisos: int = 0, agora: Optional[str] = None) -> dict:
+                      n_avisos: int = 0, agora: Optional[str] = None, marcar_saidos: bool = True) -> dict:
         """Compara com o que já existe e registra novos, alterados, saídos e voltas."""
 
     def gravar_avulso(self, imovel: ImovelCaptado, origem: str, agora: Optional[str] = None) -> int:

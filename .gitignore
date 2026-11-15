@@ -8,3 +8,4 @@ backups/
 *.antes_migracao_*
 anexos/
 .venv/
+cache_web/

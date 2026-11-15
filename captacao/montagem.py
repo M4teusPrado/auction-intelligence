@@ -3,13 +3,28 @@
 É o único módulo que conhece os adaptadores concretos. Para registrar uma fonte nova,
 acrescente-a em FONTES.
 """
+import os
+import sys
 from typing import Dict
 
 from .adaptadores.fontes.caixa import FonteCaixa
+from .adaptadores.fontes.megaleiloes import FonteMegaLeiloes
 from .adaptadores.persistencia.sqlite import RepositorioSQLite
+from .adaptadores.web import ClienteWeb
 from .aplicacao.portas import ErroDeFonte, FonteDeImoveis
 
-FONTES: Dict[str, FonteDeImoveis] = {f.nome: f for f in (FonteCaixa(),)}
+# Cópia local das páginas lidas (evita pedir de novo a mesma página no mesmo dia).
+CLIENTE_WEB = ClienteWeb(pasta_cache=os.environ.get("CAPTACAO_CACHE_WEB", "cache_web"))
+
+
+def _relatar(msg: str) -> None:
+    print(msg, file=sys.stderr, flush=True)
+
+
+FONTES: Dict[str, FonteDeImoveis] = {f.nome: f for f in (
+    FonteCaixa(),
+    FonteMegaLeiloes(CLIENTE_WEB, relatar=_relatar),
+)}
 
 
 def fonte(nome: str) -> FonteDeImoveis:
