@@ -60,7 +60,7 @@ class ImportadorDeLink(Protocol):
 class BaixadorWeb(Protocol):
     """Acesso educado à web (robots.txt, intervalo entre pedidos). Falha: ErroDeFonte."""
 
-    def baixar(self, url: str, usar_cache: bool = True) -> bytes: ...
+    def baixar(self, url: str, usar_cache: bool = True, sob_demanda: bool = False) -> bytes: ...
 
 
 class RepositorioDeImoveis(Protocol):

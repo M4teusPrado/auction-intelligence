@@ -23,7 +23,7 @@ class ClienteFalso:
     def __init__(self, paginas):
         self.paginas, self.pedidos = paginas, []
 
-    def baixar(self, url, usar_cache=True):
+    def baixar(self, url, usar_cache=True, sob_demanda=False):
         self.pedidos.append(url)
         for chave, conteudo in self.paginas.items():
             if url.split("?")[0] == chave or url == chave:

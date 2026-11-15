@@ -80,11 +80,14 @@ class ClienteWeb:
         return self._regras(url).can_fetch(self.agente, url)
 
     # ---------------------------------------------------------------- uso
-    def baixar(self, url: str, usar_cache: bool = True) -> bytes:
+    def baixar(self, url: str, usar_cache: bool = True, sob_demanda: bool = False) -> bytes:
+        """sob_demanda=True: um documento pedido por causa de uma decisão humana (imóvel em
+        'Para analisar'), não uma varredura. Por decisão do Mateus (15/11/2026), nesse caso o
+        robots.txt não impede o pedido; ritmo e identificação continuam valendo."""
         p = urlsplit(url)
         if p.scheme not in ("https", "http") or not p.netloc:
             raise ErroDeFonte(f"endereço inválido: {url}")
-        if not self.permitido(url):
+        if not sob_demanda and not self.permitido(url):
             raise ErroDeFonte(f"o robots.txt de {p.netloc} não permite acessar {p.path}")
         caminho = self._arquivo_cache(url)
         if usar_cache and caminho and os.path.isfile(caminho) and time.time() - os.path.getmtime(caminho) < self.validade_cache:

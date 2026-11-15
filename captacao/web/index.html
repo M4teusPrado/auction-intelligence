@@ -1218,34 +1218,38 @@ function sugestaoIA(d, it, salvar, nota) {
 }
 
 function botaoDocumentosFonte(d) {
-  const docs = (d.imovel.leilao || {}).documentos || [];
+  const docs = d.documentos_fonte || [];
   if (!docs.length) return null;
   const fonte = nomeFonte(d.imovel.fonte);
+  const anexados = new Set(d.anexos.map((a) => a.tipo));
+  const faltam = docs.filter((x) => !anexados.has(x.tipo));
+  const emAnalise = d.imovel.estagio === "analisar";
   const msg = el("p", { class: "dica docs-msg" });
   const links = el("div", { class: "docs-links" }, docs.map((x) =>
     el("a", { href: x.url, target: "_blank", rel: "noopener noreferrer", class: "btn", text: `Abrir ${x.rotulo || x.tipo} ↗` })));
-  const b = el("button", { type: "button", class: "btn btn-texto", text: "Tentar baixar automaticamente",
+  const b = el("button", { type: "button", class: "btn btn-texto", text: emAnalise ? "Baixar agora" : "Tentar baixar agora",
     onclick: async () => {
       b.disabled = true; b.textContent = "Baixando…"; msg.textContent = ""; msg.classList.remove("erro");
       try {
         const r = await api(`/api/imoveis/${d.imovel.id}/documentos-fonte`, POST_JSON({}));
-        const novos = r.baixados.filter((x) => !x.duplicado).length;
         if (r.baixados.length) {
-          await abrirFicha(d.imovel.id);            // redesenha com os anexos e os trechos encontrados
-          mostrarAviso(`${novos} documento(s) baixado(s) e lido(s)` + (r.erros.length ? `; ${r.erros.length} não` : ""), null);
+          await abrirFicha(d.imovel.id);
+          mostrarAviso(`${r.baixados.filter((x) => !x.duplicado).length} documento(s) baixado(s)` + (r.erros.length ? `; ${r.erros.length} não` : ""), null);
           return;
         }
         msg.classList.add("erro");
         msg.textContent = r.erros.every((e) => e.includes("robots.txt"))
-          ? `A ${fonte} não permite download automático desses arquivos. Abra pelos botões acima, salve e anexe no item.`
+          ? `A ${fonte} não permite download automático fora da análise. Marque o imóvel como "Para analisar" e o sistema baixa sozinho.`
           : `Não foi possível baixar: ${r.erros.join(" · ")}`;
       } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; }
-      b.disabled = false; b.textContent = "Tentar baixar automaticamente";
+      b.disabled = false; b.textContent = emAnalise ? "Baixar agora" : "Tentar baixar agora";
     } });
+  const situacao = !faltam.length ? "Todos os documentos publicados já estão anexados."
+    : emAnalise ? "O sistema baixa estes documentos sozinho porque o imóvel está em Para analisar. Recarregue em alguns segundos, ou baixe agora."
+                : "Ao marcar o imóvel como Para analisar, o sistema baixa estes documentos sozinho.";
   return el("div", { class: "docs-fonte" },
     el("b", { text: `Documentos publicados pela ${fonte}` }), links,
-    el("span", { class: "dica", text: "Abra, salve no computador e anexe no item (matrícula, edital). O sistema lê o PDF e mostra os trechos." }),
-    b, msg);
+    el("span", { class: "dica", text: situacao }), faltam.length ? b : null, msg);
 }
 
 function atualizarProgresso() {

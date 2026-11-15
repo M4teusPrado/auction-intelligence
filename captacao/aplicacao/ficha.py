@@ -83,6 +83,7 @@ def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes:
             "premissas_padrao": simulador.padrao_para(im),
             "premissas_da_fonte": ["comissao_leiloeiro_pct"] if (im.get("leilao") or {}).get("comissao_pct") is not None else [],
             "simulacao_salva": repo.ultima_simulacao(imovel_id),
+            "documentos_fonte": documentos_da_fonte(im, fontes),
             "parecer": repo.ultimo_parecer(imovel_id),
             "ia": {"disponivel": analisador is not None and analisador.disponivel() is None,
                    "motivo": "a análise com IA não está configurada" if analisador is None else analisador.disponivel(),
@@ -164,12 +165,26 @@ def salvar_simulacao(repo: RepositorioDeAnalise, imovel_id: int, corpo, agora: s
     return {"resultado": r, "quando": quando}
 
 
+def documentos_da_fonte(im: dict, fontes: dict = None) -> list:
+    """Documentos publicados pela fonte: os gravados na coleta (leilões) mais os que a fonte sabe
+    localizar pelo identificador do imóvel (ex.: matrícula da Caixa)."""
+    docs = list((im.get("leilao") or {}).get("documentos") or [])
+    f = (fontes or {}).get(im.get("fonte"))
+    if f is not None and hasattr(f, "documentos_conhecidos"):
+        urls = {d["url"] for d in docs}
+        docs += [d for d in f.documentos_conhecidos(im) if d["url"] not in urls]
+    return docs
+
+
 def baixar_documentos_fonte(repo: RepositorioDeAnalise, pasta: str, imovel_id: int, baixador: BaixadorWeb,
-                            agora: str = None) -> dict:
+                            agora: str = None, fontes: dict = None) -> dict:
     """Baixa edital, matrícula e laudo publicados pela fonte do anúncio e anexa à ficha
-    (a leitura de PDF roda em seguida). Só links gravados na coleta; nada digitado por pessoas."""
+    (a leitura de PDF roda em seguida). Só links gravados na coleta; nada digitado por pessoas.
+    Imóvel em 'Para analisar': download sob demanda (decisão do Mateus, 15/11/2026), um pedido
+    por documento, mesmo onde o robots.txt do servidor de arquivos não permite robôs."""
     im = _buscar_imovel(repo, imovel_id)
-    docs = (im.get("leilao") or {}).get("documentos") or []
+    sob_demanda = im.get("estagio") == "analisar"
+    docs = documentos_da_fonte(im, fontes)
     if not docs:
         raise EntradaInvalida("a fonte deste imóvel não publicou documentos para baixar")
     baixados, erros = [], []
@@ -177,13 +192,21 @@ def baixar_documentos_fonte(repo: RepositorioDeAnalise, pasta: str, imovel_id: i
         if d["tipo"] not in TIPOS_ANEXO or not d["url"].startswith("https://"):
             continue
         try:
-            dados = baixador.baixar(d["url"])
+            dados = baixador.baixar(d["url"], sob_demanda=sob_demanda)
             r = anexar(repo, pasta, imovel_id, d["tipo"], f"{d['rotulo'] or d['tipo']} ({im['fonte']}).pdf", dados, agora)
             baixados.append({"tipo": d["tipo"], "duplicado": r["duplicado"]})
         except (ErroDeFonte, EntradaInvalida) as e:
             erros.append(f"{d['rotulo'] or d['tipo']}: {e}")
-    return {"baixados": baixados, "erros": erros, "anexos": repo.anexos(imovel_id),
+    return {"baixados": baixados, "erros": erros, "sob_demanda": sob_demanda, "anexos": repo.anexos(imovel_id),
             "achados": _achados(repo, imovel_id)}
+
+
+def documentos_pendentes(repo: RepositorioDeAnalise, imovel_id: int, fontes: dict = None) -> bool:
+    """A fonte publicou documentos que ainda não estão anexados?"""
+    im = repo.buscar_imovel(imovel_id) or {}
+    docs = documentos_da_fonte(im, fontes)
+    tipos = {a["tipo"] for a in repo.anexos(imovel_id)}
+    return any(d["tipo"] not in tipos for d in docs if d["tipo"] in TIPOS_ANEXO)
 
 
 def transcrever_anexo(repo: RepositorioDeAnalise, pasta: str, transcritor, anexo_id: int) -> dict:

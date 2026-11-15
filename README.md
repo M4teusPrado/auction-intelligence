@@ -125,3 +125,11 @@ Regra de dependência: `dominio` não importa nada do projeto; `aplicacao` impor
 4. Antes de coletar de um site, confira os termos de uso. Uma coleta por dia por recorte.
 
 Coleta de qualquer fonte: `python -m captacao coletar --fonte <nome> --recorte <recorte>`.
+
+**Documentos automáticos ao marcar "Para analisar"** (decisão do Mateus, 15/11/2026): ao entrar
+em "Para analisar", a tela baixa sozinha, em segundo plano, os documentos publicados pela fonte
+(edital, matrícula, laudo) e anexa à ficha. É download sob demanda, um pedido por documento e
+só para imóveis escolhidos por uma pessoa: nesse caso o robots.txt do servidor de arquivos não
+impede o pedido (Mega, Soleon), mas o ritmo e a identificação continuam valendo. Na Caixa, a
+matrícula fica em endereço previsível pelo número do imóvel e costuma ser escaneada (use "Ler
+PDF escaneado com IA"). O edital da Caixa ainda não é localizado automaticamente.

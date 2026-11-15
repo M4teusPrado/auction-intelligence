@@ -20,7 +20,7 @@ class ClienteFalso:
     def __init__(self, paginas):
         self.paginas, self.pedidos = paginas, []
 
-    def baixar(self, url, usar_cache=True):
+    def baixar(self, url, usar_cache=True, sob_demanda=False):
         self.pedidos.append(url)
         if url in self.paginas:
             return self.paginas[url]

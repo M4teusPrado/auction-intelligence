@@ -154,6 +154,16 @@ class FonteCaixa:
         imoveis, avisos = interpretar(decodificar(dados))
         return Coleta(imoveis=imoveis[:limite] if limite else imoveis, recorte=uf, origem=origem, avisos=avisos)
 
+    def documentos_conhecidos(self, imovel: dict) -> List[dict]:
+        """Documentos que a Caixa publica em endereço previsível pelo número do imóvel.
+        A matrícula fica em /editais/matricula/<UF>/<número>.pdf (conferido em 15/11/2026: o
+        arquivo é entregue a um pedido simples; o site não tem robots.txt). Costuma ser escaneada."""
+        numero, uf = re.sub(r"\D", "", imovel.get("id_fonte") or ""), (imovel.get("uf") or "").upper()
+        if not numero or uf not in UFS:
+            return []
+        return [{"tipo": "matricula", "rotulo": "Matrícula (Caixa)",
+                 "url": f"https://venda-imoveis.caixa.gov.br/editais/matricula/{uf}/{numero}.pdf"}]
+
     def descrever_modalidade(self, modalidade: str) -> Optional[str]:
         """Hipótese a partir da modalidade da lista. Precisa ser confirmada no edital."""
         m = (modalidade or "").lower()

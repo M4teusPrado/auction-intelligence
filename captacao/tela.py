@@ -38,6 +38,21 @@ ROTA_TRANSCREVER = re.compile(r"^/api/anexos/(\d{1,12})/transcrever$")
 TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
 
 
+def baixar_em_segundo_plano(caminho_base: str, pasta_anexos: str, imovel_id: int) -> None:
+    """Imóvel marcado 'Para analisar': baixa os documentos da fonte sem travar a tela."""
+    def tarefa():
+        try:
+            with montagem.repositorio(caminho_base, migrar=False) as repo:
+                if ficha.documentos_pendentes(repo, imovel_id, montagem.FONTES):
+                    r = ficha.baixar_documentos_fonte(repo, pasta_anexos, imovel_id, montagem.CLIENTE_WEB,
+                                                      fontes=montagem.FONTES)
+                    sys.stderr.write(f"  documentos do imóvel {imovel_id}: {len(r['baixados'])} baixados, "
+                                     f"{len(r['erros'])} com erro\n")
+        except Exception as e:                        # erro aqui não pode derrubar o servidor
+            sys.stderr.write(f"  documentos do imóvel {imovel_id}: falhou ({e!r})\n")
+    threading.Thread(target=tarefa, daemon=True).start()
+
+
 def _criar_handler(caminho_base: str, porta: int):
     pasta_anexos = os.path.join(os.path.dirname(os.path.abspath(caminho_base)), "anexos")
     hosts_validos = {f"127.0.0.1:{porta}", f"localhost:{porta}"}
@@ -193,7 +208,14 @@ def _criar_handler(caminho_base: str, porta: int):
                 return self._executar(lambda repo: gerar_parecer(repo, montagem.ANALISADOR, int(m.group(1))))
             if m.group(2) == "documentos-fonte":
                 return self._executar(lambda repo: ficha.baixar_documentos_fonte(
-                    repo, pasta_anexos, int(m.group(1)), montagem.CLIENTE_WEB))
+                    repo, pasta_anexos, int(m.group(1)), montagem.CLIENTE_WEB, fontes=montagem.FONTES))
+            if m.group(2) == "triagem":
+                def triar_e_baixar(repo):
+                    im = triagem.triar(repo, int(m.group(1)), corpo)
+                    if im.get("estagio") == "analisar":
+                        baixar_em_segundo_plano(caminho_base, pasta_anexos, int(m.group(1)))
+                    return im
+                return self._executar(triar_e_baixar)
             acao = {"triagem": triagem.triar, "investigacao": ficha.investigar,
                     "simulacao": ficha.salvar_simulacao}[m.group(2)]
             self._executar(acao, int(m.group(1)), corpo)
