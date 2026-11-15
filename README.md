@@ -17,8 +17,12 @@ funciona, só a leitura de PDF fica desligada.
   Itaú...). Coleta diária liberada pelo Mateus em 15/11/2026, depois de conferir robots.txt
   e regulamento. O servidor de arquivos da Mega (cdn1) proíbe robôs no robots.txt: edital e
   matrícula são baixados pela pessoa no navegador e anexados na ficha.
+- **soleon**: 35 leiloeiros que usam a plataforma Soleon (achados pela lista da JUCESP).
+  Recorte = site do leiloeiro. Coleta diária liberada pelo Mateus em 15/11/2026 (robots.txt
+  permite; a plataforma não publica termos de uso). PDFs em servidor que proíbe robôs: links.
 
     python -m captacao fontes                                      # lista as fontes
+    python -m captacao coletar --fonte soleon --recorte todos      # os 35 sites, um por vez (~1 h)
     python -m captacao coletar --fonte megaleiloes --recorte SP    # coleta diária (20-40 min)
     python -m captacao importar <link de uma oferta>               # imóvel avulso
 
