@@ -265,6 +265,25 @@
   .anexo-lista a { color: var(--destaque-escuro); font-weight: 600; overflow-wrap: anywhere; }
   .anexo-lista .meta { color: var(--texto-3); font-size: 12.5px; }
 
+  .intro-ajuda { margin: -6px 0 14px; color: var(--texto-3); font-size: 13.5px; max-width: 90ch; }
+  .aviso-leitura { background: var(--alerta-fundo); color: var(--alerta); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; margin-bottom: 12px; }
+  .sugestao { background: #eef3fb; color: #22426e; border-radius: 6px; padding: 6px 10px; font-size: 13.5px; }
+  .sugestao .hip { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-right: 6px; background: #d5e2f5; border-radius: 4px; padding: 0 5px; }
+  .atalhos { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .atalhos a { color: var(--destaque-escuro); font-size: 13.5px; font-weight: 600; }
+  .procurar summary { cursor: pointer; font-size: 13.5px; color: var(--texto-2); font-weight: 600; }
+  .procurar ul { margin: 6px 0 0; padding-left: 18px; font-size: 13.5px; color: var(--texto-2); display: grid; gap: 2px; }
+  .achados:empty { display: none; }
+  .achados { background: #f5f7f4; border-radius: 8px; padding: 8px 10px; display: grid; gap: 6px; }
+  .ach-titulo { font-size: 13px; }
+  .achados ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .achados li { display: grid; gap: 2px; font-size: 13.5px; }
+  .ach-rot { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); }
+  .achados q { quotes: none; color: var(--texto-2); overflow-wrap: anywhere; }
+  .achados mark { background: #ffe08a; color: var(--texto); padding: 0 2px; border-radius: 2px; font-weight: 600; }
+  .ach-fonte { font-size: 12px; color: var(--destaque-escuro); }
+  .sem-achado { margin: 0; font-size: 12.5px; color: var(--texto-3); }
+
   /* passo 3: perguntas à esquerda, resultado à direita */
   .sim-grade { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 28px; align-items: start; }
   .perguntas { display: grid; gap: 18px; }
@@ -951,6 +970,63 @@ function linhaDoTempo(d) {
 
 /* passo 2: investigar */
 const TIPO_DO_ITEM = { matricula: "matricula", edital: "edital" };
+const PROCURAR = {
+  leilao: ["No edital: se é 1º ou 2º leilão, com data e hora", "Se é alienação fiduciária (Lei 9.514) ou leilão judicial", "Valor mínimo de cada leilão"],
+  edital: ["Quem paga IPTU, condomínio e outros débitos", "Formas de pagamento: à vista, financiamento, FGTS", "Prazo para pagar e para assinar a escritura",
+           "Comissão do leiloeiro", "Regras sobre desocupação"],
+  matricula: ["Se a última averbação mostra a propriedade consolidada em nome da Caixa", "Ônus ativos: penhora, indisponibilidade, hipoteca, usufruto",
+              "Se algum ônus foi cancelado depois (averbação de cancelamento)", "Se área e endereço batem com os da Caixa"],
+  ocupacao: ["O que o edital diz sobre ocupação", "Se há ação de imissão ou reintegração de posse", "Na vistoria: sinais de moradores, luz e água ligadas"],
+  iptu: ["Valor em aberto no site da prefeitura (pelo endereço ou número do contribuinte)", "Quem assume a dívida, segundo o edital"],
+  condominio: ["Perguntar à administradora: valor mensal e débitos em aberto", "Se existe ação de cobrança do condomínio", "Quem assume a dívida, segundo o edital"],
+  vistoria: ["Rua, acesso e vizinhança no mapa", "Estado aparente da fachada", "Comércio e serviços por perto"],
+};
+function atalhos(item, im) {
+  const enderecoMapa = [im.endereco, im.bairro, im.cidade, im.uf].filter(Boolean).join(", ");
+  const mapa = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoMapa)}`;
+  const caixa = /^https:\/\//.test(im.link || "") ? im.link : null;
+  const L = {
+    leilao: [caixa && ["Página do imóvel na Caixa", caixa]],
+    edital: [caixa && ["Baixar o edital na página da Caixa", caixa]],
+    matricula: [["Pedir matrícula online (ONR)", "https://registradores.onr.org.br/"]],
+    ocupacao: [["Ver o endereço no mapa", mapa]],
+    iptu: [["Procurar o site de IPTU da prefeitura", `https://www.google.com/search?q=${encodeURIComponent(`consulta débitos IPTU prefeitura ${im.cidade} ${im.uf || ""}`)}`]],
+    condominio: [],
+    vistoria: [["Abrir no Google Maps", mapa]],
+  }[item].filter(Boolean);
+  return L.length ? el("div", { class: "atalhos" }, L.map(([t, u]) => el("a", { href: u, target: "_blank", rel: "noopener noreferrer", text: t + " ↗" }))) : null;
+}
+function blocoAchados(item) {
+  const d = fichaEstado.dados, lista = (d.achados || {})[item] || [];
+  const alvo = el("div", { class: "achados", id: `ach-${item}` });
+  if (!lista.length) {
+    const temDoc = d.anexos.some((a) => a.leitura === "lido");
+    if (temDoc) alvo.append(el("p", { class: "sem-achado", text: "Nenhum trecho sobre este item nos documentos lidos. Isso não garante que não haja nada: leia o documento." }));
+    return alvo;
+  }
+  const mostrar = (todos) => {
+    const itens = (todos ? lista : lista.slice(0, 4)).map((a) => el("li", {},
+      el("span", { class: "ach-rot", text: a.rotulo }),
+      el("q", {}, a.antes ? "…" + a.antes : "", el("mark", { text: a.achado }), a.depois ? a.depois + "…" : ""),
+      el("a", { class: "ach-fonte", href: `/anexos/${a.anexo_id}#page=${a.pagina}`, target: "_blank", rel: "noopener", text: `${a.documento} · página ${a.pagina}` })));
+    const ul = el("ul", {}, itens);
+    const mais = !todos && lista.length > 4 ? el("button", { type: "button", class: "btn btn-texto", text: `Ver todos os ${lista.length} trechos`, onclick: () => mostrar(true) }) : null;
+    alvo.replaceChildren(...[el("b", { class: "ach-titulo", text: `Encontrado nos documentos (${lista.length})` }), ul, mais].filter(Boolean));
+  };
+  mostrar(false);
+  return alvo;
+}
+function atualizarAchados() {
+  for (const it of fichaEstado.dados.investigacao) { const velho = $(`ach-${it.item}`); if (velho) velho.replaceWith(blocoAchados(it.item)); }
+  const aviso = $("aviso-leitura"); if (aviso) aviso.replaceWith(avisoLeitura(fichaEstado.dados));
+}
+function avisoLeitura(d) {
+  const semTexto = d.anexos.filter((a) => a.leitura === "sem_texto" || a.leitura === "erro").map((a) => a.nome_original);
+  const partes = [];
+  if (!d.leitura_pdf) partes.push("A leitura automática de PDF está desligada neste computador. Os arquivos ficam guardados, mas o sistema não procura trechos neles.");
+  if (semTexto.length) partes.push(`Não foi possível ler o texto de: ${semTexto.join(", ")}. Provavelmente é imagem escaneada; leia o documento.`);
+  return partes.length ? el("div", { class: "aviso-leitura", id: "aviso-leitura" }, partes.join(" ")) : el("div", { id: "aviso-leitura", hidden: true });
+}
 const STATUS_BOTOES = [["ok", "OK"], ["atencao", "Atenção"], ["impeditivo", "Impeditivo"], ["nao_se_aplica", "Não se aplica"]];
 function painelInvestigar(d) {
   const progresso = el("div", { class: "progresso", id: "inv-progresso" });
@@ -960,7 +1036,8 @@ function painelInvestigar(d) {
   setTimeout(atualizarProgresso);
   return el("section", { class: "painel", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
     el("p", { class: "intro", text: "Confira cada ponto antes de decidir. Marque o que encontrou; matrícula e edital podem ser anexados no próprio item." }),
-    progresso, itens, outros, proximo("simular", "Próximo: simular →"));
+    el("p", { class: "intro-ajuda", text: "Ao anexar um PDF, o sistema procura trechos sobre cada item (penhora, ocupação, condomínio...) e mostra onde estão. São trechos para você ler, não conclusões: um ônus pode ter sido cancelado depois, e PDF escaneado não tem texto para ler." }),
+    avisoLeitura(d), progresso, itens, outros, proximo("simular", "Próximo: simular →"));
 }
 function atualizarProgresso() {
   const d = fichaEstado.dados, alvo = $("inv-progresso"); if (!alvo) return;
@@ -994,7 +1071,11 @@ function cartaoItem(d, it) {
     } catch (e) { salvo.textContent = "não salvo"; mostrarErro(e.message); }
   }
   nota.addEventListener("change", () => salvar(atual.status, nota.value.trim()));
-  card.append(el("div", { class: "cc-cab" }, el("b", { text: it.rotulo }), salvo), el("span", { class: "ajuda", text: it.ajuda }), botoes, nota);
+  card.append(el("div", { class: "cc-cab" }, el("b", { text: it.rotulo }), salvo), el("span", { class: "ajuda", text: it.ajuda }));
+  if (it.item === "leilao" && d.sugestao_leilao) card.append(el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao));
+  card.append(atalhos(it.item, d.imovel) || "",
+    el("details", { class: "procurar" }, el("summary", { text: "O que procurar" }), el("ul", {}, PROCURAR[it.item].map((t) => el("li", { text: t })))),
+    blocoAchados(it.item), botoes, nota);
   if (TIPO_DO_ITEM[it.item]) card.append(blocoAnexos(d, TIPO_DO_ITEM[it.item]));
   return card;
 }
@@ -1003,7 +1084,8 @@ function blocoAnexos(d, tipoFixo) {
   const meus = () => d.anexos.filter((a) => (tipoFixo ? a.tipo === tipoFixo : !Object.values(TIPO_DO_ITEM).includes(a.tipo)));
   const desenhar = () => lista.replaceChildren(...meus().map((a) => el("li", {},
     el("a", { href: `/anexos/${a.id}`, target: "_blank", rel: "noopener", text: a.nome_original }),
-    el("span", { class: "meta num", text: `${tipoFixo ? "" : (d.tipos_anexo[a.tipo] || a.tipo) + " · "}${tamanhoArquivo(a.tamanho)} · ${dataHoraBR(a.quando)}` }))));
+    el("span", { class: "meta num", text: `${tipoFixo ? "" : (d.tipos_anexo[a.tipo] || a.tipo) + " · "}${tamanhoArquivo(a.tamanho)} · ${dataHoraBR(a.quando)}` +
+      ({ lido: " · texto lido", sem_texto: " · sem texto (escaneado?)", erro: " · não deu para ler", desligada: " · leitura desligada" }[a.leitura] || "") }))));
   desenhar();
   const arquivo = el("input", { type: "file", class: "sr", accept: ".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg" });
   const tipoSel = tipoFixo ? null : el("select", { class: "campo campo-curto", "aria-label": "Tipo do arquivo" },
@@ -1020,7 +1102,7 @@ function blocoAnexos(d, tipoFixo) {
       const tipo = tipoFixo || tipoSel.value;
       const r = await api(`/api/imoveis/${d.imovel.id}/anexos?tipo=${encodeURIComponent(tipo)}`, {
         method: "POST", headers: { "Content-Type": mime, "X-Nome-Arquivo": encodeURIComponent(f.name) }, body: f });
-      d.anexos = r.anexos; desenhar();
+      d.anexos = r.anexos; if (r.achados) d.achados = r.achados; desenhar(); atualizarAchados();
       if (r.duplicado) mostrarErro("Esse arquivo já estava anexado a este imóvel.");
     } catch (e) { mostrarErro(`Não foi possível anexar: ${e.message}`); }
     finally { botao.disabled = false; botao.textContent = tipoFixo ? `Anexar ${d.tipos_anexo[tipoFixo].toLowerCase()}` : "Anexar arquivo"; arquivo.value = ""; }

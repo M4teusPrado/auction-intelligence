@@ -2,7 +2,13 @@
 
 Coleta imóveis de uma fonte, guarda numa base única (SQLite) e registra o que mudou entre uma coleta e outra.
 Primeira fonte: a lista pública de imóveis da Caixa, um arquivo CSV por estado.
-Só usa Python 3.9+ e a biblioteca padrão: não precisa instalar nada.
+Usa Python 3.9+ e a biblioteca padrão. A única dependência opcional é `pypdf`, que liga a
+leitura dos PDFs anexados (matrícula, edital). Para instalar, uma vez, na pasta do projeto:
+
+    python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.txt
+
+Depois use `.venv/bin/python` no lugar de `python3` nos comandos abaixo. Sem o pypdf tudo
+funciona, só a leitura de PDF fica desligada.
 
 ## Como usar
 
