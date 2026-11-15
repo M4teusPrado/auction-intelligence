@@ -53,6 +53,9 @@ def padrao_para(imovel: dict) -> Dict[str, Optional[float]]:
     p = {k: v[2] for k, v in PREMISSAS.items()}
     p["lance"] = imovel.get("preco")
     p["area_reforma"] = imovel.get("area_privativa") or imovel.get("area_total")
+    lei = imovel.get("leilao") or {}
+    if lei.get("comissao_pct") is not None:       # comissão informada pela fonte vale mais que o exemplo
+        p["comissao_leiloeiro_pct"] = lei["comissao_pct"]
     return p
 
 

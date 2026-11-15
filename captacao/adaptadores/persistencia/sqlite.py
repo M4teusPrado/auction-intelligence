@@ -56,6 +56,20 @@ CREATE TABLE IF NOT EXISTS simulacoes (          -- simulações salvas; a mais 
   premissas TEXT NOT NULL, resultado TEXT NOT NULL, quando TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_simulacoes_imovel ON simulacoes (imovel_id);
+CREATE TABLE IF NOT EXISTS leiloes (             -- dados de leilão do anúncio, como vieram da fonte
+  imovel_id INTEGER PRIMARY KEY REFERENCES imoveis(id),
+  tipo_venda TEXT, leilao TEXT, lote TEXT, comitente TEXT, leiloeiro TEXT, ocupacao TEXT,
+  matricula TEXT, cartorio TEXT, processo TEXT, vara TEXT, comissao_pct REAL, incremento REAL
+);
+CREATE TABLE IF NOT EXISTS pracas (
+  imovel_id INTEGER NOT NULL REFERENCES imoveis(id), numero INTEGER NOT NULL,
+  data TEXT, valor REAL, PRIMARY KEY (imovel_id, numero)
+);
+CREATE INDEX IF NOT EXISTS ix_pracas_data ON pracas (data);
+CREATE TABLE IF NOT EXISTS documentos_fonte (    -- links de edital/matrícula publicados pela fonte
+  imovel_id INTEGER NOT NULL REFERENCES imoveis(id), tipo TEXT NOT NULL, url TEXT NOT NULL, rotulo TEXT,
+  PRIMARY KEY (imovel_id, url)
+);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
@@ -79,7 +93,8 @@ COLUNAS_NOVAS = [
 
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
-TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas")
+TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas", "leiloes", "pracas",
+                 "documentos_fonte")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
@@ -113,8 +128,28 @@ def _copiar_se_for_migrar(con, caminho: str) -> None:
     copia.close()
 
 
+_CAMPOS_LEILAO = ("tipo_venda", "leilao", "lote", "comitente", "leiloeiro", "ocupacao", "matricula", "cartorio",
+                  "processo", "vara", "comissao_pct", "incremento")
+
+
+def _gravar_leilao(con, imovel_id: int, lei) -> None:
+    """Substitui os dados de leilão do anúncio pelos da coleta (são da fonte, não de pessoas)."""
+    if lei is None:
+        return
+    con.execute(f"INSERT OR REPLACE INTO leiloes (imovel_id, {', '.join(_CAMPOS_LEILAO)}) "
+                f"VALUES ({', '.join('?' * (len(_CAMPOS_LEILAO) + 1))})",
+                [imovel_id] + [getattr(lei, c) for c in _CAMPOS_LEILAO])
+    con.execute("DELETE FROM pracas WHERE imovel_id=?", (imovel_id,))
+    con.executemany("INSERT INTO pracas (imovel_id, numero, data, valor) VALUES (?,?,?,?)",
+                    [(imovel_id, p.numero, p.data, p.valor) for p in lei.pracas])
+    con.execute("DELETE FROM documentos_fonte WHERE imovel_id=?", (imovel_id,))
+    con.executemany("INSERT OR IGNORE INTO documentos_fonte (imovel_id, tipo, url, rotulo) VALUES (?,?,?,?)",
+                    [(imovel_id, doc.tipo, doc.url, doc.rotulo) for doc in lei.documentos])
+
+
 def _gravar_coleta(con, fonte: str, recorte: str, origem: str,
-                   imoveis: Iterable[ImovelCaptado], n_avisos: int = 0, agora: Optional[str] = None) -> dict:
+                   imoveis: Iterable[ImovelCaptado], n_avisos: int = 0, agora: Optional[str] = None,
+                   marcar_saidos: bool = True) -> dict:
     """Compara a coleta com a base. `recorte` (ex.: 'SP') limita quem pode ser marcado
     como 'saiu_da_lista': só imóveis da mesma fonte e do mesmo recorte."""
     agora = agora or datetime.now().isoformat(timespec="seconds")
@@ -145,6 +180,7 @@ def _gravar_coleta(con, fonte: str, recorte: str, origem: str,
             cur = con.execute(f"INSERT INTO imoveis ({','.join(cols)}) "
                               f"VALUES ({','.join('?' * len(cols))})", vals)
             hist(cur.lastrowid, "novo")
+            _gravar_leilao(con, cur.lastrowid, im.leilao)
             novos += 1
             continue
         mudou = False
@@ -159,9 +195,10 @@ def _gravar_coleta(con, fonte: str, recorte: str, origem: str,
         sets = ",".join(f"{c}=?" for c in CAMPOS)
         con.execute(f"UPDATE imoveis SET {sets}, recorte=?, chave_endereco=?, situacao='ativo', ultima_vez=? "
                     "WHERE id=?", [d[c] for c in CAMPOS] + [recorte, ch, agora, atual["id"]])
+        _gravar_leilao(con, atual["id"], im.leilao)
 
     saidos = 0
-    if imoveis:   # coleta vazia não derruba a base inteira: provável falha da fonte
+    if imoveis and marcar_saidos:   # coleta vazia não derruba a base inteira: provável falha da fonte
         for r in con.execute("SELECT id, id_fonte FROM imoveis WHERE fonte=? AND recorte=? "
                              "AND situacao='ativo'", (fonte, recorte)).fetchall():
             if r["id_fonte"] not in vistos:
@@ -214,6 +251,12 @@ class RepositorioSQLite:
         podem ser marcados como 'saiu_da_lista'."""
         return _gravar_coleta(self.con, fonte, recorte, origem, imoveis, n_avisos, agora)
 
+    def gravar_avulso(self, imovel: ImovelCaptado, origem: str, agora: Optional[str] = None) -> int:
+        """Grava um imóvel importado por link, sem marcar os outros como 'saiu da lista'."""
+        _gravar_coleta(self.con, imovel.fonte, imovel.uf, origem, [imovel], 0, agora, marcar_saidos=False)
+        return self.con.execute("SELECT id FROM imoveis WHERE fonte=? AND id_fonte=?",
+                                (imovel.fonte, imovel.id_fonte)).fetchone()[0]
+
     def possiveis_duplicados(self) -> List[list]:
         return _possiveis_duplicados(self.con)
 
@@ -223,13 +266,20 @@ class RepositorioSQLite:
       id, fonte, id_fonte, recorte, uf, cidade, bairro, endereco, preco, valor_avaliacao, desconto_pct,
       modalidade, tipo, categoria, area_privativa, area_terreno, area_total, link, data_fonte,
       alertas, situacao, estagio, primeira_vez, ultima_vez,
-      (SELECT nota FROM triagens t WHERE t.imovel_id = imoveis.id ORDER BY t.id DESC LIMIT 1) AS nota
+      (SELECT nota FROM triagens t WHERE t.imovel_id = imoveis.id ORDER BY t.id DESC LIMIT 1) AS nota,
+      (SELECT tipo_venda FROM leiloes l WHERE l.imovel_id = imoveis.id) AS tipo_venda,
+      (SELECT ocupacao FROM leiloes l WHERE l.imovel_id = imoveis.id) AS ocupacao,
+      (SELECT comitente FROM leiloes l WHERE l.imovel_id = imoveis.id) AS comitente,
+      (SELECT MIN(data) FROM pracas p WHERE p.imovel_id = imoveis.id AND p.data >= strftime('%Y-%m-%dT%H:%M', 'now', 'localtime')) AS proxima_praca,
+      (SELECT valor FROM pracas p WHERE p.imovel_id = imoveis.id AND p.data >= strftime('%Y-%m-%dT%H:%M', 'now', 'localtime') ORDER BY p.data LIMIT 1)
+        AS proxima_praca_valor
     """
     _ORDENS = {   # nulos sempre no fim; id desempata para a paginação ser estável
         "desconto": "desconto_pct IS NULL, desconto_pct DESC, id",
         "preco": "preco IS NULL, preco ASC, id",
         "area_terreno": "area_terreno IS NULL, area_terreno DESC, id",
         "recente": "primeira_vez DESC, id DESC",
+        "leilao": "proxima_praca IS NULL, proxima_praca ASC, id",
     }
 
     @staticmethod
@@ -246,6 +296,8 @@ class RepositorioSQLite:
             where.append(f"{coluna} IN ({','.join('?' * len(valores))})"); args.extend(valores)
         if f.estagio:
             where.append("estagio = ?"); args.append(f.estagio)
+        if f.fontes:
+            em("fonte", f.fontes)
         if f.uf:
             where.append("uf = ?"); args.append(f.uf)
         if f.modalidades:
@@ -271,7 +323,17 @@ class RepositorioSQLite:
 
     def buscar_imovel(self, imovel_id: int) -> Optional[dict]:
         r = self.con.execute(f"SELECT {self._COLUNAS_IMOVEL} FROM imoveis WHERE id=?", (imovel_id,)).fetchone()
-        return self._imovel(r) if r else None
+        if not r:
+            return None
+        im = self._imovel(r)
+        lei = self.con.execute("SELECT * FROM leiloes WHERE imovel_id=?", (imovel_id,)).fetchone()
+        im["leilao"] = None if not lei else {
+            **{k: lei[k] for k in lei.keys() if k != "imovel_id"},
+            "pracas": [dict(p) for p in self.con.execute(
+                "SELECT numero, data, valor FROM pracas WHERE imovel_id=? ORDER BY numero", (imovel_id,))],
+            "documentos": [dict(d) for d in self.con.execute(
+                "SELECT tipo, url, rotulo FROM documentos_fonte WHERE imovel_id=? ORDER BY tipo", (imovel_id,))]}
+        return im
 
     def contar_por_estagio(self) -> dict:
         return dict(self.con.execute("SELECT estagio, COUNT(*) FROM imoveis WHERE situacao='ativo' GROUP BY estagio"))
@@ -300,8 +362,8 @@ class RepositorioSQLite:
             return [{"valor": v, "n": n} for v, n in self.con.execute(
                 f"SELECT {coluna}, COUNT(*) FROM imoveis WHERE situacao='ativo' AND {coluna} IS NOT NULL "
                 f"AND {coluna} <> '' GROUP BY {coluna} ORDER BY {ordem}")]
-        return {"modalidades": contar("modalidade", "2 DESC, 1"), "categorias": contar("categoria", "2 DESC, 1"),
-                "cidades": contar("cidade", "1")}
+        return {"fontes": contar("fonte", "2 DESC, 1"), "modalidades": contar("modalidade", "2 DESC, 1"),
+                "categorias": contar("categoria", "2 DESC, 1"), "cidades": contar("cidade", "1")}
 
     def historico(self, imovel_id: int) -> List[dict]:
         return [dict(r) for r in self.con.execute(

@@ -51,6 +51,9 @@ class RepositorioDeImoveis(Protocol):
                       n_avisos: int = 0, agora: Optional[str] = None) -> dict:
         """Compara com o que já existe e registra novos, alterados, saídos e voltas."""
 
+    def gravar_avulso(self, imovel: ImovelCaptado, origem: str, agora: Optional[str] = None) -> int:
+        """Grava um imóvel importado por link (sem marcar outros como saídos). Devolve o id."""
+
 
 # ---------------------------------------------------------------------- análise
 
@@ -66,6 +69,7 @@ class NaoEncontrado(LookupError):
 class FiltroImoveis:
     """Filtro já validado para listar imóveis ativos."""
     estagio: Optional[str] = None
+    fontes: List[str] = field(default_factory=list)
     uf: Optional[str] = None
     modalidades: List[str] = field(default_factory=list)
     categorias: List[str] = field(default_factory=list)

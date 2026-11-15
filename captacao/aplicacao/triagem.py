@@ -15,9 +15,9 @@ from .portas import EntradaInvalida, FiltroImoveis, NaoEncontrado, RepositorioDe
 
 POR_PAGINA = 50
 CATEGORIAS_VALIDAS = sorted(set(CATEGORIAS.values()) | {"outros"})
-PARAMS_LISTA = {"estagio", "modalidade", "categoria", "cidade", "preco_min", "preco_max",
+PARAMS_LISTA = {"estagio", "fonte", "modalidade", "categoria", "cidade", "preco_min", "preco_max",
                 "desconto_min", "area_terreno_min", "sem_alertas", "ordem", "pagina"}
-MULTIPLOS = {"modalidade", "categoria"}
+MULTIPLOS = {"fonte", "modalidade", "categoria"}
 NOTA_MAX = 1000
 
 __all__ = ["listar", "resumo", "opcoes", "triar", "EntradaInvalida", "NaoEncontrado"]
@@ -72,6 +72,7 @@ def filtro_da_tela(params: Dict[str, List[str]]) -> FiltroImoveis:
     f.estagio = _um(params, "estagio")
     if f.estagio is not None and f.estagio not in ESTAGIOS:
         raise EntradaInvalida("estágio inválido: use " + ", ".join(ESTAGIOS))
+    f.fontes = [_texto(x.strip(), "fonte", 40) for x in params.get("fonte", []) if x.strip()]
     f.modalidades = [_texto(m.strip(), "modalidade", 120) for m in params.get("modalidade", []) if m.strip()]
     if len(f.modalidades) > 30:
         raise EntradaInvalida("modalidades demais")

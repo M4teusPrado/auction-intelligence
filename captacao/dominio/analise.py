@@ -3,7 +3,7 @@ situações possíveis e tipos de anexo. Regras fixas, sem banco nem tela."""
 
 ESTAGIOS = ("identificado", "analisar", "depois", "descartado")
 
-ORDENACOES = ("desconto", "preco", "area_terreno", "recente")
+ORDENACOES = ("desconto", "preco", "area_terreno", "recente", "leilao")
 
 ITENS_INVESTIGACAO = [  # (chave, rótulo, o que conferir)
     ("leilao", "Tipo de leilão", "Extrajudicial ou judicial, praça, data e regras de pagamento."),
