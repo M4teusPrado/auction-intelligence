@@ -220,34 +220,80 @@
   .linha-tempo li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; }
   .linha-tempo time { color: var(--texto-3); font-size: 13px; }
 
-  .aviso-premissas { background: var(--alerta-fundo); color: var(--alerta); border: 1px solid #f0d3a3; border-radius: 6px;
-                     padding: 8px 12px; font-size: 13.5px; margin-bottom: 12px; }
-  .grupo-premissas { border-top: 1px solid var(--borda); padding-top: 10px; margin-top: 10px; }
-  .grupo-premissas h4 { margin: 0 0 6px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); }
-  .premissa { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 2px 12px; padding: 5px 0; align-items: center; }
-  .premissa label { font-size: 14px; }
-  .premissa .exemplo { font-size: 11.5px; font-weight: 650; color: var(--alerta); background: var(--alerta-fundo);
-                       border-radius: 4px; padding: 0 5px; margin-left: 6px; white-space: nowrap; }
-  .premissa .explica { grid-column: 1 / -1; color: var(--texto-3); font-size: 12px; }
+  /* simulador em sequência */
+  .sim-trilha { display: grid; gap: 0; position: relative; }
+  .sim-etapa { position: relative; padding-left: 46px; }
+  .sim-etapa::before { content: ""; position: absolute; left: 15px; top: 34px; bottom: -2px; width: 2px; background: var(--borda); }
+  .sim-etapa.final::before { display: none; }
+  .passo { position: absolute; left: 0; top: 8px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
+           background: var(--destaque); color: #fff; font-weight: 700; font-size: 15px; z-index: 1; }
+  .sim-etapa summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto 18px; gap: 4px 12px;
+                       align-items: center; padding: 8px 0 12px; border-radius: 6px; }
+  .sim-etapa summary::-webkit-details-marker { display: none; }
+  .sim-etapa summary:hover .titulo-etapa { color: var(--destaque-escuro); }
+  .sim-etapa .cab { display: grid; gap: 2px; min-width: 0; }
+  .titulo-etapa { font-weight: 650; font-size: 15.5px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+  .qtd-exemplos { font-size: 11.5px; font-weight: 650; color: var(--alerta); background: var(--alerta-fundo); border-radius: 4px; padding: 0 6px; }
+  .qtd-exemplos:empty { display: none; }
+  .conta { font-size: 13px; color: var(--texto-3); }
+  .conta b { color: var(--texto-2); font-weight: 600; }
+  .subtotal { display: grid; justify-items: end; line-height: 1.2; }
+  .subtotal small { font-size: 11.5px; color: var(--texto-3); text-transform: uppercase; letter-spacing: .04em; }
+  .subtotal b { font-size: 17px; }
+  .abrir::before { content: "▾"; color: var(--texto-3); display: inline-block; transition: transform .15s; }
+  .sim-etapa[open] .abrir::before { transform: rotate(180deg); }
+  .sim-etapa.pendente .passo { background: var(--alerta); }
+  .sim-etapa.pendente .subtotal b, .sim-etapa.pendente .conta { color: var(--alerta); }
+  .sim-campos { display: grid; gap: 2px; padding: 0 0 14px; }
+  .sim-soma { margin: 0 0 4px 46px; padding: 8px 12px; border-radius: 6px; background: #f0f2ef; display: flex; justify-content: space-between;
+              font-weight: 650; font-size: 14.5px; position: relative; }
+  .sim-soma::before { content: ""; position: absolute; left: -31px; top: -2px; bottom: -6px; width: 2px; background: var(--borda); }
+  .premissa { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 2px 12px; padding: 4px 0; align-items: center; }
+  .premissa .rot { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 14px; }
+  .premissa .exemplo { font-size: 11px; font-weight: 650; color: var(--alerta); background: var(--alerta-fundo); border-radius: 4px; padding: 0 5px; }
+  .premissa .explica { grid-column: 1 / -1; color: var(--texto-2); font-size: 12.5px; background: #f6f7f5; border-radius: 6px; padding: 6px 10px; }
+  .ajuda-btn { appearance: none; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--borda-forte); background: var(--superficie);
+               color: var(--texto-3); font-size: 12px; font-weight: 700; cursor: pointer; padding: 0; line-height: 1; }
+  .ajuda-btn[aria-expanded="true"] { background: var(--destaque); border-color: var(--destaque); color: #fff; }
   .entrada-unidade { display: flex; align-items: center; border: 1px solid var(--borda-forte); border-radius: 6px; background: var(--superficie); }
   .entrada-unidade:focus-within { outline: 3px solid var(--foco); outline-offset: 1px; }
-  .entrada-unidade input { border: 0; background: none; width: 100%; padding: 7px 8px; text-align: right; min-width: 0; }
+  .entrada-unidade input { border: 0; background: none; width: 100%; padding: 6px 8px; text-align: right; min-width: 0; }
   .entrada-unidade input:focus-visible { outline: none; }
-  .entrada-unidade span { color: var(--texto-3); font-size: 12.5px; padding-right: 8px; white-space: nowrap; }
+  .entrada-unidade span { color: var(--texto-3); font-size: 12px; padding-right: 8px; white-space: nowrap; }
   .entrada-unidade.invalida { border-color: var(--erro); background: var(--erro-fundo); }
-  .resultado { margin-top: 14px; border-top: 2px solid var(--texto); padding-top: 10px; }
-  .resultado table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .resultado td { padding: 3px 0; }
-  .resultado td:last-child { text-align: right; }
-  .resultado tr.total td { font-weight: 700; border-top: 1px solid var(--borda-forte); padding-top: 6px; }
-  .resultado tr.destaque td { font-size: 17px; font-weight: 700; }
-  .resultado .negativo { color: var(--erro); }
-  .resultado .vazio-sim { color: var(--texto-2); background: #f0f2ef; border-radius: 6px; padding: 10px 12px; font-size: 14px; margin-top: 8px; }
-  .lance-max { margin-top: 10px; background: var(--destaque-claro); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
-  .lance-max b { font-size: 17px; }
-  .avisos-sim { margin: 10px 0 0; padding-left: 18px; color: var(--alerta); font-size: 13.5px; }
-  .erro-sim { color: var(--erro); font-size: 13.5px; margin-top: 8px; }
-  .acoes-sim { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+  .final-cab { display: flex; align-items: center; min-height: 48px; }
+  .final-cab h4 { margin: 0; font-size: 15.5px; }
+  .final .passo { background: var(--texto); }
+  .frase { margin: 0 0 10px; font-size: 14.5px; color: var(--texto-2); }
+  .grandes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .grandes > div { background: #f6f7f5; border-radius: 8px; padding: 8px 10px; display: grid; }
+  .grandes small { font-size: 11.5px; color: var(--texto-3); text-transform: uppercase; letter-spacing: .04em; }
+  .grandes b { font-size: 20px; letter-spacing: -.01em; }
+  .positivo { color: #1f7a4d; } .negativo { color: var(--erro); }
+  .venda-visual { margin-top: 12px; display: grid; gap: 6px; }
+  .venda-visual > small { font-size: 12.5px; color: var(--texto-3); }
+  .barra-venda { position: relative; display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: #eceeea; }
+  .barra-venda span { display: block; height: 100%; min-width: 2px; }
+  .barra-venda .investimento, .legenda i.investimento { background: #8b9690; }
+  .barra-venda .corretagem, .legenda i.corretagem { background: #c9b48a; }
+  .barra-venda .imposto, .legenda i.imposto { background: #e0a050; }
+  .barra-venda .lucro, .legenda i.lucro { background: #2f8a5b; }
+  .marca-venda { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--erro); }
+  .legenda { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--texto-2); }
+  .legenda li { display: flex; align-items: center; gap: 5px; }
+  .legenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .legenda i.marca { width: 3px; height: 12px; background: var(--erro); border-radius: 0; }
+  .sim-meta { margin-top: 14px; border-top: 1px dashed var(--borda-forte); padding-top: 10px; }
+  .lance-max { margin-top: 6px; background: var(--destaque-claro); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; }
+  .lance-max small { font-size: 12px; color: var(--destaque-escuro); font-weight: 600; }
+  .lance-max b { font-size: 22px; color: var(--destaque-escuro); }
+  .lance-max span { font-size: 13px; color: var(--texto-2); }
+  .dica-meta { font-size: 13px; color: var(--texto-3); margin-top: 4px; }
+  .dica-meta:empty { display: none; }
+  .vazio-sim { color: var(--texto-2); background: #f6f7f5; border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+  .avisos-sim { margin: 8px 0 0; color: var(--alerta); font-size: 13.5px; }
+  .erro-sim { color: var(--erro); font-size: 13.5px; }
+  .acoes-sim { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
   .acoes-sim .estado-salvo { color: var(--texto-3); font-size: 13px; }
 
   @media (max-width: 980px) {
@@ -256,7 +302,11 @@
   @media (max-width: 560px) {
     .ficha { padding: 12px 16px 32px; }
     .check .campos, .anexo-form { grid-template-columns: minmax(0, 1fr); }
-    .premissa { grid-template-columns: minmax(0, 1fr) 130px; }
+    .premissa { grid-template-columns: minmax(0, 1fr) 120px; }
+    .grandes b { font-size: 17px; }
+    .sim-etapa summary { grid-template-columns: minmax(0, 1fr) 14px; }
+    .sim-etapa summary .subtotal { grid-column: 1; grid-row: 2; justify-items: start; }
+    .sim-etapa summary .abrir { grid-row: 1; grid-column: 2; }
     .linha-tempo li { grid-template-columns: minmax(0, 1fr); gap: 0; }
   }
   /* passo a passo guiado */
@@ -887,8 +937,13 @@ function secaoHistorico(d) {
     eventos.map((e) => el("li", {}, el("time", { datetime: e.quando, text: dataHoraBR(e.quando) }), el("span", { text: e.texto })))));
 }
 
-/* simulador: a conta é feita no servidor (regra única, testada) */
-const GRUPOS = { compra: "Compra", custos: "Custos até vender", venda: "Venda e retorno" };
+/* simulador em sequência: Compra -> Até vender -> Venda -> Resultado.
+   A conta é feita no servidor (regra única, testada); a tela só organiza e desenha. */
+const ETAPAS_SIM = [
+  { id: "compra", titulo: "Compra", chaves: ["lance", "comissao_leiloeiro_pct", "itbi_pct", "registro_pct"] },
+  { id: "ate_vender", titulo: "Até vender", chaves: ["debitos", "desocupacao", "reforma_m2", "area_reforma", "custo_mensal", "prazo_meses"] },
+  { id: "venda", titulo: "Venda", chaves: ["valor_venda", "corretagem_pct", "ir_pct"] },
+];
 function numeroBR(txt) {
   const s = txt.trim().replace(/\s/g, "");
   if (!s) return null;
@@ -897,39 +952,58 @@ function numeroBR(txt) {
   return Number.isFinite(v) ? v : NaN;
 }
 function textoNumero(v) { return v == null ? "" : String(Math.round(v * 100) / 100).replace(".", ","); }
+const rs = (v) => brl.format(v || 0);
+
+function campoPremissa(d, p, inicial, campos) {
+  const id = `pr-${p.chave}`, idAjuda = `aj-${p.chave}`;
+  const input = el("input", { id, inputmode: "decimal", autocomplete: "off", class: "num" });
+  input.value = textoNumero(inicial[p.chave]);
+  const caixa = el("div", { class: "entrada-unidade" }, input, el("span", { text: p.unidade }));
+  const etiqueta = el("span", { class: "exemplo", text: "exemplo" });
+  let explicacao = p.explicacao;
+  if (p.chave === "valor_venda" && d.imovel.valor_avaliacao) explicacao += ` Avaliação da Caixa: ${brl.format(d.imovel.valor_avaliacao)} (não é valor de mercado).`;
+  const ajuda = el("div", { class: "explica", id: idAjuda, hidden: true, text: explicacao });
+  const botaoAjuda = el("button", { type: "button", class: "ajuda-btn", "aria-expanded": "false", "aria-controls": idAjuda,
+    "aria-label": `O que é: ${p.rotulo}`, text: "?",
+    onclick: (ev) => { ajuda.hidden = !ajuda.hidden; ev.currentTarget.setAttribute("aria-expanded", String(!ajuda.hidden)); } });
+  campos[p.chave] = { input, caixa, etiqueta, padrao: d.premissas_padrao[p.chave], temPadrao: p.padrao != null };
+  input.addEventListener("input", () => {
+    marcarExemplos();
+    if (Number.isNaN(numeroBR(input.value))) simularAgora(); else agendarSimulacao();   // erro aparece na hora
+  });
+  return el("div", { class: "premissa" }, el("div", { class: "rot" }, el("label", { for: id, text: p.rotulo }), botaoAjuda, etiqueta), caixa, ajuda);
+}
 
 function secaoSimulador(d) {
   const inicial = { ...d.premissas_padrao, ...(d.simulacao_salva ? d.simulacao_salva.premissas : {}) };
   fichaEstado.salvas = d.simulacao_salva ? JSON.stringify(d.simulacao_salva.premissas) : null;
-  const campos = {};
-  const grupos = Object.entries(GRUPOS).map(([g, titulo]) => el("div", { class: "grupo-premissas" }, el("h4", { text: titulo }),
-    d.premissas.filter((p) => p.grupo === g).map((p) => {
-      const id = `pr-${p.chave}`;
-      const input = el("input", { id, inputmode: "decimal", autocomplete: "off", class: "num" });
-      input.value = textoNumero(inicial[p.chave]);
-      const caixa = el("div", { class: "entrada-unidade" }, input, el("span", { text: p.unidade }));
-      const etiqueta = el("span", { class: "exemplo", text: "exemplo" });
-      const label = el("label", { for: id }, p.rotulo, etiqueta);
-      campos[p.chave] = { input, caixa, etiqueta, padrao: d.premissas_padrao[p.chave], temPadrao: p.padrao != null };
-      input.addEventListener("input", () => {
-        marcarExemplos();
-        if (Number.isNaN(numeroBR(input.value))) simularAgora(); else agendarSimulacao();   // erro aparece na hora
-      });
-      let explicacao = p.explicacao;
-      if (p.chave === "valor_venda" && d.imovel.valor_avaliacao) explicacao += ` Avaliação da Caixa: ${brl.format(d.imovel.valor_avaliacao)}.`;
-      return el("div", { class: "premissa" }, label, caixa, el("div", { class: "explica", text: explicacao }));
-    })));
+  const campos = {}, porChave = Object.fromEntries(d.premissas.map((p) => [p.chave, p]));
+  const etapas = ETAPAS_SIM.map((e, i) => {
+    const det = el("details", { class: "sim-etapa", id: `etapa-${e.id}`, open: e.id === "venda" && inicial.valor_venda == null },
+      el("summary", {},
+        el("span", { class: "passo num", text: String(i + 1) }),
+        el("span", { class: "cab" },
+          el("span", { class: "titulo-etapa" }, e.titulo, el("span", { class: "qtd-exemplos", id: `ex-${e.id}` })),
+          el("span", { class: "conta num", id: `conta-${e.id}` })),
+        el("span", { class: "subtotal num" }, el("small", { id: `rot-${e.id}` }), el("b", { id: `tot-${e.id}`, text: "–" })),
+        el("span", { class: "abrir", "aria-hidden": "true" })),
+      el("div", { class: "sim-campos" }, e.chaves.map((k) => campoPremissa(d, porChave[k], inicial, campos))));
+    return e.id === "ate_vender" ? [det, el("div", { class: "sim-soma num", id: "sim-investimento" })] : det;
+  }).flat();
+  const meta = campoPremissa(d, porChave.meta_roi_pct, inicial, campos);
   fichaEstado.campos = campos;
-  const resultado = el("div", { class: "resultado", id: "sim-resultado", "aria-live": "polite" });
-  const estadoSalvo = el("span", { class: "estado-salvo", id: "sim-estado" });
+  const resultado = el("section", { class: "sim-etapa final", "aria-labelledby": "titulo-resultado" },
+    el("div", { class: "final-cab" }, el("span", { class: "passo num", text: "4" }), el("h4", { id: "titulo-resultado", text: "Resultado" })),
+    el("div", { id: "sim-resultado", "aria-live": "polite" }),
+    el("div", { class: "sim-meta" }, meta, el("div", { id: "sim-lance-max", "aria-live": "polite" })));
   const salvar = el("button", { type: "button", class: "btn btn-primario", text: "Salvar simulação", onclick: salvarSimulacao });
   const restaurar = el("button", { type: "button", class: "btn", text: "Restaurar exemplos", onclick: () => {
     for (const [k, c] of Object.entries(campos)) c.input.value = textoNumero(d.premissas_padrao[k]);
     marcarExemplos(); simularAgora(); } });
   setTimeout(marcarExemplos);
-  return secao("Simulador de custos e retorno", null,
-    el("div", { class: "aviso-premissas", text: "Conta fixa com premissas de exemplo, a confirmar com o Ruan. Os campos marcados “exemplo” ainda não foram ajustados. Não é recomendação de compra." }),
-    ...grupos, resultado, el("div", { class: "acoes-sim" }, salvar, restaurar, estadoSalvo));
+  return secao("Simulador de custos e retorno", "Premissas de exemplo, a confirmar com o Ruan. Conta fixa, não é recomendação de compra.",
+    el("div", { class: "sim-trilha" }, ...etapas, resultado),
+    el("div", { class: "acoes-sim" }, salvar, restaurar, el("span", { class: "estado-salvo", id: "sim-estado" })));
 }
 function lerPremissas() {
   const p = {}; let ok = true;
@@ -937,14 +1011,18 @@ function lerPremissas() {
     const v = numeroBR(c.input.value);
     const invalido = Number.isNaN(v);
     c.caixa.classList.toggle("invalida", invalido); c.input.setAttribute("aria-invalid", String(invalido));
-    if (invalido) ok = false; else p[k] = v;
+    if (invalido) {
+      ok = false;
+      const det = c.input.closest("details"); if (det) det.open = true;   // mostra onde está o erro
+    } else p[k] = v;
   }
   return ok ? p : null;
 }
 function marcarExemplos() {
-  for (const c of Object.values(fichaEstado.campos)) {
-    const v = numeroBR(c.input.value);
-    c.etiqueta.hidden = !(c.temPadrao && v === c.padrao);
+  for (const c of Object.values(fichaEstado.campos)) c.etiqueta.hidden = !(c.temPadrao && numeroBR(c.input.value) === c.padrao);
+  for (const e of ETAPAS_SIM) {
+    const n = e.chaves.filter((k) => !fichaEstado.campos[k].etiqueta.hidden).length;
+    const alvo = $(`ex-${e.id}`); if (alvo) alvo.textContent = n ? `${n} ${n > 1 ? "valores" : "valor"} de exemplo` : "";
   }
   const p = lerPremissas();
   const atual = p ? JSON.stringify(normalizar(p)) : null;
@@ -958,36 +1036,77 @@ function agendarSimulacao() { clearTimeout(fichaEstado.timerSim); fichaEstado.ti
 async function simularAgora() {
   const alvo = $("sim-resultado"); if (!alvo) return;
   const p = lerPremissas();
-  if (!p) { alvo.replaceChildren(el("div", { class: "erro-sim", text: "Há um número inválido nas premissas (campo em vermelho)." })); return; }
+  if (!p) { alvo.replaceChildren(el("div", { class: "erro-sim", text: "Há um número inválido (campo em vermelho)." })); return; }
   const meu = ++fichaEstado.seqSim;
   try {
     const r = await api("/api/simular", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ premissas: p }) });
     if (meu === fichaEstado.seqSim) desenharResultado(r);
   } catch (e) { if (meu === fichaEstado.seqSim) alvo.replaceChildren(el("div", { class: "erro-sim", role: "alert", text: e.message })); }
 }
+
+function conta(...partes) {   // "Lance R$ 98.000 + taxas R$ 9.310"
+  return partes.filter((x) => x && !(x[0] === "−" && !x[2])).flatMap(([op, rot, v], i) => [i || op !== "+" ? ` ${op} ` : "", rot + " ", el("b", { text: rs(v) })]);
+}
 function desenharResultado(r) {
-  const linha = (a, b, cls) => el("tr", { class: cls }, el("td", { text: a }), el("td", { class: "num" + (typeof b === "number" && b < 0 ? " negativo" : ""), text: typeof b === "number" ? brl.format(b) : b }));
-  const t = el("table", {}, el("tbody", {}, r.custos.filter((c) => c.valor || c.rotulo.startsWith("Lance")).map((c) => linha(c.rotulo, c.valor)),
-    linha("Investimento total", r.investimento, "total")));
-  const partes = [el("h4", { style: "margin:0 0 6px", text: "Resultado" }), t];
-  if (r.venda) {
-    const v = r.venda;
-    partes.push(el("table", { style: "margin-top:10px" }, el("tbody", {},
-      linha("Valor de venda estimado", v.valor_venda), linha("Corretagem", v.corretagem ? -v.corretagem : 0),
-      linha("Lucro antes do imposto", v.lucro_antes_ir), linha("Imposto sobre o ganho", v.ir ? -v.ir : 0),
-      linha("Lucro líquido", v.lucro, "total destaque"),
-      linha("Retorno sobre o investimento", v.roi_pct == null ? "-" : `${pct.format(v.roi_pct)}%`, "destaque"),
-      linha("Retorno ao mês (equivalente)", v.roi_mes_pct == null ? "-" : `${pct.format(v.roi_mes_pct)}%`))));
+  const p = r.premissas, e = r.etapas, v = r.venda;
+  const pick = (rot) => r.custos.find((c) => c.rotulo.startsWith(rot))?.valor || 0;
+  $("conta-compra").replaceChildren(...conta(["+", "Lance", p.lance], ["+", "taxas", e.taxas_compra]));
+  $("rot-compra").textContent = "para comprar"; $("tot-compra").textContent = rs(e.compra);
+
+  const extras = [["+", "débitos", p.debitos], ["+", "desocupação", p.desocupacao], ["+", "reforma", pick("Reforma")],
+                  ["+", `${p.prazo_meses} meses`, pick("Custo mensal")]].filter(([, , x]) => x);
+  $("conta-ate_vender").replaceChildren(...(extras.length ? conta(...extras) : ["Nenhum custo informado ainda"]));
+  $("rot-ate_vender").textContent = "até vender"; $("tot-ate_vender").textContent = rs(e.ate_vender);
+  $("sim-investimento").replaceChildren(el("span", { text: "= Investimento total" }), el("b", { text: rs(r.investimento) }));
+
+  const etapaVenda = $("etapa-venda");
+  etapaVenda.classList.toggle("pendente", !v);
+  if (v) {
+    $("conta-venda").replaceChildren(...conta(["+", "Venda", v.valor_venda], ["−", "corretagem", v.corretagem], ["−", "imposto", v.ir]));
+    $("rot-venda").textContent = "você recebe"; $("tot-venda").textContent = rs(v.recebe);
   } else {
-    partes.push(el("div", { class: "vazio-sim", text: "Informe o valor de venda estimado para ver lucro e retorno. A avaliação da Caixa não serve como valor de mercado." }));
+    $("conta-venda").textContent = "Informe o valor de venda estimado";
+    $("rot-venda").textContent = ""; $("tot-venda").textContent = "falta";
   }
+
+  const alvo = $("sim-resultado");
+  if (!v) {
+    alvo.replaceChildren(el("div", { class: "vazio-sim", text: "O resultado aparece quando você informar o valor de venda na etapa 3. A avaliação da Caixa não serve como valor de mercado." }));
+  } else {
+    const lucro = v.lucro, perda = lucro < 0;
+    const numeros = el("div", { class: "grandes num" },
+      el("div", {}, el("small", { text: perda ? "Prejuízo" : "Lucro líquido" }), el("b", { class: perda ? "negativo" : "positivo", text: rs(lucro) })),
+      el("div", {}, el("small", { text: "Retorno" }), el("b", { class: perda ? "negativo" : "", text: v.roi_pct == null ? "–" : `${pct.format(v.roi_pct)}%` })),
+      el("div", {}, el("small", { text: `Ao mês (${p.prazo_meses} meses)` }), el("b", { class: perda ? "negativo" : "", text: v.roi_mes_pct == null ? "–" : `${pct.format(v.roi_mes_pct)}%` })));
+    alvo.replaceChildren(el("p", { class: "frase", text: perda
+        ? `Investindo ${rs(r.investimento)} e vendendo por ${rs(v.valor_venda)}, a conta fecha no prejuízo.`
+        : `Investindo ${rs(r.investimento)} e vendendo por ${rs(v.valor_venda)}, sobram ${rs(lucro)} depois de corretagem e imposto.` }),
+      numeros, barraVenda(r));
+  }
+  const lm = $("sim-lance-max");
   if (r.lance_maximo != null) {
-    partes.push(el("div", { class: "lance-max num" }, "Lance máximo para atingir ", `${pct.format(r.premissas.meta_roi_pct)}%`, " de retorno: ",
-      el("b", { text: brl.format(r.lance_maximo) })));
+    const folga = r.lance_maximo - p.lance;
+    lm.replaceChildren(el("div", { class: "lance-max num" }, el("small", { text: `Lance máximo para ${pct.format(p.meta_roi_pct)}% de retorno` }),
+      el("b", { text: rs(r.lance_maximo) }),
+      el("span", { class: folga >= 0 ? "" : "negativo", text: folga >= 0 ? `${rs(folga)} acima do lance atual` : `${rs(-folga)} abaixo do lance atual` })));
+  } else if (p.meta_roi_pct != null && v) {
+    lm.replaceChildren(el("div", { class: "avisos-sim", text: "Nem com lance mínimo essa meta é atingida com essas premissas." }));
+  } else {
+    lm.replaceChildren(el("div", { class: "dica-meta", text: v ? "Informe um retorno mínimo para ver até quanto vale dar de lance." : "" }));
   }
-  const avisos = r.avisos.filter((a) => !a.startsWith("Informe o valor de venda"));
-  if (avisos.length) partes.push(el("ul", { class: "avisos-sim" }, avisos.map((a) => el("li", { text: a }))));
-  $("sim-resultado").replaceChildren(...partes);
+}
+function barraVenda(r) {
+  // para onde vai o dinheiro da venda: investimento, corretagem, imposto e lucro (ou prejuízo além da venda)
+  const v = r.venda, total = Math.max(v.valor_venda, r.investimento + v.corretagem + v.ir);
+  const partes = [["investimento", "Investimento", r.investimento], ["corretagem", "Corretagem", v.corretagem],
+                  ["imposto", "Imposto", v.ir], v.lucro >= 0 ? ["lucro", "Lucro", v.lucro] : null].filter((x) => x && x[2] > 0);
+  const barra = el("div", { class: "barra-venda", role: "img",
+    "aria-label": partes.map(([, n, x]) => `${n} ${rs(x)}`).join(", ") + (v.lucro < 0 ? `; faltam ${rs(-v.lucro)} para empatar` : "") },
+    partes.map(([c, , x]) => el("span", { class: c, style: `width:${(x / total) * 100}%` })));
+  if (v.lucro < 0) barra.append(el("i", { class: "marca-venda", style: `left:${(v.valor_venda / total) * 100}%`, title: "valor de venda" }));
+  const legenda = el("ul", { class: "legenda num" }, partes.map(([c, n, x]) => el("li", {}, el("i", { class: c }), `${n} `, el("b", { text: rs(x) }))),
+    v.lucro < 0 ? el("li", {}, el("i", { class: "marca" }), "a linha marca a venda: o que passa dela é prejuízo") : null);
+  return el("div", { class: "venda-visual" }, el("small", { text: `Para onde vai o valor da venda (${rs(v.valor_venda)})` }), barra, legenda);
 }
 async function salvarSimulacao(ev) {
   const p = lerPremissas(); if (!p) { mostrarErro("Corrija os campos em vermelho antes de salvar."); return; }
@@ -1097,7 +1216,7 @@ async function irParaTela(tela) {
       if (tour.idFicha == null) return false;
       location.hash = `#/imovel/${tour.idFicha}`;
     }
-    return esperar(() => document.querySelector("#sim-resultado table"));
+    return esperar(() => $("tot-compra") && $("tot-compra").textContent !== "–");
   }
   if (naFicha()) location.hash = "#/";
   if (estreito() && $("filtros").classList.contains("aberta")) gaveta(false);

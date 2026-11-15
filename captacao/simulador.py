@@ -140,7 +140,11 @@ def simular(premissas) -> dict:
         ("Custo mensal × prazo", c["manutencao"]),
     ]
     r = {"premissas": p, "custos": [{"rotulo": a, "valor": round(b, 2)} for a, b in linhas],
-         "investimento": round(c["investimento"], 2), "venda": None, "lance_maximo": None}
+         "investimento": round(c["investimento"], 2), "venda": None, "lance_maximo": None,
+         "etapas": {   # subtotais na ordem em que a tela mostra a conta
+             "compra": round(p["lance"] + c["leiloeiro"] + c["itbi"] + c["registro"], 2),
+             "taxas_compra": round(c["leiloeiro"] + c["itbi"] + c["registro"], 2),
+             "ate_vender": round(p["debitos"] + p["desocupacao"] + c["reforma"] + c["manutencao"], 2)}}
     if p["valor_venda"] is None:
         avisos.append("Informe o valor de venda estimado para calcular lucro e retorno.")
     else:
@@ -148,6 +152,7 @@ def simular(premissas) -> dict:
         roi_mes = (1 + roi) ** (1 / p["prazo_meses"]) - 1 if roi is not None and roi > -1 else None
         r["venda"] = {"valor_venda": p["valor_venda"], "corretagem": round(c["corretagem"], 2),
                       "lucro_antes_ir": round(c["lucro_antes_ir"], 2), "ir": round(c["ir"], 2),
+                      "recebe": round(p["valor_venda"] - c["corretagem"] - c["ir"], 2),
                       "lucro": round(c["lucro"], 2),
                       "roi_pct": None if roi is None else round(roi * 100, 2),
                       "roi_mes_pct": None if roi_mes is None else round(roi_mes * 100, 2)}

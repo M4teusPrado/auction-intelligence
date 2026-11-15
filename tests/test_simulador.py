@@ -26,6 +26,9 @@ class Conta(unittest.TestCase):
         self.assertEqual(v["roi_pct"], 27.8)
         self.assertAlmostEqual(v["roi_mes_pct"], ((1 + 35445 / 127500) ** (1 / 12) - 1) * 100, places=2)
         self.assertEqual(r["avisos"], [])
+        self.assertEqual(r["etapas"], {"compra": 109500, "taxas_compra": 9500, "ate_vender": 18000})
+        self.assertEqual(r["etapas"]["compra"] + r["etapas"]["ate_vender"], r["investimento"])
+        self.assertEqual(v["recebe"], 180000 - 10800 - 6255)
 
     def test_prejuizo_nao_gera_imposto(self):
         r = simulador.simular({**EXEMPLO, "valor_venda": 120000})
