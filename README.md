@@ -39,6 +39,10 @@ custos e retorno. O simulador é conta fixa (`captacao/simulador.py`); as premis
 exemplos a confirmar e o valor de venda não tem padrão, porque a avaliação da Caixa não é
 valor de mercado.
 
+Na investigação, cada item tem atalhos (mapa, página da Caixa, matrícula online, IPTU), uma
+lista do que procurar e, quando há PDF anexado, os trechos encontrados por busca de palavras
+(`captacao/documentos.py`), com documento e página. São trechos para ler, não conclusões.
+
 ## O que ele faz
 
 - Guarda cada imóvel com a fonte, o identificador na fonte, o link e as datas da primeira e da última vez em que apareceu.
