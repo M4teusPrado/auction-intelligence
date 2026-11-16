@@ -182,6 +182,7 @@
 
   /* ficha: cabeçalho, 4 passos em abas e um painel por vez */
   .ficha { max-width: 1120px; margin: 0 auto; padding: 16px 20px 48px; }
+  .ficha.larga { max-width: 1520px; }      /* investigar: lista e documento lado a lado */
   .voltar { display: inline-block; color: var(--destaque-escuro); font-weight: 600; text-decoration: none; padding: 4px 0; }
   .voltar:hover { text-decoration: underline; }
   .ficha-topo { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; align-items: flex-end; margin: 8px 0 16px; }
@@ -319,6 +320,119 @@
   .carga-trilho { height: 8px; border-radius: 999px; background: var(--borda); overflow: hidden; }
   .carga-barra { height: 100%; width: 0; border-radius: 999px; background: var(--destaque); transition: width .5s linear; }
   .carga-legenda { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--texto-2); }
+
+  /* ---------- investigar em duas colunas ---------- */
+  .painel.inv { max-width: none; }
+  .inv-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+  .inv-esq { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .inv-alternar { display: none; gap: 4px; background: var(--fundo); border: 1px solid var(--borda); border-radius: 999px; padding: 3px;
+                  width: max-content; margin: 0 0 12px; }
+  .inv-alternar button { border: 0; background: transparent; padding: 6px 16px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer; color: var(--texto-2); }
+  .inv-alternar [aria-selected="true"] { background: var(--superficie); box-shadow: var(--sombra); color: var(--texto); font-weight: 600; }
+  @media (min-width: 1100px) { .inv-grade { grid-template-columns: minmax(0, 1fr) minmax(380px, 46%); } }
+  @media (max-width: 1099px) {
+    .inv-alternar { display: flex; }
+    .inv-grade[data-coluna="lista"] .inv-doc { display: none; }
+    .inv-grade[data-coluna="doc"] .inv-esq { display: none; }
+    .inv-doc { position: static !important; height: calc(100vh - 120px) !important; }
+  }
+  .inv-cartao, .inv-resumo { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 14px 16px; }
+  .inv-cartao h3 { font-size: 15px; margin: 0; }
+  .inv-cartao-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .inv-cartao-cab > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .inv-cartao-cab .dica { font-size: 12px; }
+  .inv-cartao-cab .btn { flex: none; white-space: nowrap; }
+  .inv-resumo { display: flex; flex-direction: column; gap: 12px; }
+  .inv-resumo-linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .conts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .conts .rot { font-size: 12px; color: var(--texto-3); margin-right: 4px; }
+  .cont { font-size: 13px; padding: 3px 10px; border-radius: 999px; }
+  .tom-impeditivo, .tom-alto { background: var(--erro-fundo); color: var(--erro); }
+  .tom-atencao, .tom-medio { background: var(--alerta-fundo); color: var(--alerta); }
+  .tom-ok { background: var(--destaque-claro); color: var(--destaque-escuro); }
+  .tom-sem_informacao, .tom-baixo { background: var(--fundo); color: var(--texto-2); }
+  .inv-prog { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--texto-2); }
+  .inv-prog .barra-prog { width: 140px; flex: none; }
+  .inv-fatos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 18px; margin: 0; }
+  .inv-fatos dt { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-3); }
+  .inv-fatos dd { margin: 2px 0 0; font-size: 13px; color: var(--texto); line-height: 1.4; }
+  .doc-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+  .doc-lista li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+  .doc-tipo { font-size: 12px; color: var(--texto-3); min-width: 70px; }
+  @media (max-width: 600px) { .doc-lista li { gap: 2px 8px; } .doc-tipo { flex-basis: 100%; } }
+  .doc-nome { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: var(--destaque-escuro); cursor: pointer;
+              text-decoration: underline; text-underline-offset: 2px; text-align: left; overflow-wrap: anywhere; }
+  .doc-st { font-size: 12px; padding: 2px 8px; border-radius: 999px; }
+  .doc-acao { display: inline-flex; align-items: center; gap: 6px; }
+  .docs-fonte { margin-top: 10px; display: grid; gap: 6px; }
+  .docs-fonte.recolhido summary { cursor: pointer; }
+  .docs-linha { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .docs-links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .docs-links .btn { font-size: 13px; padding: 4px 10px; min-height: 0; }
+  .inv-parecer .resumo-ia { margin: 4px 0 10px; line-height: 1.5; }
+  .inv-sec { border-top: 1px solid var(--borda); padding: 8px 0 2px; }
+  .inv-sec > summary { cursor: pointer; padding: 2px 0; list-style-position: outside; }
+  .inv-sec > ul { margin: 8px 0 4px; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+  .riscos details > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; list-style: none; }
+  .riscos details > summary::-webkit-details-marker { display: none; }
+  .riscos details[open] > summary b { color: var(--texto); }
+  .riscos details > p { margin: 4px 0 6px; color: var(--texto-2); font-size: 14px; }
+  .nivel { font-size: 11px; font-weight: 650; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
+  .regras li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 12px; font-size: 14px; }
+  .regras .tema { color: var(--texto-3); font-size: 13px; }
+  .regras .chips { grid-column: 2; }
+  @media (max-width: 600px) { .regras li { grid-template-columns: minmax(0, 1fr); } .regras .chips { grid-column: 1; } }
+  .perguntas li { font-size: 14px; padding-left: 14px; position: relative; }
+  .perguntas li::before { content: "?"; position: absolute; left: 0; color: var(--texto-3); }
+  .cits { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; font-size: 14px; color: var(--texto-2); }
+  .chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+  .chip { font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 7px; border-radius: 6px; cursor: pointer;
+          border: 1px solid var(--borda-forte); background: var(--superficie); color: var(--destaque-escuro); }
+  .chip:hover { background: var(--destaque-claro); border-color: var(--destaque); }
+  .chip.nao-conf { color: var(--alerta); border-style: dashed; }
+  .aviso-ia { font-size: 12px; color: var(--texto-3); margin: 10px 0 0; }
+  .inv-check { padding: 0; }
+  .inv-check .inv-cartao-cab { padding: 14px 16px 6px; }
+  .inv-item { border-top: 1px solid var(--borda); border-left: 3px solid transparent; outline: none; }
+  .inv-item:focus-visible { box-shadow: inset 0 0 0 2px var(--foco); }
+  .inv-item[data-status="ok"] { border-left-color: #2f8a5b; }
+  .inv-item[data-status="atencao"] { border-left-color: #d39a2a; }
+  .inv-item[data-status="impeditivo"] { border-left-color: var(--erro); }
+  .inv-item[data-status="nao_se_aplica"] { border-left-color: #a9b0ab; }
+  .inv-item-cab { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; flex-wrap: wrap; }
+  .inv-item-cab:hover { background: #f7f8f6; }
+  .inv-item-cab .seta { width: 0; height: 0; border-left: 5px solid var(--texto-3); border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform .15s; }
+  .inv-item.aberto .seta { transform: rotate(90deg); }
+  .inv-item-cab .rot { flex: 1 1 140px; font-size: 14px; }
+  .pill-ia { font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+  .seg-mini .seg-b { padding: 3px 9px; font-size: 12px; }
+  .inv-item-corpo { padding: 2px 14px 14px 30px; display: grid; gap: 10px; }
+  .inv-item-corpo .ia-bloco p { margin: 0 0 4px; line-height: 1.5; }
+  .nota-linha { display: grid; gap: 4px; }
+  .nota-linha textarea { resize: vertical; font-size: 14px; }
+  .nota-linha .salvo { font-size: 12px; color: var(--texto-3); }
+  .inv-item-corpo .procurar { margin: 6px 0; padding-left: 18px; font-size: 13px; color: var(--texto-2); }
+  .inv-outros { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 16px; }
+  .inv-outros summary { cursor: pointer; font-size: 14px; }
+  .inv-teclas { font-size: 12px; color: var(--texto-3); margin: 14px 0 0; }
+  @media (hover: none) { .inv-teclas { display: none; } }
+  .inv-doc { position: sticky; top: 12px; height: calc(100vh - 24px); display: flex; flex-direction: column; background: var(--superficie);
+             border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; }
+  .leitor-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-bottom: 1px solid var(--borda); }
+  .leitor-tit { display: flex; flex-direction: column; min-width: 0; }
+  .leitor-tit b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .leitor-nav { display: flex; align-items: center; gap: 2px; flex: none; }
+  .leitor-nav .btn { font-size: 16px; }
+  .leitor-balao { margin: 10px 12px 0; padding: 8px 12px; background: #fff8db; border: 1px solid #f0dc8a; border-radius: 6px; font-size: 13px; line-height: 1.45; }
+  .leitor-balao .rot { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-3); margin-bottom: 2px; }
+  .leitor-balao small { display: block; color: var(--texto-3); margin-top: 4px; }
+  .leitor-corpo { flex: 1; overflow: auto; padding: 12px; background: #e9ebe8; }
+  .leitor-folha { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .leitor-canvas { display: block; }
+  .realce-pdf { position: absolute; background: rgba(255, 196, 0, .4); mix-blend-mode: multiply; border-radius: 2px; pointer-events: none; }
+  .leitor-vazio { color: var(--texto-3); text-align: center; margin: 48px 16px; font-size: 14px; }
+  .leitor-vazio.erro { color: var(--erro); }
+  .leitor-texto { background: #fff; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
   .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
   .etiquetas:empty { display: none; }
   .etiqueta { border: 1px solid var(--borda-forte); background: var(--superficie); border-radius: 999px; padding: 3px 10px;
@@ -981,7 +1095,7 @@ const ABAS_FICHA = [
   { id: "imovel", titulo: "O imóvel" }, { id: "investigar", titulo: "Investigar" },
   { id: "simular", titulo: "Simular" }, { id: "decidir", titulo: "Decidir" },
 ];
-const fichaEstado = { id: null, dados: null, aba: "imovel", timerSim: null, seqSim: 0, salvas: null, ultimo: null };
+const fichaEstado = { id: null, dados: null, itemAberto: null, aba: "imovel", timerSim: null, seqSim: 0, salvas: null, ultimo: null };
 const rs = (v) => brl.format(v || 0);
 const POST_JSON = (corpo) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
 
@@ -1047,6 +1161,7 @@ function abaFicha(id, rolar) {
     $(`painel-${a.id}`).hidden = !sel;
   }
   if (id === "decidir") atualizarDecidir();
+  $("vista-ficha").classList.toggle("larga", id === "investigar");
   if (rolar) $("ficha-abas").scrollIntoView({ block: "start", behavior: "smooth" });
 }
 function atualizarStatusAbas() {
@@ -1174,120 +1289,377 @@ function blocoAchados(item) {
   mostrar(false);
   return alvo;
 }
-function atualizarAchados() {
-  for (const it of fichaEstado.dados.investigacao) { const velho = $(`ach-${it.item}`); if (velho) velho.replaceWith(blocoAchados(it.item)); }
-  const aviso = $("aviso-leitura"); if (aviso) aviso.replaceWith(avisoLeitura(fichaEstado.dados));
-}
-function avisoLeitura(d) {
-  const semTexto = d.anexos.filter((a) => a.leitura === "sem_texto" || a.leitura === "erro").map((a) => a.nome_original);
-  const partes = [];
-  if (!d.leitura_pdf) partes.push("A leitura automática de PDF está desligada neste computador. Os arquivos ficam guardados, mas o sistema não procura trechos neles.");
-  if (semTexto.length) partes.push(`Sem texto para ler em: ${semTexto.join(", ")} (PDF escaneado). Use "Ler PDF escaneado com IA" no arquivo para transcrever.`);
-  return partes.length ? el("div", { class: "aviso-leitura", id: "aviso-leitura" }, partes.join(" ")) : el("div", { id: "aviso-leitura", hidden: true });
-}
-const STATUS_BOTOES = [["ok", "OK"], ["atencao", "Atenção"], ["impeditivo", "Impeditivo"], ["nao_se_aplica", "Não se aplica"]];
-function painelInvestigar(d) {
-  const progresso = el("div", { class: "progresso", id: "inv-progresso" });
-  const itens = el("div", { class: "checklist" }, d.investigacao.map((it) => cartaoItem(d, it)));
-  const outros = el("div", { class: "check-card outros" }, el("div", { class: "cc-cab" }, el("b", { text: "Outros arquivos" }),
-    el("span", { class: "ajuda", text: "Laudo, fotos ou qualquer documento do imóvel." })), blocoAnexos(d, null));
-  setTimeout(atualizarProgresso);
-  return el("section", { class: "painel", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
-    el("p", { class: "intro", text: "Confira cada ponto antes de decidir. Marque o que encontrou; matrícula e edital podem ser anexados no próprio item." }),
-    el("p", { class: "intro-ajuda", text: "Ao anexar um PDF, o sistema procura trechos sobre cada item (penhora, ocupação, condomínio...) e mostra onde estão. São trechos para você ler, não conclusões: um ônus pode ter sido cancelado depois, e PDF escaneado não tem texto para ler." }),
-    avisoLeitura(d), botaoDocumentosFonte(d), blocoParecer(d), progresso, itens, outros, proximo("simular", "Próximo: simular →"));
-}
-/* parecer preliminar com IA: só sugere; cada afirmação tem trecho conferido no documento */
+/* ---------- passo 2: investigar. Duas colunas: à esquerda o que a IA diz e o checklist,
+   à direita o próprio documento (pdf.js), aberto na página citada com o trecho em destaque. ---------- */
+const STATUS_BOTOES = [["ok", "OK"], ["atencao", "Atenção"], ["impeditivo", "Impeditivo"], ["nao_se_aplica", "N/A"]];
 const NOME_SITUACAO = { ok: "OK", atencao: "Atenção", impeditivo: "Impeditivo", sem_informacao: "Sem informação" };
-const NOME_NIVEL = { alto: "Risco alto", medio: "Risco médio", baixo: "Risco baixo" };
+const NOME_NIVEL = { alto: "Alto", medio: "Médio", baixo: "Baixo" };
 const NOME_TEMA = { condominio: "Condomínio", iptu: "IPTU e tributos", desocupacao: "Desocupação", estado_do_imovel: "Estado do imóvel",
   venda_ad_corpus: "Venda ad corpus", onus_e_acoes: "Ônus e ações", comissao: "Comissão", pagamento: "Pagamento",
   fgts_financiamento: "FGTS e financiamento", prazos: "Prazos", direito_de_preferencia: "Direito de preferência",
   desistencia_e_penalidades: "Desistência e multas", outros: "Outros" };
-function blocoRegrasEdital(d) {
-  if (!(d.regras_edital || []).length) return null;
-  return el("div", { class: "regras-edital" }, d.regras_edital.map((e) => el("details", {},
-    el("summary", {}, el("b", { text: `Regras do edital (${e.regras.length})` }),
-      el("span", { class: "dica", text: ` · ${e.nome} · lidas uma vez para todos os imóveis deste edital` })),
-    el("ul", {}, e.regras.map((r) => el("li", {},
-      el("b", { text: (NOME_TEMA[r.tema] || r.tema) + ": " }), el("span", { text: r.regra }),
-      el("ul", { class: "citacoes" }, r.citacoes.map((c) => citacao(d, { ...c, afirmacao: "" }, e)))))))));
+const NOME_LEITURA = { lido: "texto lido", transcrito_ia: "transcrito pela IA", sem_texto: "escaneado, sem texto",
+  erro: "não deu para ler", desligada: "leitura desligada", imagem: "imagem" };
+const lerParecer = (d) => d.parecer && d.parecer.parecer;
+const sugestaoDo = (d, item) => ((lerParecer(d) || {}).itens || []).find((x) => x.item === item);
+
+function painelInvestigar(d) {
+  const esq = el("div", { class: "inv-esq" },
+    resumoInvestigacao(d), faixaDocumentos(d), cartaoParecer(d), listaChecklist(d),
+    el("details", { class: "inv-outros" }, el("summary", { text: "Outros arquivos (laudo, fotos…)" }), blocoAnexos(d, null)),
+    proximo("simular", "Próximo: simular →"));
+  setTimeout(() => {
+    atualizarProgresso();
+    // a ficha foi redesenhada (parecer gerado, PDF lido...): o documento que estava aberto continua aberto
+    if (leitor.atual && leitor.atual.imovelId === d.imovel.id && window.matchMedia("(min-width: 1100px)").matches) abrirNoLeitor(leitor.atual);
+  });
+  return el("section", { class: "painel inv", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
+    el("div", { class: "inv-alternar", role: "tablist", "aria-label": "Ver" },
+      el("button", { type: "button", role: "tab", id: "inv-ver-lista", "aria-selected": "true", text: "Checklist", onclick: () => mostrarColuna("lista") }),
+      el("button", { type: "button", role: "tab", id: "inv-ver-doc", "aria-selected": "false", text: "Documento", onclick: () => mostrarColuna("doc") })),
+    el("div", { class: "inv-grade", id: "inv-grade", "data-coluna": "lista" }, esq, (() => {
+      const l = leitorDocumento(); observarLeitor.observe(l.querySelector(".leitor-corpo")); return l; })()),
+    el("p", { class: "inv-teclas", text: "Atalhos: ↑ ↓ navegar · Enter abrir · 1 OK · 2 Atenção · 3 Impeditivo · 4 N/A · P ver o primeiro trecho" }));
 }
-function citacao(d, c, edital) {
-  const doc = edital ? { nome: edital.nome, anexo_id: edital.anexo_id }
-                     : ((d.parecer || {}).documentos || []).find((x) => x.codigo === c.documento);
-  const nome = c.documento === "DESCRICAO" ? "descrição do lote" : doc ? doc.nome : c.documento;
-  const fonte = doc && doc.anexo_id ? el("a", { href: `/anexos/${doc.anexo_id}#page=${c.pagina}`, target: "_blank", rel: "noopener", text: `${nome} · página ${c.pagina}` })
-                                    : el("span", { text: nome });
-  return el("li", { class: c.confirmada ? "" : "nao-confirmada" },
-    el("span", { text: c.afirmacao }),
-    el("q", { text: c.trecho }),
-    el("small", {}, c.confirmada ? "✓ trecho conferido no texto · " : "⚠ trecho não encontrado no documento: confira · ", fonte));
+function mostrarColuna(c) {
+  const g = $("inv-grade"); if (!g) return;
+  g.dataset.coluna = c;
+  $("inv-ver-lista").setAttribute("aria-selected", String(c === "lista"));
+  $("inv-ver-doc").setAttribute("aria-selected", String(c === "doc"));
 }
-function blocoParecer(d) {
-  const p = d.parecer && d.parecer.parecer, ia = d.ia || {};
-  const caixa = el("section", { class: "parecer-ia", id: "parecer-ia" });
+
+/* topo: o que decide em 10 segundos */
+function resumoInvestigacao(d) {
+  const p = lerParecer(d);
+  const ia = {}; for (const x of (p && p.itens) || []) ia[x.situacao_sugerida] = (ia[x.situacao_sugerida] || 0) + 1;
+  const regras = ((d.regras_edital || [])[0] || {}).regras || [];
+  const regra = (tema) => (regras.find((r) => r.tema === tema) || {}).regra;
+  const fatos = [["Desocupação", regra("desocupacao")], ["Débitos", regra("condominio") || regra("iptu")],
+                 ["Ocupação", (d.imovel.leilao || {}).ocupacao]].filter(([, v]) => v);
+  const conts = [["impeditivo", "impeditivo"], ["atencao", "atenção"], ["sem_informacao", "sem informação"], ["ok", "ok"]]
+    .filter(([k]) => ia[k]).map(([k, r]) => el("span", { class: `cont tom-${k}` }, el("b", { class: "num", text: String(ia[k]) }), ` ${r}`));
+  return el("section", { class: "inv-resumo" },
+    el("div", { class: "inv-resumo-linha" },
+      conts.length ? el("div", { class: "conts" }, el("span", { class: "rot", text: "A IA sugere" }), conts)
+                   : el("span", { class: "dica", text: "Gere o parecer para ver aqui o resumo dos riscos." }),
+      el("div", { class: "inv-prog", id: "inv-progresso" })),
+    fatos.length ? el("dl", { class: "inv-fatos" }, fatos.map(([k, v]) => el("div", {}, el("dt", { text: k }), el("dd", { text: v })))) : null);
+}
+function atualizarProgresso() {
+  const d = fichaEstado.dados, alvo = $("inv-progresso"); if (!alvo) return;
+  const inv = d.investigacao, n = inv.length, feitos = inv.filter((i) => i.status !== "pendente").length;
+  alvo.replaceChildren(el("span", { class: "num", text: `Você conferiu ${feitos} de ${n}` }),
+    el("div", { class: "barra-prog", role: "img", "aria-label": `${feitos} de ${n} conferidos` }, inv.map((i) => el("i", { class: i.status }))));
+  atualizarStatusAbas();
+}
+
+/* documentos: o que está anexado, em que estado, e a ação que falta */
+function faixaDocumentos(d) {
+  const docs = d.anexos.filter((a) => ["edital", "matricula", "laudo"].includes(a.tipo));
+  const lista = docs.map((a) => {
+    const legivel = a.leitura === "lido" || a.leitura === "transcrito_ia";
+    return el("li", {},
+      el("span", { class: "doc-tipo", text: d.tipos_anexo[a.tipo] || a.tipo }),
+      el("button", { type: "button", class: "doc-nome", text: a.nome_original, title: "Ver no leitor",
+        onclick: () => abrirNoLeitor({ anexoId: a.id, nome: a.nome_original, pagina: 1 }) }),
+      el("span", { class: `doc-st ${legivel ? "tom-ok" : "tom-atencao"}`, text: NOME_LEITURA[a.leitura] || "" }),
+      ["sem_texto", "erro"].includes(a.leitura) && /\.pdf$/i.test(a.nome_original) ? botaoTranscrever(d, a) : null);
+  });
+  return el("section", { class: "inv-cartao inv-docs" },
+    el("h3", { text: "Documentos" }),
+    lista.length ? el("ul", { class: "doc-lista" }, lista) : el("p", { class: "dica", text: "Nenhum edital ou matrícula anexado ainda." }),
+    botaoDocumentosFonte(d));
+}
+function botaoTranscrever(d, a) {
+  const msg = el("span", { class: "dica" });
+  const b = el("button", { type: "button", class: "btn btn-texto", disabled: !(d.ia || {}).disponivel,
+    text: "Ler com IA", title: (d.ia || {}).disponivel ? "Transcreve o PDF escaneado (menos de 1 centavo de dólar). A imagem vai inteira para a IA; o texto guardado fica com CPF e RG mascarados." : (d.ia || {}).motivo,
+    onclick: async () => {
+      b.disabled = true; b.textContent = "Lendo…"; msg.textContent = "";
+      const barra = barraDeProgresso(25, [[0, "Enviando o PDF"], [4, "Transcrevendo página por página"], [60, "PDF longo: ainda transcrevendo"]]);
+      b.closest("li").after(barra.el);
+      try {
+        const r = await api(`/api/anexos/${a.id}/transcrever`, POST_JSON({}));
+        barra.concluir();
+        await abrirFicha(d.imovel.id);
+        mostrarAviso(`${r.paginas} página(s) transcritas`, null);
+      } catch (e) { barra.el.remove(); barra.parar(); msg.textContent = e.message; b.disabled = false; b.textContent = "Ler com IA"; }
+    } });
+  return el("span", { class: "doc-acao" }, b, msg);
+}
+
+/* trechos: etiquetas p.N que abrem o documento na página, com o trecho em destaque */
+function chip(d, c, edital) {
+  const alvo = alvoDaCitacao(d, c, edital);
+  return el("button", { type: "button", class: `chip${c.confirmada ? "" : " nao-conf"}`,
+    title: `${c.confirmada ? "" : "Trecho não encontrado no documento: confira. "}«${c.trecho}»`,
+    text: alvo.descricao ? "descrição" : `p.${c.pagina}`, onclick: () => abrirNoLeitor(alvo) });
+}
+function alvoDaCitacao(d, c, edital) {
+  if (c.documento === "DESCRICAO") return { descricao: true, nome: "Descrição do lote", trecho: c.trecho, confirmada: c.confirmada };
+  const id = edital ? edital.anexo_id : Number(String(c.documento).replace(/^A/, ""));
+  const a = d.anexos.find((x) => x.id === id) || {};
+  return { anexoId: id, nome: a.nome_original || (edital && edital.nome) || c.documento, pagina: c.pagina,
+           trecho: c.trecho, confirmada: c.confirmada, transcrito: a.leitura === "transcrito_ia" };
+}
+const chips = (d, lista, edital) => el("span", { class: "chips" }, (lista || []).map((c) => chip(d, c, edital)));
+
+/* parecer: resumo, riscos e perguntas, compactos; o detalhe abre sob demanda */
+function cartaoParecer(d) {
+  const p = lerParecer(d), ia = d.ia || {};
+  const caixa = el("section", { class: "inv-cartao inv-parecer", id: "parecer-ia" });
   const msg = el("p", { class: "dica parecer-msg" });
   const lidos = d.anexos.filter((a) => a.leitura === "lido" || a.leitura === "transcrito_ia").length;
+  const escaneados = d.anexos.filter((a) => ["sem_texto", "erro"].includes(a.leitura) && /\.pdf$/i.test(a.nome_original)).length;
   let confirmouSemDocs = false;
-  const b = el("button", { type: "button", class: "btn btn-primario", disabled: !ia.disponivel,
-    text: p ? "Gerar de novo" : "Gerar parecer com IA",
+  const rotulo = p ? "Gerar de novo" : "Gerar parecer";
+  const b = el("button", { type: "button", class: p ? "btn" : "btn btn-primario", disabled: !ia.disponivel, text: rotulo,
     onclick: async () => {
-      if (!lidos && !confirmouSemDocs) {           // sem edital/matrícula o parecer fica fraco: avisa antes de gastar
+      if (!lidos && !escaneados && !confirmouSemDocs) {
         confirmouSemDocs = true; msg.classList.add("erro");
-        msg.textContent = "Nenhum edital ou matrícula anexado (ou com texto lido). O parecer vai usar só a descrição do lote e ficará limitado. Anexe os PDFs abaixo, ou clique de novo para gerar mesmo assim.";
+        msg.textContent = "Nenhum edital ou matrícula anexado. O parecer vai usar só a descrição do lote. Clique de novo para gerar mesmo assim.";
         b.textContent = "Gerar só com a descrição"; return;
       }
-      b.disabled = true; b.textContent = "Analisando os documentos…"; msg.classList.remove("erro"); msg.textContent = "";
-      const barra = barraDeProgresso(40 + 15 * lidos, [
-        [0, "Preparando o material e mascarando CPF e RG"],
-        [4, "A IA está lendo a descrição e os PDFs anexados"],
-        [20, "Organizando ocupação, débitos, ônus e riscos"],
-        [45, "Conferindo cada trecho citado no texto original"],
-        [100, "Documentos longos: ainda trabalhando, pode levar até 3 minutos"]]);
+      b.disabled = true; b.textContent = "Analisando…"; msg.classList.remove("erro"); msg.textContent = "";
+      const barra = barraDeProgresso(30 + 10 * lidos + 20 * escaneados, [
+        [0, escaneados ? "Lendo os PDFs escaneados" : "Preparando o material e mascarando CPF e RG"],
+        [escaneados ? 20 : 4, "A IA está lendo os documentos"],
+        [escaneados ? 35 : 18, "Organizando ocupação, débitos, ônus e riscos"],
+        [escaneados ? 55 : 35, "Conferindo cada trecho citado no texto original"],
+        [100, "Documentos longos: ainda trabalhando"]]);
       cab.after(barra.el);
       try {
         await api(`/api/imoveis/${d.imovel.id}/parecer`, POST_JSON({}));
         barra.concluir();
         await abrirFicha(d.imovel.id);
-      } catch (e) { barra.el.remove(); barra.parar(); msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = p ? "Gerar de novo" : "Gerar parecer com IA"; }
+      } catch (e) { barra.el.remove(); barra.parar(); msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = rotulo; }
     } });
-  const cab = el("div", { class: "parecer-cab" }, el("h3", { text: "Parecer preliminar (IA)" }), b);
+  const meta = p ? (() => {
+    const u = d.parecer.uso || {};
+    return `${dataHoraBR(d.parecer.quando)} · ${p.citacoes_confirmadas}/${p.citacoes_total} trechos conferidos` +
+      (u.custo_usd != null ? ` · US$ ${u.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "");
+  })() : "";
+  const cab = el("div", { class: "inv-cartao-cab" },
+    el("div", {}, el("h3", { text: "Parecer da IA" }), meta ? el("span", { class: "dica num", text: meta }) : null), b);
   caixa.append(cab);
-  const regras = blocoRegrasEdital(d);
-  if (regras) caixa.append(regras);
-  if (p) caixa.append(msg);
   if (!ia.disponivel) caixa.append(el("p", { class: "dica erro", text: `Indisponível: ${ia.motivo}.` }));
   if (!p) {
-    caixa.append(el("p", { class: "dica", text: "A IA lê a descrição do lote e os PDFs anexados (edital, matrícula) e organiza ocupação, débitos, ônus e riscos, " +
-      "mostrando o trecho de onde tirou cada informação. Ela só sugere: quem marca cada item é você. Custa centavos de dólar por imóvel; o edital é lido uma vez e reaproveitado." }), msg);
+    caixa.append(el("p", { class: "dica", text: "A IA lê edital e matrícula (os escaneados também), organiza ocupação, débitos, ônus e riscos e mostra a página de onde tirou cada informação. Ela só sugere; quem decide é você." }), msg);
     return caixa;
   }
-  const u = d.parecer.uso || {};
-  caixa.append(
-    el("p", { class: "resumo-ia", text: p.resumo_geral }),
-    el("p", { class: "dica num", text: `Gerado em ${dataHoraBR(d.parecer.quando)} · ${p.citacoes_confirmadas} de ${p.citacoes_total} trechos conferidos no texto` +
-      (u.custo_usd != null ? ` · custo US$ ${u.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "") + ` · documentos lidos: ${(d.parecer.documentos || []).map((x) => x.codigo === "DESCRICAO" ? "descrição" : x.nome).join(", ")}` }));
-  const riscos = [...(p.riscos || [])].sort((a, c) => ["alto", "medio", "baixo"].indexOf(a.nivel) - ["alto", "medio", "baixo"].indexOf(c.nivel));
-  if (riscos.length) caixa.append(el("h4", { text: "Pontos de atenção" }), el("ul", { class: "riscos-ia" }, riscos.map((r) => el("li", { class: `nivel-${r.nivel}` },
-    el("div", { class: "risco-cab" }, el("span", { class: "nivel", text: NOME_NIVEL[r.nivel] || r.nivel }), el("b", { text: r.titulo })),
-    el("p", { text: r.explicacao }),
-    r.citacoes.length ? el("ul", { class: "citacoes" }, r.citacoes.map((c) => citacao(d, c))) : null))));
-  if ((p.perguntas || []).length) caixa.append(el("h4", { text: "O que ainda precisa ser apurado" }),
-    el("ul", { class: "perguntas-ia" }, p.perguntas.map((q) => el("li", { text: q }))));
-  caixa.append(el("p", { class: "aviso-ia", text: "Parecer gerado por IA a partir dos documentos. Não é análise jurídica: confira os trechos e decida item por item." }), msg);
+  caixa.append(el("p", { class: "resumo-ia", text: p.resumo_geral }), msg);
+  const ordem = ["alto", "medio", "baixo"];
+  const riscos = [...(p.riscos || [])].sort((a, c) => ordem.indexOf(a.nivel) - ordem.indexOf(c.nivel));
+  if (riscos.length) {
+    const n = (nv) => riscos.filter((r) => r.nivel === nv).length;
+    const resumo = ordem.filter(n).map((nv) => `${n(nv)} ${{ alto: "alto", medio: "médio", baixo: "baixo" }[nv]}${n(nv) > 1 ? "s" : ""}`).join(" · ");
+    caixa.append(el("details", { class: "inv-sec", open: true },
+      el("summary", {}, el("b", { text: "Riscos" }), el("span", { class: "dica", text: ` ${resumo}` })),
+      el("ul", { class: "riscos" }, riscos.map((r) => el("li", { class: `nivel-${r.nivel}` },
+        el("details", {}, el("summary", {}, el("span", { class: `nivel tom-${r.nivel}`, text: NOME_NIVEL[r.nivel] || r.nivel }), el("b", { text: r.titulo }),
+          chips(d, r.citacoes)),
+          el("p", { text: r.explicacao }),
+          r.citacoes.length ? el("ul", { class: "cits" }, r.citacoes.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null))))));
+  }
+  if ((p.perguntas || []).length) caixa.append(el("details", { class: "inv-sec" },
+    el("summary", {}, el("b", { text: "A apurar" }), el("span", { class: "dica", text: ` ${p.perguntas.length} perguntas que os documentos não respondem` })),
+    el("ul", { class: "perguntas" }, p.perguntas.map((q) => el("li", { text: q })))));
+  for (const e of d.regras_edital || []) caixa.append(el("details", { class: "inv-sec" },
+    el("summary", {}, el("b", { text: "Regras do edital" }), el("span", { class: "dica", text: ` ${e.regras.length} · lidas uma vez para todos os imóveis deste edital` })),
+    el("ul", { class: "regras" }, e.regras.map((r) => el("li", {},
+      el("span", { class: "tema", text: NOME_TEMA[r.tema] || r.tema }), el("span", { text: r.regra }), chips(d, r.citacoes, e))))));
+  caixa.append(el("p", { class: "aviso-ia", text: "Gerado por IA a partir dos documentos. Não é análise jurídica: confira os trechos." }));
   return caixa;
 }
-function sugestaoIA(d, it, salvar, nota) {
-  const p = d.parecer && d.parecer.parecer;
-  const s = p && (p.itens || []).find((x) => x.item === it.item);
-  if (!s) return null;
-  const usar = s.situacao_sugerida !== "sem_informacao" ? el("button", { type: "button", class: "btn btn-texto", text: "Usar sugestão",
-    onclick: () => { nota.value = s.resumo; salvar(s.situacao_sugerida, s.resumo); } }) : null;
-  return el("div", { class: `sugestao-ia sit-${s.situacao_sugerida}` },
-    el("div", { class: "sug-cab" }, el("span", { text: "IA sugere:" }), el("b", { class: "pill-sit", text: NOME_SITUACAO[s.situacao_sugerida] }), usar),
-    el("p", { text: s.resumo }),
-    s.fatos.length ? el("ul", { class: "citacoes" }, s.fatos.map((c) => citacao(d, c))) : null);
+
+/* checklist: uma linha por item; o detalhe abre só no item escolhido */
+function listaChecklist(d) {
+  return el("section", { class: "inv-cartao inv-check" },
+    el("div", { class: "inv-cartao-cab" }, el("h3", { text: "Checklist" }), el("span", { class: "dica", text: "A IA sugere; você marca." })),
+    el("div", { class: "inv-itens", id: "inv-itens" }, d.investigacao.map((it) => linhaItem(d, it))));
+}
+function alternarItem(item, abrir) {
+  const corpo = item.querySelector(".inv-item-corpo"), vai = abrir ?? corpo.hidden;
+  corpo.hidden = !vai; item.classList.toggle("aberto", vai);
+  item.querySelector(".inv-item-cab").setAttribute("aria-expanded", String(vai));
+  if (vai) fichaEstado.itemAberto = item.dataset.item; else if (fichaEstado.itemAberto === item.dataset.item) fichaEstado.itemAberto = null;
+}
+function linhaItem(d, it) {
+  const s = sugestaoDo(d, it.item);
+  const item = el("div", { class: "inv-item", "data-item": it.item, "data-status": it.status, tabindex: "0", "aria-label": it.rotulo });
+  const salvo = el("span", { class: "salvo", text: it.quando ? `atualizado em ${dataHoraBR(it.quando)}` : "" });
+  const nota = el("textarea", { class: "campo", rows: "2", maxlength: "2000", placeholder: "Sua anotação (opcional)", "aria-label": `Anotação: ${it.rotulo}` });
+  nota.value = it.nota || "";
+  let atual = { status: it.status, nota: it.nota || "" };
+  const botoes = el("div", { class: "seg seg-mini", role: "group", "aria-label": `Situação: ${it.rotulo}` },
+    STATUS_BOTOES.map(([v, r]) => el("button", { type: "button", class: `seg-b ${v}`, "aria-pressed": String(it.status === v), text: r, tabindex: "-1",
+      onclick: (ev) => { ev.stopPropagation(); marcar(v); } })));
+  const marcar = (v) => salvar(atual.status === v ? "pendente" : v, nota.value.trim());
+  item._marcar = marcar;
+  async function salvar(status, texto) {
+    if (status === atual.status && texto === atual.nota) return;
+    salvo.textContent = "salvando…";
+    try {
+      const r = await api(`/api/imoveis/${d.imovel.id}/investigacao`, POST_JSON({ item: it.item, status, nota: texto || null }));
+      atual = { status, nota: texto }; d.investigacao = r.investigacao;
+      const novo = r.investigacao.find((x) => x.item === it.item);
+      item.dataset.status = novo.status;
+      botoes.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.classList.contains(novo.status))));
+      salvo.textContent = `salvo em ${dataHoraBR(novo.quando)}`;
+      atualizarProgresso();
+    } catch (e) { salvo.textContent = "não salvo"; mostrarErro(e.message); }
+  }
+  nota.addEventListener("change", () => salvar(atual.status, nota.value.trim()));
+  const cab = el("div", { class: "inv-item-cab", "aria-expanded": "false", onclick: () => alternarItem(item) },
+    el("span", { class: "seta", "aria-hidden": "true" }),
+    el("b", { class: "rot", text: it.rotulo }),
+    s ? el("span", { class: `pill-ia tom-${s.situacao_sugerida}`, title: "Sugestão da IA", text: `IA: ${NOME_SITUACAO[s.situacao_sugerida]}` }) : null,
+    botoes);
+  const temParecer = !!lerParecer(d), achados = ((d.achados || {})[it.item] || []).length;
+  const corpo = el("div", { class: "inv-item-corpo", hidden: true },
+    s ? el("div", { class: "ia-bloco" },
+          el("p", { text: s.resumo }),
+          s.fatos.length ? el("ul", { class: "cits" }, s.fatos.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null,
+          s.situacao_sugerida !== "sem_informacao" ? el("button", { type: "button", class: "btn btn-texto", text: "Usar a sugestão da IA",
+            onclick: () => { nota.value = s.resumo; salvar(s.situacao_sugerida, s.resumo); } }) : null)
+      : el("p", { class: "ajuda", text: it.ajuda }),
+    it.item === "leilao" && d.sugestao_leilao ? el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao) : null,
+    atalhos(it.item, d.imovel),
+    el("div", { class: "nota-linha" }, nota, salvo),
+    TIPO_DO_ITEM[it.item] ? blocoAnexos(d, TIPO_DO_ITEM[it.item]) : null,
+    el("details", { class: "inv-sec busca" },
+      el("summary", { text: temParecer ? `Busca por palavra-chave${achados ? ` (${achados})` : ""}` : "O que procurar e trechos encontrados" }),
+      el("ul", { class: "procurar" }, PROCURAR[it.item].map((t) => el("li", { text: t }))), blocoAchados(it.item)));
+  item.append(cab, corpo);
+  if (fichaEstado.itemAberto === it.item) alternarItem(item, true);
+  return item;
+}
+function atualizarAchados() {
+  for (const it of fichaEstado.dados.investigacao) { const velho = $(`ach-${it.item}`); if (velho) velho.replaceWith(blocoAchados(it.item)); }
+}
+/* teclado: ↑↓ entre itens, Enter abre, 1–4 marca, P abre o primeiro trecho */
+document.addEventListener("keydown", (ev) => {
+  if ($("vista-ficha").hidden || fichaEstado.aba !== "investigar" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  if (ev.target.closest && ev.target.closest("input, textarea, select")) return;
+  const itens = [...document.querySelectorAll("#inv-itens .inv-item")]; if (!itens.length) return;
+  const i = itens.indexOf(ev.target.closest ? ev.target.closest(".inv-item") : null), k = ev.key;
+  if (i < 0) return;
+  if (k === "ArrowDown" || k === "j") { ev.preventDefault(); itens[Math.min(itens.length - 1, i + 1)].focus(); }
+  else if (k === "ArrowUp" || k === "k") { ev.preventDefault(); itens[Math.max(0, i - 1)].focus(); }
+  else if (k === "Enter" && ev.target === itens[i]) { ev.preventDefault(); alternarItem(itens[i]); }
+  else if (["1", "2", "3", "4"].includes(k)) { ev.preventDefault(); itens[i]._marcar(STATUS_BOTOES[Number(k) - 1][0]); }
+  else if (k === "p" || k === "P") { const c = itens[i].querySelector(".chip"); if (c) { ev.preventDefault(); c.click(); } }
+});
+
+/* leitor de documento (pdf.js 4.10.38, aprovado pelo Mateus em 16/11/2026) */
+const leitor = { lib: null, pdfs: {}, atual: null, seq: 0 };
+function leitorDocumento() {
+  return el("aside", { class: "inv-doc", id: "inv-doc", "aria-label": "Documento" },
+    el("div", { class: "leitor-cab" },
+      el("div", { class: "leitor-tit" }, el("b", { id: "leitor-nome", text: "Documento" }), el("span", { id: "leitor-pag", class: "num dica" })),
+      el("div", { class: "leitor-nav" },
+        el("button", { type: "button", class: "btn btn-texto", text: "‹", "aria-label": "Página anterior", onclick: () => irPagina(-1) }),
+        el("button", { type: "button", class: "btn btn-texto", text: "›", "aria-label": "Próxima página", onclick: () => irPagina(1) }),
+        el("a", { id: "leitor-abrir", class: "btn btn-texto", target: "_blank", rel: "noopener", text: "Abrir ↗", hidden: true }))),
+    el("div", { class: "leitor-balao", id: "leitor-balao", hidden: true }),
+    el("div", { class: "leitor-corpo", id: "leitor-corpo", "data-observar": "1" },
+      el("p", { class: "leitor-vazio", text: "Clique numa página citada (p.12) ou no nome de um documento para vê-lo aqui, com o trecho em destaque." })));
+}
+// a largura do leitor mudou (janela, celular girado, troca de coluna): redesenha a página atual
+let timerLeitor = null;
+const observarLeitor = new ResizeObserver(() => {
+  clearTimeout(timerLeitor);
+  timerLeitor = setTimeout(async () => {
+    const a = leitor.atual, corpo = $("leitor-corpo"), folha = corpo && corpo.querySelector(".leitor-folha");
+    if (!a || !a.total || !folha || Math.abs(folha.offsetWidth - (corpo.clientWidth - 24)) < 20) return;
+    await desenharPagina(await leitor.pdfs[a.anexoId], a.paginaAtual || 1, ++leitor.seq);
+  }, 200);
+});
+function pdfjs() {
+  leitor.lib ||= import("/vendor/pdfjs/pdf.min.mjs").then((m) => { m.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.mjs"; return m; });
+  return leitor.lib;
+}
+async function abrirNoLeitor(alvo) {
+  if (!$("leitor-corpo")) return;
+  mostrarColuna("doc");
+  leitor.atual = { ...alvo, imovelId: fichaEstado.dados.imovel.id };
+  const seq = ++leitor.seq, corpo = $("leitor-corpo"), balao = $("leitor-balao");
+  $("leitor-nome").textContent = alvo.nome || "Documento";
+  balao.hidden = !alvo.trecho;
+  if (alvo.trecho) balao.replaceChildren(el("span", { class: "rot", text: alvo.confirmada === false ? "Trecho citado · não encontrado no texto, confira" : "Trecho citado" }),
+    el("q", { text: alvo.trecho }));
+  if (!window.matchMedia("(min-width: 1100px)").matches) $("inv-grade").scrollIntoView({ block: "start", behavior: "smooth" });
+  if (alvo.descricao) {
+    $("leitor-abrir").hidden = true; $("leitor-pag").textContent = "";
+    corpo.replaceChildren(el("div", { class: "leitor-texto", text: fichaEstado.dados.imovel.descricao || "" }));
+    return;
+  }
+  $("leitor-abrir").hidden = false;
+  corpo.replaceChildren(el("p", { class: "leitor-vazio", text: "Abrindo o documento…" }));
+  try {
+    const lib = await pdfjs();
+    leitor.pdfs[alvo.anexoId] ||= lib.getDocument({ url: `/anexos/${alvo.anexoId}`, isEvalSupported: false }).promise;
+    const pdf = await leitor.pdfs[alvo.anexoId];
+    if (seq !== leitor.seq) return;
+    leitor.atual.total = pdf.numPages;
+    await desenharPagina(pdf, Math.min(Math.max(1, alvo.pagina || 1), pdf.numPages), seq);
+  } catch (e) {
+    if (seq === leitor.seq) corpo.replaceChildren(el("p", { class: "leitor-vazio erro", text: `Não foi possível mostrar o PDF aqui (${e.message}). Use "Abrir ↗".` }));
+  }
+}
+async function irPagina(passo) {
+  const a = leitor.atual; if (!a || !a.total) return;
+  const n = (a.paginaAtual || 1) + passo; if (n < 1 || n > a.total) return;
+  await desenharPagina(await leitor.pdfs[a.anexoId], n, ++leitor.seq);
+}
+const normalizarBusca = (t) => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+async function desenharPagina(pdf, n, seq) {
+  const lib = await pdfjs(), a = leitor.atual, corpo = $("leitor-corpo");
+  a.paginaAtual = n;
+  $("leitor-pag").textContent = `página ${n} de ${pdf.numPages}`;
+  $("leitor-abrir").href = `/anexos/${a.anexoId}#page=${n}`;
+  const page = await pdf.getPage(n);
+  const largura = Math.max(260, corpo.clientWidth - 24);
+  const viewport = page.getViewport({ scale: largura / page.getViewport({ scale: 1 }).width });
+  const dpr = window.devicePixelRatio || 1;
+  const canvas = el("canvas", { class: "leitor-canvas", "aria-label": `Página ${n}` });
+  canvas.width = Math.floor(viewport.width * dpr); canvas.height = Math.floor(viewport.height * dpr);
+  canvas.style.width = `${viewport.width}px`; canvas.style.height = `${viewport.height}px`;
+  const folha = el("div", { class: "leitor-folha" }, canvas);
+  folha.style.width = `${viewport.width}px`; folha.style.height = `${viewport.height}px`;
+  await page.render({ canvasContext: canvas.getContext("2d"), viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+  if (seq !== leitor.seq) return;
+  corpo.replaceChildren(folha);
+  if (a.trecho && n === a.pagina) {
+    const achou = await destacar(page, viewport, folha, a.trecho, lib);
+    if (achou) {
+      const m = folha.querySelector(".realce-pdf");
+      if (m) corpo.scrollTop = Math.max(0, m.offsetTop - 60);
+    } else if (a.transcrito) {
+      $("leitor-balao").append(el("small", { text: "PDF escaneado: o trecho vem da transcrição e não dá para marcá-lo na imagem." }));
+    }
+  }
+}
+async function destacar(page, viewport, folha, trecho, lib) {
+  const tc = await page.getTextContent();
+  let texto = ""; const dono = [];
+  tc.items.forEach((it, i) => { const t = normalizarBusca(it.str); texto += t; for (let k = 0; k < t.length; k++) dono.push(i); });
+  const partes = trecho.split(/\.\.\.|…/).map(normalizarBusca).filter((p) => p.length >= 10).sort((x, y) => y.length - x.length);
+  let ini = -1, fim = -1;
+  for (const p of partes.flatMap((p) => [p, p.slice(0, 60), p.slice(-60)])) {
+    const j = texto.indexOf(p);
+    if (j >= 0) { ini = j; fim = j + p.length; break; }
+  }
+  if (ini < 0) return false;
+  for (const i of new Set(dono.slice(ini, fim))) {
+    const it = tc.items[i], tx = lib.Util.transform(viewport.transform, it.transform);
+    const h = Math.hypot(tx[2], tx[3]), w = it.width * viewport.scale;
+    if (!w || !h) continue;
+    const m = el("div", { class: "realce-pdf" });
+    Object.assign(m.style, { left: `${tx[4]}px`, top: `${tx[5] - h * 0.95}px`, width: `${w}px`, height: `${h * 1.2}px` });
+    folha.append(m);
+  }
+  return true;
 }
 
 let timerBuscaDocs = null;
@@ -1351,58 +1723,19 @@ function botaoDocumentosFonte(d) {
       } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; }
       b.disabled = false; b.textContent = emAnalise ? "Baixar agora" : "Tentar baixar agora";
     } });
-  const semEdital = !docs.some((x) => x.tipo === "edital") && d.imovel.fonte !== "caixa"
-    ? ` O edital da ${fonte} ainda não é baixado sozinho: baixe pelo botão "Abrir na ${fonte}" e anexe no item Edital.` : "";
-  const situacao = !faltam.length ? "Os documentos que o sistema sabe buscar já foram baixados e estão no item correspondente (Matrícula, Edital) em Investigar." + semEdital
-    : emAnalise ? "O sistema baixa estes documentos sozinho porque o imóvel está em Para analisar. Recarregue em alguns segundos, ou baixe agora."
-                : "Ao marcar o imóvel como Para analisar, o sistema baixa estes documentos sozinho.";
+  const semEditalCaixa = d.imovel.fonte === "caixa" && !docs.some((x) => x.tipo === "edital");
+  if (!faltam.length && !semEditalCaixa) {          // tudo baixado: só os links de origem, recolhidos
+    return el("details", { class: "docs-fonte recolhido" },
+      el("summary", { class: "dica", text: `Publicados pela ${fonte}: todos já anexados` }), links);
+  }
+  const situacao = !faltam.length ? "" : emAnalise ? "O sistema baixa sozinho; recarregue em alguns segundos ou baixe agora."
+                                                    : "Ao marcar Para analisar, o sistema baixa sozinho.";
   return el("div", { class: "docs-fonte" },
-    el("b", { text: `Documentos publicados pela ${fonte}` }), links,
-    el("span", { class: "dica", text: situacao }), faltam.length && !d.buscando_documentos ? b : null, msg,
-    d.imovel.fonte === "caixa" && !docs.some((x) => x.tipo === "edital") ? blocoEditalCaixa(d) : null);
+    el("span", { class: "dica", text: `Publicados pela ${fonte}: ${faltam.map((x) => x.rotulo || x.tipo).join(", ") || "edital ainda não encontrado"}. ${situacao}` }),
+    el("div", { class: "docs-linha" }, faltam.length && !d.buscando_documentos ? b : null, links), msg,
+    semEditalCaixa ? blocoEditalCaixa(d) : null);
 }
 
-function atualizarProgresso() {
-  const d = fichaEstado.dados, alvo = $("inv-progresso"); if (!alvo) return;
-  const inv = d.investigacao, n = inv.length, conta = (s) => inv.filter((i) => i.status === s).length;
-  const feitos = n - conta("pendente");
-  alvo.replaceChildren(el("div", { class: "barra-prog", role: "img", "aria-label": `${feitos} de ${n} conferidos` },
-      inv.map((i) => el("i", { class: i.status }))),
-    el("span", { class: "num", text: `${feitos} de ${n} conferidos` + (conta("impeditivo") ? ` · ${conta("impeditivo")} impeditivo` : "") + (conta("atencao") ? ` · ${conta("atencao")} com atenção` : "") }));
-  atualizarStatusAbas();
-}
-function cartaoItem(d, it) {
-  const card = el("div", { class: "check-card", "data-status": it.status, "data-item": it.item });
-  const salvo = el("span", { class: "salvo", text: it.quando ? `atualizado em ${dataHoraBR(it.quando)}` : "" });
-  const nota = el("textarea", { class: "campo", rows: "2", maxlength: "2000", placeholder: "O que você encontrou? (opcional)", "aria-label": `Anotação: ${it.rotulo}` });
-  nota.value = it.nota || "";
-  let atual = { status: it.status, nota: it.nota || "" };
-  const botoes = el("div", { class: "seg", role: "group", "aria-label": `Situação: ${it.rotulo}` },
-    STATUS_BOTOES.map(([v, r]) => el("button", { type: "button", class: `seg-b ${v}`, "aria-pressed": String(it.status === v), text: r,
-      onclick: () => salvar(atual.status === v ? "pendente" : v, nota.value.trim()) })));
-  async function salvar(status, texto) {
-    if (status === atual.status && texto === atual.nota) return;
-    salvo.textContent = "salvando…";
-    try {
-      const r = await api(`/api/imoveis/${d.imovel.id}/investigacao`, POST_JSON({ item: it.item, status, nota: texto || null }));
-      atual = { status, nota: texto }; d.investigacao = r.investigacao;
-      const novo = r.investigacao.find((x) => x.item === it.item);
-      card.dataset.status = novo.status;
-      botoes.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.classList.contains(novo.status))));
-      salvo.textContent = `salvo em ${dataHoraBR(novo.quando)}`;
-      atualizarProgresso();
-    } catch (e) { salvo.textContent = "não salvo"; mostrarErro(e.message); }
-  }
-  nota.addEventListener("change", () => salvar(atual.status, nota.value.trim()));
-  card.append(el("div", { class: "cc-cab" }, el("b", { text: it.rotulo }), salvo), el("span", { class: "ajuda", text: it.ajuda }));
-  const sug = sugestaoIA(d, it, salvar, nota); if (sug) card.append(sug);
-  if (it.item === "leilao" && d.sugestao_leilao) card.append(el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao));
-  card.append(atalhos(it.item, d.imovel) || "",
-    el("details", { class: "procurar" }, el("summary", { text: "O que procurar" }), el("ul", {}, PROCURAR[it.item].map((t) => el("li", { text: t })))),
-    blocoAchados(it.item), botoes, nota);
-  if (TIPO_DO_ITEM[it.item]) card.append(blocoAnexos(d, TIPO_DO_ITEM[it.item]));
-  return card;
-}
 /* Barra de progresso estimada: a API não informa o andamento, então a barra avança pelo tempo
    (rápido no começo, desacelerando perto do fim, nunca chega a 100% antes da resposta) e mostra a etapa provável. */
 function barraDeProgresso(estimativaSeg, etapas) {
@@ -1425,26 +1758,6 @@ function barraDeProgresso(estimativaSeg, etapas) {
   const timer = setInterval(passo, 500);
   return { el: caixa, parar: () => clearInterval(timer),
     concluir: () => { clearInterval(timer); preench.style.width = "100%"; trilho.setAttribute("aria-valuenow", "100"); etapa.textContent = "Pronto"; } };
-}
-
-function botaoTranscrever(d, a) {
-  const msg = el("span", { class: "dica" });
-  const b = el("button", { type: "button", class: "btn btn-anexar", disabled: !(d.ia || {}).disponivel,
-    text: "Ler PDF escaneado com IA", title: (d.ia || {}).disponivel ? "" : (d.ia || {}).motivo,
-    onclick: async () => {
-      b.disabled = true; b.textContent = "Lendo o PDF…"; msg.textContent = "";
-      const barra = barraDeProgresso(Math.max(30, Math.round((a.tamanho || 300000) / 4000)), [
-        [0, "Enviando o PDF"], [5, "A IA está transcrevendo página por página"], [90, "PDF longo: ainda transcrevendo"]]);
-      msg.before(barra.el);
-      try {
-        const r = await api(`/api/anexos/${a.id}/transcrever`, POST_JSON({}));
-        barra.concluir();
-        await abrirFicha(d.imovel.id);
-        mostrarAviso(`${r.paginas} página(s) transcritas` + (r.uso && r.uso.custo_usd != null ? ` · custo US$ ${r.uso.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""), null);
-      } catch (e) { barra.el.remove(); barra.parar(); msg.textContent = e.message; b.disabled = false; b.textContent = "Ler PDF escaneado com IA"; }
-    } });
-  return el("span", { class: "transcrever" }, b, msg,
-    el("span", { class: "dica", text: "~US$ 0,10–0,30 por documento. O PDF vai inteiro para a IA (imagem não pode ser mascarada); a transcrição guardada fica com CPF e RG mascarados." }));
 }
 
 function blocoAnexos(d, tipoFixo) {
@@ -1748,7 +2061,7 @@ const PASSOS = [
     extra: () => miniFluxo(["O imóvel", "Investigar", "Simular", "Decidir"], 0) },
   { tela: "ficha", aba: "imovel", alvo: () => document.querySelector("#painel-imovel .fatos"), titulo: "7. O imóvel em poucas linhas",
     texto: () => "Uma frase e os quatro números principais, como vieram da Caixa. Histórico e dados completos ficam recolhidos logo abaixo." },
-  { tela: "ficha", aba: "investigar", alvo: () => document.querySelector("#painel-investigar .check-card"), titulo: "8. Investigue item por item",
+  { tela: "ficha", aba: "investigar", alvo: () => document.querySelector("#painel-investigar .inv-item"), titulo: "8. Investigue item por item",
     texto: () => "Para cada ponto, marque OK, Atenção, Impeditivo ou Não se aplica e anote o que encontrou. Matrícula e edital podem ser anexados no próprio item.",
     extra: miniChecklist },
   { tela: "ficha", aba: "simular", alvo: () => document.querySelector("#painel-simular .sim-grade"), titulo: "9. Responda três perguntas",

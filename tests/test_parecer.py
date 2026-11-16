@@ -179,6 +179,16 @@ class Transcricao(unittest.TestCase):
         with self.assertRaises(Exception):                                             # já tem texto: não repete
             ficha.transcrever_anexo(self.repo, self.pasta, t, self.aid)
 
+    def test_antes_do_parecer_le_os_escaneados(self):
+        ctx, _, _ = montar_contexto(self.repo, self.iid)
+        self.assertIn("SEM TEXTO LEGÍVEL", ctx)                                         # a IA sabe que existe, mas sem texto
+        self.assertIn("matricula-scan.pdf", ctx)
+        r = ficha.transcrever_pendentes(self.repo, self.pasta, TranscritorFalso(), self.iid)
+        self.assertEqual((len(r["transcritos"]), r["custo_usd"], r["erros"]), (1, 0.028, []))
+        ctx, _, _ = montar_contexto(self.repo, self.iid)
+        self.assertNotIn("SEM TEXTO LEGÍVEL", ctx)
+        self.assertEqual(ficha.transcrever_pendentes(self.repo, self.pasta, TranscritorFalso(), self.iid)["transcritos"], [])
+
     def test_sem_transcritor(self):
         with self.assertRaises(ErroDeAnalise):
             ficha.transcrever_anexo(self.repo, self.pasta, None, self.aid)

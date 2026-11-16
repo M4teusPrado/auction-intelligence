@@ -348,3 +348,18 @@ def buscar_edital_caixa(repo, pasta: str, baixador: BaixadorWeb, imovel_id: int,
             if tentar(n, serie, unidade) and tem():
                 return {"encontrado": True, "consultados": consultados}
     return {"encontrado": tem(), "consultados": consultados}
+
+
+def transcrever_pendentes(repo, pasta: str, transcritor, imovel_id: int) -> dict:
+    """Antes do parecer: PDFs escaneados de edital, matrícula ou laudo são transcritos (modelo barato,
+    < US$ 0,01 por matrícula). Um que falhe não impede o parecer: ele segue com o que houver."""
+    feitos, custo, erros = [], 0.0, []
+    for a in repo.anexos(imovel_id):
+        if a["tipo"] in ("edital", "matricula", "laudo") and a["leitura"] in ("sem_texto", "erro") \
+                and a["nome_original"].lower().endswith(".pdf"):
+            try:
+                r = transcrever_anexo(repo, pasta, transcritor, a["id"])
+                feitos.append(a["id"]); custo += (r.get("uso") or {}).get("custo_usd") or 0
+            except Exception as e:                 # segue sem esse documento; o parecer avisa que não há texto
+                erros.append(f"{a['nome_original']}: {e}")
+    return {"transcritos": feitos, "custo_usd": round(custo, 4), "erros": erros}

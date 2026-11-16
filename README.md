@@ -142,3 +142,10 @@ claude-sonnet-5-5 (esforço médio), ~US$ 0,08–0,15 por imóvel; regras gerais
 coletivo (Caixa) lidas uma vez com claude-opus-5-5 (~US$ 0,26 por edital, reaproveitadas por
 todos os imóveis dele); transcrição de PDF escaneado com claude-haiku-5-5 (< US$ 0,01 por
 matrícula). Antes: ~US$ 1,00 por imóvel com edital da Caixa.
+
+**Investigar em duas colunas (16/11/2026):** à esquerda o resumo, os documentos, o parecer e o
+checklist (um item aberto por vez; teclado: ↑ ↓, Enter, 1–4, P); à direita o próprio PDF. Cada
+citação vira uma etiqueta `p.N` que abre o documento na página, com o trecho em destaque. O leitor
+usa o pdf.js 4.10.38 (Mozilla, Apache 2.0, aprovado pelo Mateus), guardado em
+`captacao/web/vendor/pdfjs/` para funcionar sem internet. "Gerar parecer" lê antes, sozinho, os PDFs
+escaneados (modelo barato).

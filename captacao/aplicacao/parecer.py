@@ -87,6 +87,9 @@ def montar_contexto(repo: RepositorioDeAnalise, imovel_id: int, regras_por_sha: 
                              f"(DOCUMENTO {codigo}: {len(outros)} páginas omitidas por listarem apenas outros imóveis.)")
         else:
             envio[codigo] = None
+    lidos = {a["id"] for a in repo.textos_lidos(imovel_id)}
+    sem_texto = [f"{a['nome_original']} ({a['tipo']})" for a in repo.anexos(imovel_id)
+                 if a["id"] not in lidos and a["tipo"] in ("edital", "matricula", "laudo")]
     pracas = "; ".join(f"{p['numero']}ª praça {p['data']}: {_valor(p['valor'])}" for p in lei.get("pracas", [])) or "não informadas"
     cabecalho = "\n".join([
         "DADOS DO IMÓVEL (como publicados pela fonte)",
@@ -98,6 +101,8 @@ def montar_contexto(repo: RepositorioDeAnalise, imovel_id: int, regras_por_sha: 
         f"Matrícula: {lei.get('matricula') or 'não informada'} | Processo: {lei.get('processo') or '-'} | Vara: {lei.get('vara') or '-'}",
         f"Áreas: privativa {im.get('area_privativa') or '-'} m², terreno {im.get('area_terreno') or '-'} m², total {im.get('area_total') or '-'} m²",
         "", "DOCUMENTOS DISPONÍVEIS: " + "; ".join(f"{d['codigo']} = {d['nome']}" for d in documentos),
+        *([f"ANEXADOS MAS SEM TEXTO LEGÍVEL (imagem não transcrita): {', '.join(sem_texto)}. Não diga que não foram anexados; "
+           "diga que não puderam ser lidos."] if sem_texto else []),
         "(Se edital ou matrícula não estiverem na lista, eles ainda não foram anexados: diga isso nas perguntas.)", ""])
     partes = [cabecalho]
     for codigo, paginas in fontes.items():

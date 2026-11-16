@@ -32,6 +32,8 @@ from .aplicacao.parecer import gerar_parecer
 from .aplicacao.portas import EntradaInvalida, ErroDeAnalise, ErroDeFonte, NaoEncontrado
 
 HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
+# pdf.js 4.10.38 (Apache 2.0), aprovado pelo Mateus em 16/11/2026: leitor de PDF com trecho em destaque
+VENDOR = {"/vendor/pdfjs/pdf.min.mjs", "/vendor/pdfjs/pdf.worker.min.mjs"}
 CORPO_MAX = 16 * 1024
 ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte|parecer))?$")
 ROTA_ANEXO = re.compile(r"^/anexos/(\d{1,12})$")
@@ -135,6 +137,9 @@ def _criar_handler(caminho_base: str, porta: int):
             if url.path in ("/", "/index.html"):
                 with open(HTML, "rb") as f:
                     self._enviar(200, f.read(), "text/html; charset=utf-8")
+            elif url.path in VENDOR:
+                with open(os.path.join(os.path.dirname(HTML), url.path.lstrip("/")), "rb") as f:
+                    self._enviar(200, f.read(), "text/javascript; charset=utf-8")
             elif url.path == "/api/resumo":
                 self._executar(triagem.resumo)
             elif url.path == "/api/opcoes":
@@ -229,7 +234,14 @@ def _criar_handler(caminho_base: str, porta: int):
                     return self._json(400, {"erro": "envie {\"url\": \"...\"}"})
                 return self._executar(lambda repo: importar_link(montagem.FONTES, repo, corpo["url"]))
             if m.group(2) == "parecer":
-                return self._executar(lambda repo: gerar_parecer(repo, montagem.ANALISADOR, int(m.group(1))))
+                def parecer(repo):
+                    iid = int(m.group(1))
+                    t = ficha.transcrever_pendentes(repo, pasta_anexos, montagem.ANALISADOR, iid)
+                    r = gerar_parecer(repo, montagem.ANALISADOR, iid)
+                    if t["custo_usd"]:
+                        r["uso"]["custo_transcricao_usd"] = t["custo_usd"]
+                    return {**r, "transcricao": t}
+                return self._executar(parecer)
             if m.group(2) == "documentos-fonte":
                 def baixar_agora(repo):
                     iid = int(m.group(1))
