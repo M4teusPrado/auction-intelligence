@@ -310,6 +310,10 @@
   .edital-caixa { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
   .linha-edital { display: flex; gap: 8px; flex-wrap: wrap; }
   .linha-edital .campo { flex: 1 1 240px; width: auto; }
+  .carga-ia { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; width: 100%; }
+  .carga-trilho { height: 8px; border-radius: 999px; background: var(--borda); overflow: hidden; }
+  .carga-barra { height: 100%; width: 0; border-radius: 999px; background: var(--destaque); transition: width .5s linear; }
+  .carga-legenda { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--texto-2); }
   .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
   .etiquetas:empty { display: none; }
   .etiqueta { border: 1px solid var(--borda-forte); background: var(--superficie); border-radius: 999px; padding: 3px 10px;
@@ -1210,15 +1214,23 @@ function blocoParecer(d) {
         msg.textContent = "Nenhum edital ou matrícula anexado (ou com texto lido). O parecer vai usar só a descrição do lote e ficará limitado. Anexe os PDFs abaixo, ou clique de novo para gerar mesmo assim.";
         b.textContent = "Gerar só com a descrição"; return;
       }
-      b.disabled = true; b.textContent = "Analisando os documentos…"; msg.classList.remove("erro");
-      msg.textContent = "A IA está lendo a descrição e os PDFs anexados. Pode levar de 1 a 3 minutos.";
+      b.disabled = true; b.textContent = "Analisando os documentos…"; msg.classList.remove("erro"); msg.textContent = "";
+      const barra = barraDeProgresso(40 + 15 * lidos, [
+        [0, "Preparando o material e mascarando CPF e RG"],
+        [4, "A IA está lendo a descrição e os PDFs anexados"],
+        [20, "Organizando ocupação, débitos, ônus e riscos"],
+        [45, "Conferindo cada trecho citado no texto original"],
+        [100, "Documentos longos: ainda trabalhando, pode levar até 3 minutos"]]);
+      cab.after(barra.el);
       try {
         await api(`/api/imoveis/${d.imovel.id}/parecer`, POST_JSON({}));
+        barra.concluir();
         await abrirFicha(d.imovel.id);
-      } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = p ? "Gerar de novo" : "Gerar parecer com IA"; }
+      } catch (e) { barra.el.remove(); barra.parar(); msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = p ? "Gerar de novo" : "Gerar parecer com IA"; }
     } });
   const cab = el("div", { class: "parecer-cab" }, el("h3", { text: "Parecer preliminar (IA)" }), b);
   caixa.append(cab);
+  if (p) caixa.append(msg);
   if (!ia.disponivel) caixa.append(el("p", { class: "dica erro", text: `Indisponível: ${ia.motivo}.` }));
   if (!p) {
     caixa.append(el("p", { class: "dica", text: "A IA lê a descrição do lote e os PDFs anexados (edital, matrícula) e organiza ocupação, débitos, ônus e riscos, " +
@@ -1353,17 +1365,45 @@ function cartaoItem(d, it) {
   if (TIPO_DO_ITEM[it.item]) card.append(blocoAnexos(d, TIPO_DO_ITEM[it.item]));
   return card;
 }
+/* Barra de progresso estimada: a API não informa o andamento, então a barra avança pelo tempo
+   (rápido no começo, desacelerando perto do fim, nunca chega a 100% antes da resposta) e mostra a etapa provável. */
+function barraDeProgresso(estimativaSeg, etapas) {
+  const inicio = Date.now();
+  const preench = el("div", { class: "carga-barra" });
+  const trilho = el("div", { class: "carga-trilho", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": "0",
+    "aria-label": "Andamento estimado" }, preench);
+  const etapa = el("span", { class: "carga-etapa" }), tempo = el("span", { class: "carga-tempo num" });
+  const caixa = el("div", { class: "carga-ia", "aria-live": "polite" }, trilho, el("div", { class: "carga-legenda" }, etapa, tempo));
+  let ultimaEtapa = "";
+  const passo = () => {
+    const s = (Date.now() - inicio) / 1000;
+    const pct = Math.min(95, 95 * (1 - Math.exp(-s / (estimativaSeg / 1.6))));
+    preench.style.width = pct.toFixed(1) + "%"; trilho.setAttribute("aria-valuenow", String(Math.round(pct)));
+    const atual = etapas.filter(([t]) => s >= t).pop()[1];
+    if (atual !== ultimaEtapa) { etapa.textContent = atual; ultimaEtapa = atual; }
+    tempo.textContent = `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  };
+  passo();
+  const timer = setInterval(passo, 500);
+  return { el: caixa, parar: () => clearInterval(timer),
+    concluir: () => { clearInterval(timer); preench.style.width = "100%"; trilho.setAttribute("aria-valuenow", "100"); etapa.textContent = "Pronto"; } };
+}
+
 function botaoTranscrever(d, a) {
   const msg = el("span", { class: "dica" });
   const b = el("button", { type: "button", class: "btn btn-anexar", disabled: !(d.ia || {}).disponivel,
     text: "Ler PDF escaneado com IA", title: (d.ia || {}).disponivel ? "" : (d.ia || {}).motivo,
     onclick: async () => {
-      b.disabled = true; b.textContent = "Lendo o PDF…"; msg.textContent = "A IA está transcrevendo página por página (1 a 3 minutos).";
+      b.disabled = true; b.textContent = "Lendo o PDF…"; msg.textContent = "";
+      const barra = barraDeProgresso(Math.max(30, Math.round((a.tamanho || 300000) / 4000)), [
+        [0, "Enviando o PDF"], [5, "A IA está transcrevendo página por página"], [90, "PDF longo: ainda transcrevendo"]]);
+      msg.before(barra.el);
       try {
         const r = await api(`/api/anexos/${a.id}/transcrever`, POST_JSON({}));
+        barra.concluir();
         await abrirFicha(d.imovel.id);
         mostrarAviso(`${r.paginas} página(s) transcritas` + (r.uso && r.uso.custo_usd != null ? ` · custo US$ ${r.uso.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : ""), null);
-      } catch (e) { msg.textContent = e.message; b.disabled = false; b.textContent = "Ler PDF escaneado com IA"; }
+      } catch (e) { barra.el.remove(); barra.parar(); msg.textContent = e.message; b.disabled = false; b.textContent = "Ler PDF escaneado com IA"; }
     } });
   return el("span", { class: "transcrever" }, b, msg,
     el("span", { class: "dica", text: "~US$ 0,10–0,30 por documento. O PDF vai inteiro para a IA (imagem não pode ser mascarada); a transcrição guardada fica com CPF e RG mascarados." }));
