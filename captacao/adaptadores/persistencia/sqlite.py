@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS regras_edital (       -- regras gerais de um edital, 
   id INTEGER PRIMARY KEY, sha256 TEXT NOT NULL, modelo TEXT NOT NULL, regras TEXT NOT NULL, uso TEXT, quando TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_regras_edital_sha ON regras_edital (sha256);
+CREATE TABLE IF NOT EXISTS editais_caixa (       -- editais da Caixa já consultados (para não baixar de novo)
+  codigo TEXT PRIMARY KEY, existe INTEGER NOT NULL, url TEXT, imoveis INTEGER, quando TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
@@ -103,7 +106,7 @@ COLUNAS_NOVAS = [
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
 TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas", "leiloes", "pracas",
-                 "documentos_fonte", "pareceres", "regras_edital")
+                 "documentos_fonte", "pareceres", "regras_edital", "editais_caixa")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
@@ -360,6 +363,18 @@ class RepositorioSQLite:
         self.con.execute("INSERT INTO regras_edital (sha256, modelo, regras, uso, quando) VALUES (?,?,?,?,?)",
                          (sha256, modelo, json.dumps(regras, ensure_ascii=False), json.dumps(uso), quando))
         self.con.commit()
+
+    def edital_caixa(self, codigo: str) -> Optional[dict]:
+        r = self.con.execute("SELECT * FROM editais_caixa WHERE codigo=?", (codigo,)).fetchone()
+        return dict(r) if r else None
+
+    def registrar_edital_caixa(self, codigo: str, existe: bool, url: str, imoveis: int, quando: str) -> None:
+        self.con.execute("INSERT OR REPLACE INTO editais_caixa (codigo, existe, url, imoveis, quando) VALUES (?,?,?,?,?)",
+                         (codigo, int(existe), url, imoveis, quando))
+        self.con.commit()
+
+    def editais_caixa_conhecidos(self) -> List[dict]:
+        return [dict(r) for r in self.con.execute("SELECT * FROM editais_caixa ORDER BY codigo")]
 
     def ligar_editais_de_leiloeiros(self) -> int:
         """Imóvel da Caixa vendido por um leiloeiro que coletamos: o lote do leiloeiro traz o link da

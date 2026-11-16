@@ -1290,26 +1290,38 @@ function sugestaoIA(d, it, salvar, nota) {
     s.fatos.length ? el("ul", { class: "citacoes" }, s.fatos.map((c) => citacao(d, c))) : null);
 }
 
+let timerBuscaDocs = null;
 function blocoEditalCaixa(d) {
-  // Um edital da Caixa lista centenas de imóveis: colado uma vez, vale para todos os que aparecem nele.
+  // Edital da Caixa: o sistema procura sozinho pelo número do edital (autorizado pelo Mateus em 16/11/2026).
+  clearTimeout(timerBuscaDocs);
+  const msg = el("p", { class: "dica docs-msg" });
+  let principal;
+  if (d.buscando_documentos) {
+    principal = el("p", { class: "dica buscando", role: "status",
+      text: "Procurando o edital da Caixa e baixando os documentos… Na primeira vez pode levar alguns minutos; a ficha se atualiza sozinha." });
+    timerBuscaDocs = setTimeout(() => { if (location.hash === `#/imovel/${d.imovel.id}`) abrirFicha(d.imovel.id); }, 8000);
+  } else {
+    const b = el("button", { type: "button", class: "btn", text: "Procurar o edital agora", onclick: async () => {
+      b.disabled = true; b.textContent = "Procurando…";
+      try { await api(`/api/imoveis/${d.imovel.id}/documentos-fonte`, POST_JSON({})); await abrirFicha(d.imovel.id); }
+      catch (e) { msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = "Procurar o edital agora"; }
+    } });
+    principal = el("div", {}, el("p", { class: "dica",
+      text: "O edital da Caixa ainda não foi encontrado para este imóvel. Ao marcar Para analisar o sistema procura sozinho; você também pode procurar agora." }), b);
+  }
   const campo = el("input", { class: "campo", type: "url", placeholder: "https://venda-imoveis.caixa.gov.br/editais/EL....PDF",
     "aria-label": "Link do edital da Caixa" });
-  const msg = el("p", { class: "dica docs-msg" });
-  const b = el("button", { type: "button", class: "btn", text: "Buscar edital", onclick: async () => {
-    b.disabled = true; b.textContent = "Lendo o edital…"; msg.classList.remove("erro"); msg.textContent = "";
+  const bm = el("button", { type: "button", class: "btn btn-texto", text: "Usar este link", onclick: async () => {
+    bm.disabled = true; msg.classList.remove("erro"); msg.textContent = "Lendo o edital…";
     try {
       const r = await api("/api/editais-caixa", POST_JSON({ url: campo.value.trim() }));
-      const aqui = r.anexados_em_analise.includes(d.imovel.id);
-      mostrarAviso(`${r.edital}: ${r.imoveis_na_base} imóvel(is) da base ligados a ele` +
-        (r.anexados_em_analise.length ? `; anexado em ${r.anexados_em_analise.length} em análise` : ""), null);
-      if (!aqui && !r.anexados_em_analise.length && r.imoveis_na_base) msg.textContent = "Este imóvel não aparece nesse edital.";
+      mostrarAviso(`${r.edital}: ${r.imoveis_na_base} imóvel(is) da base ligados a ele`, null);
       await abrirFicha(d.imovel.id);
-    } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = "Buscar edital"; }
+    } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; bm.disabled = false; }
   } });
-  return el("div", { class: "edital-caixa" },
-    el("span", { class: "dica", text: "Edital da Caixa: no site da Caixa, clique com o botão direito em \"Baixar edital e anexos\", " +
-      "\"Copiar endereço do link\" e cole aqui. Basta uma vez por edital: o sistema liga o edital a todos os imóveis que aparecem nele." }),
-    el("div", { class: "linha-edital" }, campo, b), msg);
+  return el("div", { class: "edital-caixa" }, principal,
+    el("details", {}, el("summary", { class: "dica", text: "Já tenho o link do edital" }),
+      el("div", { class: "linha-edital" }, campo, bm)), msg);
 }
 
 function botaoDocumentosFonte(d) {
@@ -1346,7 +1358,7 @@ function botaoDocumentosFonte(d) {
                 : "Ao marcar o imóvel como Para analisar, o sistema baixa estes documentos sozinho.";
   return el("div", { class: "docs-fonte" },
     el("b", { text: `Documentos publicados pela ${fonte}` }), links,
-    el("span", { class: "dica", text: situacao }), faltam.length ? b : null, msg,
+    el("span", { class: "dica", text: situacao }), faltam.length && !d.buscando_documentos ? b : null, msg,
     d.imovel.fonte === "caixa" && !docs.some((x) => x.tipo === "edital") ? blocoEditalCaixa(d) : null);
 }
 

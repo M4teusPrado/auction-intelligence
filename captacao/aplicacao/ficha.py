@@ -261,6 +261,8 @@ def indexar_edital_caixa(repo, pasta: str, baixador: BaixadorWeb, url: str, font
     num = re.match(r"E[LA](\d{4})(\d{4})", cod)
     rotulo = f"Edital {num.group(1)}/{num.group(2)} (Caixa)" if num else f"Edital {cod} (Caixa)"
     achados = repo.vincular_documento("caixa", numeros, "edital", url, rotulo)
+    if hasattr(repo, "registrar_edital_caixa"):
+        repo.registrar_edital_caixa(cod, True, url, len(numeros), _agora(None))
     anexados = []
     for a in achados:
         if a["estagio"] == "analisar" and documentos_pendentes(repo, a["id"], fontes):
@@ -282,3 +284,67 @@ def _regras_dos_editais(repo, imovel_id: int) -> list:
             saida.append({"anexo_id": a["id"], "nome": a["nome_original"], "quando": salvo["quando"],
                           "regras": [r for r in regras if r["citacoes"]]})
     return saida
+
+
+SERIE_CAIXA_PADRAO = ("0226", "CPARE")      # série e unidade do edital 0061/0226 - CPA/RE (nov/2026)
+URL_EDITAL_CAIXA = "https://venda-imoveis.caixa.gov.br/editais/EL{numero:04d}{serie}{unidade}.PDF"
+
+
+def buscar_edital_caixa(repo, pasta: str, baixador: BaixadorWeb, imovel_id: int, fontes: dict = None,
+                        agora: str = None, limite: int = 90) -> dict:
+    """Imóvel da Caixa sem edital: procura o edital pelo nome do arquivo (EL<número><série><unidade>.PDF),
+    que segue numeração sequencial. Autorizado pelo Mateus em 16/11/2026. Cada edital encontrado é
+    baixado uma vez e ligado a todos os imóveis que ele lista; os já consultados não são pedidos de novo
+    (os inexistentes são reconsultados depois de 7 dias, quando a Caixa pode ter publicado). Para quando
+    o imóvel ganha edital ou acabam os candidatos. Pedidos sob demanda, identificados e com pausa."""
+    import re
+    from datetime import datetime, timedelta
+    from .portas import ErroDeFonte
+    im = _buscar_imovel(repo, imovel_id)
+    tem = lambda: any(d["tipo"] == "edital" for d in documentos_da_fonte(repo.buscar_imovel(imovel_id), fontes))
+    if im.get("fonte") != "caixa" or tem():
+        return {"encontrado": tem(), "consultados": 0}
+    agora = agora or _agora(None)
+    conhecidos = {e["codigo"]: e for e in repo.editais_caixa_conhecidos()}
+    series = {}
+    for cod in conhecidos:
+        m = re.fullmatch(r"EL(\d{4})(\d{4})([A-Z]+)", cod)
+        if m:
+            series.setdefault((m.group(2), m.group(3)), []).append(int(m.group(1)) if conhecidos[cod]["existe"] else 0)
+    series.setdefault(SERIE_CAIXA_PADRAO, [0])
+    limite_antigo = (datetime.fromisoformat(agora) - timedelta(days=7)).isoformat(timespec="seconds")
+    consultados = 0
+
+    def tentar(n, serie, unidade):
+        """None: já consultado; True: existe (e foi indexado); False: não existe."""
+        nonlocal consultados
+        cod = f"EL{n:04d}{serie}{unidade}"
+        e = conhecidos.get(cod)
+        if e and (e["existe"] or e["quando"] >= limite_antigo):
+            return None if e["existe"] else False
+        url = URL_EDITAL_CAIXA.format(numero=n, serie=serie, unidade=unidade)
+        consultados += 1
+        try:
+            indexar_edital_caixa(repo, pasta, baixador, url, fontes)
+            return True
+        except ErroDeFonte as erro:
+            if "respondeu 404" not in str(erro):
+                raise
+            repo.registrar_edital_caixa(cod, False, url, 0, agora)
+            return False
+
+    for (serie, unidade), ns in series.items():
+        maior = max(ns)
+        n, faltas = maior + 1, 0                 # 1ª fase: editais novos, até 3 números seguidos sem edital
+        while faltas < 3 and consultados < limite:
+            r = tentar(n, serie, unidade)
+            faltas = faltas + 1 if r is False else 0
+            if r and tem():
+                return {"encontrado": True, "consultados": consultados}
+            n += 1
+        for n in range(maior, 0, -1):            # 2ª fase: os anteriores ainda não consultados, do mais novo ao mais antigo
+            if consultados >= limite:
+                return {"encontrado": False, "consultados": consultados, "parou": "limite"}
+            if tentar(n, serie, unidade) and tem():
+                return {"encontrado": True, "consultados": consultados}
+    return {"encontrado": tem(), "consultados": consultados}

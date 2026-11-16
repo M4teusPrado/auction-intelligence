@@ -132,5 +132,48 @@ class EditalPeloLeiloeiro(unittest.TestCase):
                          [("edital", edital), ("matricula", "https://venda-imoveis.caixa.gov.br/editais/matricula/SP/8787715548453.pdf")])
 
 
+class BuscaDoEditalCaixa(unittest.TestCase):
+    """Edital da Caixa achado pelo número do arquivo (EL<nº><série><unidade>.PDF), sem colar link."""
+    def setUp(self):
+        self.repo = RepositorioSQLite(":memory:"); self.addCleanup(self.repo.close)
+        nums = ["8787715548453", "8444425522289", "1111111111111"]
+        ims = []
+        for n in nums:
+            im = imovel_caixa(); im.id_fonte = n; ims.append(im)
+        self.repo.gravar_coleta("caixa", "SP", "t", ims)
+        self.ids = dict(self.repo.con.execute("SELECT id_fonte, id FROM imoveis").fetchall())
+        enche = " | texto complementar da pagina para parecer uma pagina real de edital lida"
+        self.site = {f"https://venda-imoveis.caixa.gov.br/editais/EL000{i}0226CPARE.PDF": pdf_com_texto([t + enche])
+                     for i, t in ((1, "item 1 9999999999999 R$ 1"), (2, "item 9 8787715548453 R$ 2"), (3, "item 7 8444425522289 R$ 3"))}
+        self.pedidos = []
+
+    def baixador(self):
+        b = BaixadorFalso(recusa_robots=False)
+        def baixar(url, usar_cache=True, sob_demanda=False):
+            self.pedidos.append(url)
+            if url in self.site:
+                return self.site[url]
+            if "/matricula/" in url:
+                return PDF
+            raise ErroDeFonte(f"o site respondeu 404 para {url}")
+        b.baixar = baixar
+        return b
+
+    def test_acha_liga_e_nao_repete(self):
+        fontes, pasta = {"caixa": FonteCaixa()}, tempfile.mkdtemp()
+        r = ficha.buscar_edital_caixa(self.repo, pasta, self.baixador(), self.ids["8787715548453"], fontes, "2026-11-16T10:00:00")
+        self.assertEqual((r["encontrado"], r["consultados"]), (True, 2))                   # EL0001 (outro) e EL0002 (o dele)
+        r = ficha.buscar_edital_caixa(self.repo, pasta, self.baixador(), self.ids["8444425522289"], fontes, "2026-11-16T10:01:00")
+        self.assertEqual((r["encontrado"], r["consultados"]), (True, 1))                   # já sabe 1 e 2: vai direto ao 3
+        r = ficha.buscar_edital_caixa(self.repo, pasta, self.baixador(), self.ids["1111111111111"], fontes, "2026-11-16T10:02:00")
+        self.assertEqual((r["encontrado"], r["consultados"]), (False, 3))                  # 4, 5, 6 não existem: para
+        antes = len(self.pedidos)
+        r = ficha.buscar_edital_caixa(self.repo, pasta, self.baixador(), self.ids["1111111111111"], fontes, "2026-11-17T10:00:00")
+        self.assertEqual((r["consultados"], len(self.pedidos)), (0, antes))                # nada repetido na mesma semana
+        r = ficha.buscar_edital_caixa(self.repo, pasta, self.baixador(), self.ids["1111111111111"], fontes, "2026-11-24T10:00:00")
+        self.assertEqual(r["consultados"], 3)                                               # uma semana depois, olha de novo
+        self.assertTrue(all(u.startswith("https://venda-imoveis.caixa.gov.br/editais/EL") for u in self.pedidos))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -39,12 +39,26 @@ ROTA_TRANSCREVER = re.compile(r"^/api/anexos/(\d{1,12})/transcrever$")
 TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
 
 
+EM_BUSCA = set()                 # imóveis com busca de documentos em andamento (a ficha mostra o aviso)
+_TRAVA_BUSCA = threading.Lock()  # uma busca de edital da Caixa por vez: evita pedidos repetidos ao site
+
+
 def baixar_em_segundo_plano(caminho_base: str, pasta_anexos: str, imovel_id: int) -> None:
-    """Imóvel marcado 'Para analisar': baixa os documentos da fonte sem travar a tela."""
+    """Imóvel marcado 'Para analisar': baixa os documentos da fonte sem travar a tela. Imóvel da Caixa
+    sem edital conhecido: procura o edital pelo número (pode levar alguns minutos na primeira vez)."""
+    if imovel_id in EM_BUSCA:
+        return
+    EM_BUSCA.add(imovel_id)
+
     def tarefa():
         try:
             with montagem.repositorio(caminho_base, migrar=False) as repo:
                 repo.ligar_editais_de_leiloeiros()
+                if (repo.buscar_imovel(imovel_id) or {}).get("fonte") == "caixa":
+                    with _TRAVA_BUSCA:
+                        r = ficha.buscar_edital_caixa(repo, pasta_anexos, montagem.CLIENTE_WEB, imovel_id, montagem.FONTES)
+                    sys.stderr.write(f"  edital da Caixa do imóvel {imovel_id}: "
+                                     f"{'encontrado' if r['encontrado'] else 'não encontrado'} ({r['consultados']} consultas)\n")
                 if ficha.documentos_pendentes(repo, imovel_id, montagem.FONTES):
                     r = ficha.baixar_documentos_fonte(repo, pasta_anexos, imovel_id, montagem.CLIENTE_WEB,
                                                       fontes=montagem.FONTES)
@@ -52,6 +66,8 @@ def baixar_em_segundo_plano(caminho_base: str, pasta_anexos: str, imovel_id: int
                                      f"{len(r['erros'])} com erro\n")
         except Exception as e:                        # erro aqui não pode derrubar o servidor
             sys.stderr.write(f"  documentos do imóvel {imovel_id}: falhou ({e!r})\n")
+        finally:
+            EM_BUSCA.discard(imovel_id)
     threading.Thread(target=tarefa, daemon=True).start()
 
 
@@ -128,7 +144,8 @@ def _criar_handler(caminho_base: str, porta: int):
                 params = parse_qs(url.query, keep_blank_values=True, max_num_fields=100)
                 self._executar(triagem.listar, params)
             elif (m := ROTA_IMOVEL.match(url.path)) and m.group(2) is None:
-                self._executar(lambda repo: ficha.ficha(repo, int(m.group(1)), pasta_anexos, montagem.FONTES, montagem.ANALISADOR))
+                self._executar(lambda repo: {**ficha.ficha(repo, int(m.group(1)), pasta_anexos, montagem.FONTES, montagem.ANALISADOR),
+                                             "buscando_documentos": int(m.group(1)) in EM_BUSCA})
             elif m := ROTA_ANEXO.match(url.path):
                 self._enviar_anexo(int(m.group(1)))
             else:
@@ -214,8 +231,15 @@ def _criar_handler(caminho_base: str, porta: int):
             if m.group(2) == "parecer":
                 return self._executar(lambda repo: gerar_parecer(repo, montagem.ANALISADOR, int(m.group(1))))
             if m.group(2) == "documentos-fonte":
-                return self._executar(lambda repo: ficha.baixar_documentos_fonte(
-                    repo, pasta_anexos, int(m.group(1)), montagem.CLIENTE_WEB, fontes=montagem.FONTES))
+                def baixar_agora(repo):
+                    iid = int(m.group(1))
+                    r = ficha.baixar_documentos_fonte(repo, pasta_anexos, iid, montagem.CLIENTE_WEB, fontes=montagem.FONTES)
+                    sem_edital = (repo.buscar_imovel(iid) or {}).get("fonte") == "caixa" and not any(
+                        d["tipo"] == "edital" for d in ficha.documentos_da_fonte(repo.buscar_imovel(iid), montagem.FONTES))
+                    if sem_edital:
+                        baixar_em_segundo_plano(caminho_base, pasta_anexos, iid)
+                    return {**r, "buscando_edital": sem_edital}
+                return self._executar(baixar_agora)
             if m.group(2) == "triagem":
                 def triar_e_baixar(repo):
                     im = triagem.triar(repo, int(m.group(1)), corpo)
