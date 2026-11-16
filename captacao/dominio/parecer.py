@@ -14,6 +14,8 @@ from typing import Dict, List
 from .analise import ITENS_CHAVES
 
 SITUACOES = ("ok", "atencao", "impeditivo", "sem_informacao")
+QUEM = ("comprador", "vendedor", "dividido", "nao_informado")
+OCUPACAO = ("ocupado", "desocupado", "nao_informado")
 NIVEIS_RISCO = ("alto", "medio", "baixo")
 
 _CITACAO = {
@@ -63,8 +65,19 @@ ESQUEMA_PARECER = {
         },
         "perguntas": {"type": "array", "items": {"type": "string"},
                       "description": "o que os documentos não respondem e precisa ser apurado"},
+        "quadro": {
+            "type": "object",
+            "description": "respostas curtas para o topo da tela; só o que estiver escrito no material",
+            "properties": {
+                "desocupacao": {"type": "string", "enum": list(QUEM), "description": "quem desocupa e paga a desocupação"},
+                "debitos": {"type": "string", "enum": list(QUEM), "description": "quem paga débitos de IPTU e condomínio anteriores"},
+                "ocupacao": {"type": "string", "enum": list(OCUPACAO), "description": "situação de ocupação do imóvel"},
+            },
+            "required": ["desocupacao", "debitos", "ocupacao"],
+            "additionalProperties": False,
+        },
     },
-    "required": ["resumo_geral", "itens", "riscos", "perguntas"],
+    "required": ["resumo_geral", "itens", "riscos", "perguntas", "quadro"],
     "additionalProperties": False,
 }
 

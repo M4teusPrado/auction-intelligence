@@ -59,6 +59,9 @@ avaliação em leilão judicial).
 8. perguntas: o que o analista ainda precisa apurar porque o material não responde (inclua pedir edital ou matrícula \
 se não foram anexados).
 9. Dados pessoais aparecem como [CPF] e [RG]; não tente recuperá-los.
+10. quadro: respostas de uma palavra para o topo da tela. desocupacao e debitos: comprador, vendedor, dividido \
+(ex.: vendedor até o leilão, comprador depois) ou nao_informado. ocupacao: ocupado, desocupado ou nao_informado. \
+Só marque o que estiver escrito; na dúvida, nao_informado.
 
 Escreva em português do Brasil, em frases curtas e diretas."""
 

@@ -324,115 +324,186 @@
   /* ---------- investigar em duas colunas ---------- */
   .painel.inv { max-width: none; }
   .inv-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
-  .inv-esq { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-  .inv-alternar { display: none; gap: 4px; background: var(--fundo); border: 1px solid var(--borda); border-radius: 999px; padding: 3px;
-                  width: max-content; margin: 0 0 12px; }
-  .inv-alternar button { border: 0; background: transparent; padding: 6px 16px; border-radius: 999px; font: inherit; font-size: 14px; cursor: pointer; color: var(--texto-2); }
+  .inv-esq { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .inv-alternar { display: none; gap: 2px; background: #eceeeb; border-radius: 10px; padding: 3px; width: 100%; margin: 0 0 12px;
+                  position: sticky; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 6; }
+  .inv-alternar button { flex: 1; border: 0; background: transparent; padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 14px;
+                         cursor: pointer; color: var(--texto-2); }
   .inv-alternar [aria-selected="true"] { background: var(--superficie); box-shadow: var(--sombra); color: var(--texto); font-weight: 600; }
-  @media (min-width: 1100px) { .inv-grade { grid-template-columns: minmax(0, 1fr) minmax(380px, 46%); } }
+  @media (min-width: 1100px) { .inv-grade { grid-template-columns: minmax(0, 1fr) minmax(400px, 47%); } }
   @media (max-width: 1099px) {
     .inv-alternar { display: flex; }
     .inv-grade[data-coluna="lista"] .inv-doc { display: none; }
     .inv-grade[data-coluna="doc"] .inv-esq { display: none; }
-    .inv-doc { position: static !important; height: calc(100vh - 120px) !important; }
+    .inv-doc { position: static !important; height: calc(100vh - 150px) !important; }
   }
-  .inv-cartao, .inv-resumo { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 14px 16px; }
-  .inv-cartao h3 { font-size: 15px; margin: 0; }
-  .inv-cartao-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .inv-cartao-cab > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .inv-cartao, .inv-resumo { background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; }
+  .inv-cartao { padding: 14px 16px; }
+  .inv-cartao h3 { font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-3); font-weight: 650; }
+  .inv-cartao-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
   .inv-cartao-cab .dica { font-size: 12px; }
-  .inv-cartao-cab .btn { flex: none; white-space: nowrap; }
-  .inv-resumo { display: flex; flex-direction: column; gap: 12px; }
-  .inv-resumo-linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .conts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .conts .rot { font-size: 12px; color: var(--texto-3); margin-right: 4px; }
-  .cont { font-size: 13px; padding: 3px 10px; border-radius: 999px; }
+  /* tons: só os estados têm cor */
   .tom-impeditivo, .tom-alto { background: var(--erro-fundo); color: var(--erro); }
   .tom-atencao, .tom-medio { background: var(--alerta-fundo); color: var(--alerta); }
   .tom-ok { background: var(--destaque-claro); color: var(--destaque-escuro); }
-  .tom-sem_informacao, .tom-baixo { background: var(--fundo); color: var(--texto-2); }
+  .tom-sem_informacao, .tom-baixo { background: #f0f2ef; color: var(--texto-2); }
+  /* resumo do topo */
+  .inv-resumo { padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: var(--sombra); }
+  .inv-resumo-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .conts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .cont { font-size: 13px; padding: 4px 10px; border-radius: 999px; font-weight: 550; }
+  .vazio-ia { font-size: 14px; color: var(--texto-2); }
+  .acoes-resumo { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .acoes-resumo .btn.confirmar { background: var(--destaque); border-color: var(--destaque); color: #fff; }
+  .quadro { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
+  .quadro .q { border-radius: 10px; padding: 10px 12px; }
+  .quadro dt { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .8; }
+  .quadro dd { margin: 2px 0 0; font-size: 17px; font-weight: 650; }
+  @media (max-width: 520px) { .quadro { grid-template-columns: minmax(0, 1fr); } .quadro .q { display: flex; justify-content: space-between; align-items: baseline; } }
   .inv-prog { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--texto-2); }
-  .inv-prog .barra-prog { width: 140px; flex: none; }
-  .inv-fatos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 18px; margin: 0; }
-  .inv-fatos dt { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-3); }
-  .inv-fatos dd { margin: 2px 0 0; font-size: 13px; color: var(--texto); line-height: 1.4; }
-  .doc-lista { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
-  .doc-lista li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
-  .doc-tipo { font-size: 12px; color: var(--texto-3); min-width: 70px; }
-  @media (max-width: 600px) { .doc-lista li { gap: 2px 8px; } .doc-tipo { flex-basis: 100%; } }
-  .doc-nome { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: var(--destaque-escuro); cursor: pointer;
-              text-decoration: underline; text-underline-offset: 2px; text-align: left; overflow-wrap: anywhere; }
-  .doc-st { font-size: 12px; padding: 2px 8px; border-radius: 999px; }
-  .doc-acao { display: inline-flex; align-items: center; gap: 6px; }
-  .docs-fonte { margin-top: 10px; display: grid; gap: 6px; }
-  .docs-fonte.recolhido summary { cursor: pointer; }
-  .docs-linha { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .docs-links { display: flex; gap: 6px; flex-wrap: wrap; }
-  .docs-links .btn { font-size: 13px; padding: 4px 10px; min-height: 0; }
-  .inv-parecer .resumo-ia { margin: 4px 0 10px; line-height: 1.5; }
-  .inv-sec { border-top: 1px solid var(--borda); padding: 8px 0 2px; }
-  .inv-sec > summary { cursor: pointer; padding: 2px 0; list-style-position: outside; }
+  .inv-resumo .parecer-msg { margin: 0; } .inv-resumo .parecer-msg:empty { display: none; }
+  .inv-prog .barra-prog { flex: 1 1 auto; max-width: none; }
+  /* checklist */
+  .inv-check { padding: 0; overflow: hidden; }
+  .inv-check .inv-cartao-cab { padding: 14px 16px 8px; margin: 0; }
+  .inv-item { border-top: 1px solid var(--borda); outline: none; position: relative; }
+  .inv-item:focus-visible { box-shadow: inset 3px 0 0 var(--foco), inset 0 0 0 1px var(--foco); }
+  .inv-item-cab { display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer; }
+  .inv-item-cab:hover { background: #f8f9f7; }
+  .inv-item.aberto .inv-item-cab { background: #f8f9f7; }
+  .inv-item-cab .seta { flex: none; width: 0; height: 0; border-left: 5px solid var(--texto-3); border-top: 4px solid transparent;
+                        border-bottom: 4px solid transparent; transition: transform .15s; }
+  .inv-item.aberto .seta { transform: rotate(90deg); }
+  .ponto { flex: none; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--borda-forte); }
+  .inv-item[data-status="ok"] .ponto { background: #2f8a5b; border-color: #2f8a5b; }
+  .inv-item[data-status="atencao"] .ponto { background: #d39a2a; border-color: #d39a2a; }
+  .inv-item[data-status="impeditivo"] .ponto { background: var(--erro); border-color: var(--erro); }
+  .inv-item[data-status="nao_se_aplica"] .ponto { background: #a9b0ab; border-color: #a9b0ab; }
+  .inv-item-cab .rot { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .inv-item-cab .rot b { font-size: 14px; font-weight: 600; }
+  .inv-item-cab .rot small { font-size: 12.5px; color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .inv-item.aberto .rot small { display: none; }
+  .estado { flex: none; }
+  .pill-ia, .pill-voce { display: inline-block; font-size: 12px; padding: 3px 9px; border-radius: 999px; white-space: nowrap; font-weight: 550; }
+  .pill-ia { background: transparent !important; border: 1px dashed currentColor; }
+  .pill-ia small, .pill-voce small { font-weight: 400; opacity: .85; }
+  .aceitar { flex: none; appearance: none; border: 1px solid var(--destaque); background: var(--superficie); color: var(--destaque-escuro);
+             border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .aceitar:hover { background: var(--destaque); color: #fff; }
+  @media (max-width: 520px) {
+    .inv-item-cab { flex-wrap: wrap; } .inv-item-cab .rot { flex-basis: calc(100% - 40px); }
+    .estado { margin-left: 30px; } .inv-item-cab .seta { display: none; }
+  }
+  .inv-item-corpo { padding: 4px 16px 16px 48px; display: grid; gap: 12px; background: #f8f9f7; }
+  @media (max-width: 520px) { .inv-item-corpo { padding-left: 16px; } }
+  .ia-bloco p { margin: 0 0 6px; line-height: 1.55; }
+  .decidir-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .decidir-item .dica { font-size: 12px; }
+  .seg-mini .seg-b { padding: 4px 11px; font-size: 12.5px; }
+  .nota-linha { display: grid; gap: 4px; }
+  .nota-linha textarea { resize: vertical; font-size: 14px; background: var(--superficie); }
+  .nota-linha .salvo { font-size: 12px; color: var(--texto-3); }
+  .inv-item-corpo .procurar { margin: 6px 0; padding-left: 18px; font-size: 13px; color: var(--texto-2); }
+  .inv-item-corpo .bloco-anexos { background: var(--superficie); border: 1px solid var(--borda); border-radius: 8px; padding: 8px 10px; }
+  /* parecer */
+  .inv-parecer .resumo-ia { margin: 0; line-height: 1.6; }
+  .inv-parecer .resumo-ia.recolhido { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .inv-parecer .mais { padding: 2px 0; font-size: 13px; }
+  .inv-sec { border-top: 1px solid var(--borda); padding: 8px 0 2px; margin-top: 8px; }
+  .inv-sec > summary { cursor: pointer; padding: 2px 0; }
   .inv-sec > ul { margin: 8px 0 4px; padding-left: 0; list-style: none; display: grid; gap: 6px; }
   .riscos details > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; list-style: none; }
   .riscos details > summary::-webkit-details-marker { display: none; }
-  .riscos details[open] > summary b { color: var(--texto); }
   .riscos details > p { margin: 4px 0 6px; color: var(--texto-2); font-size: 14px; }
   .nivel { font-size: 11px; font-weight: 650; padding: 2px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
   .regras li { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 4px 12px; font-size: 14px; }
   .regras .tema { color: var(--texto-3); font-size: 13px; }
   .regras .chips { grid-column: 2; }
   @media (max-width: 600px) { .regras li { grid-template-columns: minmax(0, 1fr); } .regras .chips { grid-column: 1; } }
-  .perguntas li { font-size: 14px; padding-left: 14px; position: relative; }
-  .perguntas li::before { content: "?"; position: absolute; left: 0; color: var(--texto-3); }
-  .cits { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 4px; font-size: 14px; color: var(--texto-2); }
+  .perguntas li { font-size: 14px; padding-left: 16px; position: relative; }
+  .perguntas li::before { content: "?"; position: absolute; left: 0; color: var(--texto-3); font-weight: 700; }
+  .cits { list-style: none; margin: 6px 0; padding: 0; display: grid; gap: 5px; font-size: 14px; color: var(--texto-2); }
   .chips { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-  .chip { font: 600 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 7px; border-radius: 6px; cursor: pointer;
-          border: 1px solid var(--borda-forte); background: var(--superficie); color: var(--destaque-escuro); }
-  .chip:hover { background: var(--destaque-claro); border-color: var(--destaque); }
-  .chip.nao-conf { color: var(--alerta); border-style: dashed; }
+  .chip { font: 600 11.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 4px 7px; border-radius: 6px; cursor: pointer; vertical-align: 1px;
+          border: 1px solid #c9d8d3; background: var(--destaque-claro); color: var(--destaque-escuro); }
+  .chip:hover { background: var(--destaque); border-color: var(--destaque); color: #fff; }
+  .chip.nao-conf { color: var(--alerta); background: var(--alerta-fundo); border: 1px dashed var(--alerta); }
+  .chip.falso { cursor: default; }
   .aviso-ia { font-size: 12px; color: var(--texto-3); margin: 10px 0 0; }
-  .inv-check { padding: 0; }
-  .inv-check .inv-cartao-cab { padding: 14px 16px 6px; }
-  .inv-item { border-top: 1px solid var(--borda); border-left: 3px solid transparent; outline: none; }
-  .inv-item:focus-visible { box-shadow: inset 0 0 0 2px var(--foco); }
-  .inv-item[data-status="ok"] { border-left-color: #2f8a5b; }
-  .inv-item[data-status="atencao"] { border-left-color: #d39a2a; }
-  .inv-item[data-status="impeditivo"] { border-left-color: var(--erro); }
-  .inv-item[data-status="nao_se_aplica"] { border-left-color: #a9b0ab; }
-  .inv-item-cab { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; flex-wrap: wrap; }
-  .inv-item-cab:hover { background: #f7f8f6; }
-  .inv-item-cab .seta { width: 0; height: 0; border-left: 5px solid var(--texto-3); border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform .15s; }
-  .inv-item.aberto .seta { transform: rotate(90deg); }
-  .inv-item-cab .rot { flex: 1 1 140px; font-size: 14px; }
-  .pill-ia { font-size: 12px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
-  .seg-mini .seg-b { padding: 3px 9px; font-size: 12px; }
-  .inv-item-corpo { padding: 2px 14px 14px 30px; display: grid; gap: 10px; }
-  .inv-item-corpo .ia-bloco p { margin: 0 0 4px; line-height: 1.5; }
-  .nota-linha { display: grid; gap: 4px; }
-  .nota-linha textarea { resize: vertical; font-size: 14px; }
-  .nota-linha .salvo { font-size: 12px; color: var(--texto-3); }
-  .inv-item-corpo .procurar { margin: 6px 0; padding-left: 18px; font-size: 13px; color: var(--texto-2); }
-  .inv-outros { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 10px 16px; }
-  .inv-outros summary { cursor: pointer; font-size: 14px; }
+  /* documentos */
+  .doc-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .doc-lista li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+  .doc-nome { appearance: none; border: 0; background: none; padding: 4px 0; font: inherit; font-weight: 600; color: var(--texto); cursor: pointer;
+              display: inline-flex; align-items: center; gap: 8px; text-align: left; }
+  .doc-nome:hover { color: var(--destaque-escuro); text-decoration: underline; text-underline-offset: 2px; }
+  .doc-ic { width: 8px; height: 8px; border-radius: 50%; background: #2f8a5b; flex: none; }
+  .doc-ic.pendente { background: #d39a2a; }
+  .doc-st { font-size: 12.5px; color: var(--texto-3); }
+  .doc-acao { display: inline-flex; align-items: center; gap: 6px; }
+  .docs-fonte { margin-top: 8px; display: grid; gap: 6px; }
+  .docs-fonte.recolhido { margin-top: 6px; }
+  .docs-fonte.recolhido summary { cursor: pointer; font-size: 12.5px; }
+  .docs-linha { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .docs-links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .docs-links .btn { font-size: 13px; padding: 4px 10px; min-height: 0; }
+  .inv-outros { padding: 12px 16px; }
+  .inv-outros summary { cursor: pointer; font-size: 14px; color: var(--texto-2); }
   .inv-teclas { font-size: 12px; color: var(--texto-3); margin: 14px 0 0; }
+  .inv-teclas kbd { font: 600 11px/1 ui-monospace, Menlo, monospace; border: 1px solid var(--borda-forte); border-bottom-width: 2px; border-radius: 4px;
+                    padding: 2px 5px; background: var(--superficie); color: var(--texto-2); }
   @media (hover: none) { .inv-teclas { display: none; } }
-  .inv-doc { position: sticky; top: 12px; height: calc(100vh - 24px); display: flex; flex-direction: column; background: var(--superficie);
-             border: 1px solid var(--borda); border-radius: var(--raio); overflow: hidden; }
-  .leitor-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; border-bottom: 1px solid var(--borda); }
+  /* leitor */
+  .inv-doc { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); height: calc(100vh - 76px); display: flex; flex-direction: column;
+             background: #2b2f2d; border-radius: 12px; overflow: hidden; color: #e9ece9; }
+  .inv-doc:fullscreen { border-radius: 0; height: 100vh; }
+  .leitor-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; background: #232725; }
   .leitor-tit { display: flex; flex-direction: column; min-width: 0; }
-  .leitor-tit b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .leitor-tit b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; }
+  .leitor-tit span { font-size: 12px; color: #aab2ad; }
   .leitor-nav { display: flex; align-items: center; gap: 2px; flex: none; }
-  .leitor-nav .btn { font-size: 16px; }
-  .leitor-balao { margin: 10px 12px 0; padding: 8px 12px; background: #fff8db; border: 1px solid #f0dc8a; border-radius: 6px; font-size: 13px; line-height: 1.45; }
-  .leitor-balao .rot { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--texto-3); margin-bottom: 2px; }
-  .leitor-balao small { display: block; color: var(--texto-3); margin-top: 4px; }
-  .leitor-corpo { flex: 1; overflow: auto; padding: 12px; background: #e9ebe8; }
-  .leitor-folha { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+  .lt-b { appearance: none; border: 0; background: transparent; color: #dfe4e0; min-width: 30px; height: 30px; border-radius: 6px; font: inherit;
+          font-size: 16px; cursor: pointer; display: inline-grid; place-items: center; text-decoration: none; }
+  .lt-b:hover { background: #3a3f3c; color: #fff; }
+  .lt-sep { width: 1px; height: 18px; background: #454b47; margin: 0 4px; }
+  .lt-zoom { font-size: 12px; color: #aab2ad; min-width: 38px; text-align: center; }
+  @media (max-width: 520px) { .lt-zoom, .lt-sep { display: none; } }
+  .leitor-balao { margin: 10px 12px 0; padding: 8px 12px; background: #fff6cf; color: #3d3410; border-radius: 8px; font-size: 13px; line-height: 1.45; }
+  .leitor-balao .rot { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: #7a6a2a; margin-bottom: 2px; }
+  .leitor-balao small { display: block; color: #7a6a2a; margin-top: 4px; }
+  .leitor-corpo { flex: 1; overflow: auto; padding: 12px; }
+  .leitor-folha { position: relative; margin: 0 auto; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.35); }
   .leitor-canvas { display: block; }
-  .realce-pdf { position: absolute; background: rgba(255, 196, 0, .4); mix-blend-mode: multiply; border-radius: 2px; pointer-events: none; }
-  .leitor-vazio { color: var(--texto-3); text-align: center; margin: 48px 16px; font-size: 14px; }
-  .leitor-vazio.erro { color: var(--erro); }
-  .leitor-texto { background: #fff; padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.5; }
+  .realce-pdf { position: absolute; background: rgba(255, 196, 0, .42); mix-blend-mode: multiply; border-radius: 2px; pointer-events: none;
+                box-shadow: 0 0 0 1px rgba(214, 160, 0, .35); }
+  .leitor-vazio { color: #c4cbc6; text-align: center; margin: 18vh auto 0; max-width: 300px; font-size: 14px; line-height: 1.6; }
+  .leitor-vazio b { display: block; color: #fff; font-size: 15px; margin-bottom: 6px; }
+  .leitor-carregando { color: #c4cbc6; text-align: center; margin-top: 40px; font-size: 14px; }
+  .leitor-carregando.erro { color: #ffb4a8; }
+  .leitor-texto { background: #fff; color: var(--texto); padding: 16px; white-space: pre-wrap; font-size: 14px; line-height: 1.5; border-radius: 4px; }
+  .leitor-miniaturas { display: flex; gap: 8px; overflow-x: auto; padding: 8px 12px 10px; background: #232725; flex: none; }
+  .mini { flex: none; appearance: none; border: 2px solid transparent; background: #3a3f3c; border-radius: 4px; padding: 0; width: 60px; min-height: 78px;
+          cursor: pointer; position: relative; display: grid; place-items: center; }
+  .mini canvas { display: block; width: 56px; height: auto; }
+  .mini span { position: absolute; bottom: 2px; right: 3px; font-size: 10px; background: rgba(0,0,0,.6); color: #fff; padding: 0 3px; border-radius: 3px; }
+  .mini.atual { border-color: #ffc400; }
+  /* barra fixa da ficha */
+  .ficha-fixa { position: fixed; left: 0; right: 0; top: 0; z-index: 30; background: rgba(255,255,255,.94); backdrop-filter: saturate(1.4) blur(8px);
+                border-bottom: 1px solid var(--borda); padding-top: env(safe-area-inset-top, 0px); transform: translateY(-110%); transition: transform .18s ease; }
+  .ficha-fixa.visivel { transform: none; }
+  .ff-dentro { max-width: 1520px; margin: 0 auto; padding: 8px 20px; display: flex; align-items: center; gap: 16px; min-height: 40px; }
+  .ff-imovel { appearance: none; border: 0; background: none; font: inherit; cursor: pointer; display: flex; gap: 10px; align-items: baseline;
+               min-width: 0; padding: 0; color: var(--texto); }
+  .ff-imovel b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; text-transform: capitalize; }
+  .ff-imovel span { color: var(--texto-2); font-size: 14px; }
+  .ff-passos { display: flex; gap: 2px; margin-left: auto; }
+  .ff-passos button { appearance: none; border: 0; background: none; font: inherit; font-size: 13px; color: var(--texto-2); padding: 6px 10px;
+                      border-radius: 8px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+  .ff-passos button span { font-size: 11px; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; background: #eceeeb; }
+  .ff-passos button[aria-current="step"] { color: var(--destaque-escuro); font-weight: 650; background: var(--destaque-claro); }
+  .ff-passos button[aria-current="step"] span { background: var(--destaque); color: #fff; }
+  .ff-prog { font-size: 13px; color: var(--texto-2); padding: 3px 8px; border-radius: 999px; background: #eceeeb; }
+  .ff-prog:empty { display: none; }
+  @media (max-width: 760px) { .ff-passos button { font-size: 0; padding: 6px; } .ff-passos button span { font-size: 11px; } .ff-imovel span { display: none; } }
   .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
   .etiquetas:empty { display: none; }
   .etiqueta { border: 1px solid var(--borda-forte); background: var(--superficie); border-radius: 999px; padding: 3px 10px;
@@ -1147,8 +1218,9 @@ function desenharFicha(d) {
     if (passo) { ev.preventDefault(); const n = ABAS_FICHA[(i + passo + 4) % 4].id; abaFicha(n); $(`fa-${n}`).focus(); }
   });
   const paineis = [painelImovel(d), painelInvestigar(d), painelSimular(d), painelDecidir(d)];
-  $("vista-ficha").replaceChildren(el("a", { class: "voltar", href: "#/", text: "← Voltar para a triagem" }), topo, abas, ...paineis);
+  $("vista-ficha").replaceChildren(barraFicha(d), el("a", { class: "voltar", href: "#/", text: "← Voltar para a triagem" }), topo, abas, ...paineis);
   abaFicha(fichaEstado.aba);
+  ligarBarraFicha();
   atualizarStatusAbas();
   simularAgora();
 }
@@ -1162,6 +1234,7 @@ function abaFicha(id, rolar) {
   }
   if (id === "decidir") atualizarDecidir();
   $("vista-ficha").classList.toggle("larga", id === "investigar");
+  document.querySelectorAll(".ff-passos button").forEach((b) => b.toggleAttribute("aria-current", false) || (b.dataset.aba === id && b.setAttribute("aria-current", "step")));
   if (rolar) $("ficha-abas").scrollIntoView({ block: "start", behavior: "smooth" });
 }
 function atualizarStatusAbas() {
@@ -1289,10 +1362,10 @@ function blocoAchados(item) {
   mostrar(false);
   return alvo;
 }
-/* ---------- passo 2: investigar. Duas colunas: à esquerda o que a IA diz e o checklist,
+/* ---------- passo 2: investigar. Duas colunas: à esquerda o que decide (quadro, checklist, parecer),
    à direita o próprio documento (pdf.js), aberto na página citada com o trecho em destaque. ---------- */
 const STATUS_BOTOES = [["ok", "OK"], ["atencao", "Atenção"], ["impeditivo", "Impeditivo"], ["nao_se_aplica", "N/A"]];
-const NOME_SITUACAO = { ok: "OK", atencao: "Atenção", impeditivo: "Impeditivo", sem_informacao: "Sem informação" };
+const NOME_SITUACAO = { ok: "OK", atencao: "Atenção", impeditivo: "Impeditivo", sem_informacao: "Sem informação", nao_se_aplica: "N/A" };
 const NOME_NIVEL = { alto: "Alto", medio: "Médio", baixo: "Baixo" };
 const NOME_TEMA = { condominio: "Condomínio", iptu: "IPTU e tributos", desocupacao: "Desocupação", estado_do_imovel: "Estado do imóvel",
   venda_ad_corpus: "Venda ad corpus", onus_e_acoes: "Ônus e ações", comissao: "Comissão", pagamento: "Pagamento",
@@ -1300,26 +1373,46 @@ const NOME_TEMA = { condominio: "Condomínio", iptu: "IPTU e tributos", desocupa
   desistencia_e_penalidades: "Desistência e multas", outros: "Outros" };
 const NOME_LEITURA = { lido: "texto lido", transcrito_ia: "transcrito pela IA", sem_texto: "escaneado, sem texto",
   erro: "não deu para ler", desligada: "leitura desligada", imagem: "imagem" };
+const QUADRO = {
+  desocupacao: { rot: "Desocupação", txt: { comprador: "comprador", vendedor: "vendedor", dividido: "dividida", nao_informado: "não informado" } },
+  debitos: { rot: "Débitos anteriores", txt: { comprador: "comprador", vendedor: "vendedor", dividido: "divididos", nao_informado: "não informado" } },
+  ocupacao: { rot: "Ocupação", txt: { ocupado: "ocupado", desocupado: "desocupado", nao_informado: "não informada" } },
+};
+const TOM_QUADRO = { comprador: "atencao", dividido: "atencao", ocupado: "atencao", vendedor: "ok", desocupado: "ok", nao_informado: "sem_informacao" };
 const lerParecer = (d) => d.parecer && d.parecer.parecer;
 const sugestaoDo = (d, item) => ((lerParecer(d) || {}).itens || []).find((x) => x.item === item);
+const usd = (v) => `US$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/* nome limpo para mostrar: "Edital 0061/0226", "Matrícula 225732" */
+function nomeDoc(d, a) {
+  const base = (a.nome_original || "").replace(/\.pdf$/i, "").replace(/\s*\((caixa|Caixa|[a-z.]+)\)/g, "").trim();
+  const ed = base.match(/Edital\s+(\d{4})[-/](\d{4})/i);
+  if (a.tipo === "edital") return ed ? `Edital ${ed[1]}/${ed[2]}` : (base || "Edital");
+  if (a.tipo === "matricula") {
+    const n = (d.imovel.leilao || {}).matricula || ((d.imovel.descricao || "").match(/Matr[íi]cula:?\s*([\d.]+)/i) || [])[1];
+    return n ? `Matrícula ${n}` : (base && !/^Matr[íi]cula$/i.test(base) ? base : "Matrícula");
+  }
+  return base || d.tipos_anexo[a.tipo] || "Documento";
+}
 
 function painelInvestigar(d) {
   const esq = el("div", { class: "inv-esq" },
-    resumoInvestigacao(d), faixaDocumentos(d), cartaoParecer(d), listaChecklist(d),
-    el("details", { class: "inv-outros" }, el("summary", { text: "Outros arquivos (laudo, fotos…)" }), blocoAnexos(d, null)),
+    resumoInvestigacao(d), listaChecklist(d), cartaoParecer(d), faixaDocumentos(d),
+    el("details", { class: "inv-cartao inv-outros" }, el("summary", { text: "Outros arquivos (laudo, fotos…)" }), blocoAnexos(d, null)),
     proximo("simular", "Próximo: simular →"));
   setTimeout(() => {
     atualizarProgresso();
     // a ficha foi redesenhada (parecer gerado, PDF lido...): o documento que estava aberto continua aberto
-    if (leitor.atual && leitor.atual.imovelId === d.imovel.id && window.matchMedia("(min-width: 1100px)").matches) abrirNoLeitor(leitor.atual);
+    if (leitor.atual && leitor.atual.imovelId === d.imovel.id && window.matchMedia("(min-width: 1100px)").matches) abrirNoLeitor(leitor.atual, true);
   });
+  const l = leitorDocumento(); observarLeitor.observe(l.querySelector(".leitor-corpo"));
   return el("section", { class: "painel inv", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
     el("div", { class: "inv-alternar", role: "tablist", "aria-label": "Ver" },
       el("button", { type: "button", role: "tab", id: "inv-ver-lista", "aria-selected": "true", text: "Checklist", onclick: () => mostrarColuna("lista") }),
       el("button", { type: "button", role: "tab", id: "inv-ver-doc", "aria-selected": "false", text: "Documento", onclick: () => mostrarColuna("doc") })),
-    el("div", { class: "inv-grade", id: "inv-grade", "data-coluna": "lista" }, esq, (() => {
-      const l = leitorDocumento(); observarLeitor.observe(l.querySelector(".leitor-corpo")); return l; })()),
-    el("p", { class: "inv-teclas", text: "Atalhos: ↑ ↓ navegar · Enter abrir · 1 OK · 2 Atenção · 3 Impeditivo · 4 N/A · P ver o primeiro trecho" }));
+    el("div", { class: "inv-grade", id: "inv-grade", "data-coluna": "lista" }, esq, l),
+    el("p", { class: "inv-teclas" }, "Atalhos ", ...[["↑ ↓", "navegar"], ["Enter", "abrir"], ["A", "aceitar a IA"], ["1–4", "marcar"], ["P", "ver o trecho"]]
+      .flatMap(([k, t]) => [el("kbd", { text: k }), ` ${t}  `])));
 }
 function mostrarColuna(c) {
   const g = $("inv-grade"); if (!g) return;
@@ -1328,29 +1421,208 @@ function mostrarColuna(c) {
   $("inv-ver-doc").setAttribute("aria-selected", String(c === "doc"));
 }
 
-/* topo: o que decide em 10 segundos */
+/* topo: o que decide em 10 segundos, e a ação principal (gerar o parecer / aceitar as sugestões) */
 function resumoInvestigacao(d) {
-  const p = lerParecer(d);
-  const ia = {}; for (const x of (p && p.itens) || []) ia[x.situacao_sugerida] = (ia[x.situacao_sugerida] || 0) + 1;
-  const regras = ((d.regras_edital || [])[0] || {}).regras || [];
-  const regra = (tema) => (regras.find((r) => r.tema === tema) || {}).regra;
-  const fatos = [["Desocupação", regra("desocupacao")], ["Débitos", regra("condominio") || regra("iptu")],
-                 ["Ocupação", (d.imovel.leilao || {}).ocupacao]].filter(([, v]) => v);
-  const conts = [["impeditivo", "impeditivo"], ["atencao", "atenção"], ["sem_informacao", "sem informação"], ["ok", "ok"]]
-    .filter(([k]) => ia[k]).map(([k, r]) => el("span", { class: `cont tom-${k}` }, el("b", { class: "num", text: String(ia[k]) }), ` ${r}`));
-  return el("section", { class: "inv-resumo" },
-    el("div", { class: "inv-resumo-linha" },
-      conts.length ? el("div", { class: "conts" }, el("span", { class: "rot", text: "A IA sugere" }), conts)
-                   : el("span", { class: "dica", text: "Gere o parecer para ver aqui o resumo dos riscos." }),
-      el("div", { class: "inv-prog", id: "inv-progresso" })),
-    fatos.length ? el("dl", { class: "inv-fatos" }, fatos.map(([k, v]) => el("div", {}, el("dt", { text: k }), el("dd", { text: v })))) : null);
+  const p = lerParecer(d), ia = d.ia || {}, q = p && p.quadro;
+  const caixa = el("section", { class: "inv-resumo", id: "inv-resumo" });
+  const msg = el("p", { class: "dica parecer-msg", role: "status" });
+  const lidos = d.anexos.filter((a) => a.leitura === "lido" || a.leitura === "transcrito_ia").length;
+  const escaneados = d.anexos.filter((a) => ["sem_texto", "erro"].includes(a.leitura) && /\.pdf$/i.test(a.nome_original)).length;
+  let confirmouSemDocs = false;
+  const rotulo = p ? "Gerar de novo" : "Gerar parecer";
+  const gerar = el("button", { type: "button", class: p ? "btn btn-texto" : "btn btn-primario", disabled: !ia.disponivel, text: rotulo,
+    title: ia.disponivel ? "A IA lê edital e matrícula (os escaneados também) e sugere cada item. Custa centavos." : ia.motivo,
+    onclick: async () => {
+      if (!lidos && !escaneados && !confirmouSemDocs) {
+        confirmouSemDocs = true; msg.classList.add("erro");
+        msg.textContent = "Nenhum edital ou matrícula anexado: o parecer vai usar só a descrição do lote. Clique de novo para gerar assim mesmo.";
+        gerar.textContent = "Gerar só com a descrição"; return;
+      }
+      gerar.disabled = true; gerar.textContent = "Analisando…"; msg.classList.remove("erro"); msg.textContent = "";
+      const barra = barraDeProgresso(30 + 10 * lidos + 20 * escaneados, [
+        [0, escaneados ? "Lendo os PDFs escaneados" : "Preparando o material e mascarando CPF e RG"],
+        [escaneados ? 20 : 4, "A IA está lendo os documentos"],
+        [escaneados ? 35 : 18, "Organizando ocupação, débitos, ônus e riscos"],
+        [escaneados ? 55 : 35, "Conferindo cada trecho citado no texto original"],
+        [100, "Documentos longos: ainda trabalhando"]]);
+      caixa.append(barra.el);
+      try {
+        await api(`/api/imoveis/${d.imovel.id}/parecer`, POST_JSON({}));
+        barra.concluir();
+        await abrirFicha(d.imovel.id);
+      } catch (e) { barra.el.remove(); barra.parar(); msg.classList.add("erro"); msg.textContent = e.message; gerar.disabled = false; gerar.textContent = rotulo; }
+    } });
+  // quadro rápido: 3 respostas curtas (do parecer)
+  const quadro = q ? el("dl", { class: "quadro" }, Object.entries(QUADRO).map(([k, def]) =>
+    el("div", { class: `q tom-${TOM_QUADRO[q[k]] || "sem_informacao"}` }, el("dt", { text: def.rot }), el("dd", { text: def.txt[q[k]] || q[k] }))))
+    : null;
+  // contagem das sugestões e "aceitar todas"
+  const conts = {}; for (const x of (p && p.itens) || []) conts[x.situacao_sugerida] = (conts[x.situacao_sugerida] || 0) + 1;
+  const pendentes = () => d.investigacao.filter((it) => it.status === "pendente" && (sugestaoDo(d, it.item) || {}).situacao_sugerida
+    && sugestaoDo(d, it.item).situacao_sugerida !== "sem_informacao");
+  let confirmar = false;
+  const aceitarTodas = el("button", { type: "button", class: "btn", text: "Aceitar sugestões", onclick: async () => {
+    const lista = pendentes();
+    if (!lista.length) return;
+    if (!confirmar) { confirmar = true; aceitarTodas.textContent = `Confirmar ${lista.length} itens?`; aceitarTodas.classList.add("confirmar");
+      setTimeout(() => { confirmar = false; aceitarTodas.textContent = "Aceitar sugestões"; aceitarTodas.classList.remove("confirmar"); }, 4000); return; }
+    aceitarTodas.disabled = true;
+    for (const it of lista) { const linha = document.querySelector(`.inv-item[data-item="${it.item}"]`); if (linha) await linha._aceitar(); }
+    aceitarTodas.textContent = "Aceitas"; atualizarResumoAcoes();
+  } });
+  caixa._atualizar = () => { const n = pendentes().length; aceitarTodas.hidden = !n || !p; };
+  const titulo = el("div", { class: "inv-resumo-cab" },
+    el("div", { class: "conts" },
+      p ? [["impeditivo", "impeditivo"], ["atencao", "atenção"], ["sem_informacao", "sem informação"], ["ok", "ok"]]
+            .filter(([k]) => conts[k]).map(([k, r]) => el("span", { class: `cont tom-${k}` }, el("b", { class: "num", text: String(conts[k]) }), ` ${r}`))
+        : el("span", { class: "vazio-ia", text: ia.disponivel ? "A IA ainda não leu os documentos deste imóvel." : `IA indisponível: ${ia.motivo}.` }),
+      p ? el("span", { class: "dica", text: "sugeridos pela IA" }) : null),
+    el("div", { class: "acoes-resumo" }, aceitarTodas, gerar));
+  caixa.append(titulo, quadro || (p ? el("p", { class: "dica", text: "Gere de novo para ver o quadro rápido (desocupação, débitos, ocupação)." }) : null),
+    el("div", { class: "inv-prog", id: "inv-progresso" }), msg);
+  setTimeout(caixa._atualizar);
+  return caixa;
 }
+function atualizarResumoAcoes() { const r = $("inv-resumo"); if (r && r._atualizar) r._atualizar(); }
 function atualizarProgresso() {
   const d = fichaEstado.dados, alvo = $("inv-progresso"); if (!alvo) return;
   const inv = d.investigacao, n = inv.length, feitos = inv.filter((i) => i.status !== "pendente").length;
-  alvo.replaceChildren(el("span", { class: "num", text: `Você conferiu ${feitos} de ${n}` }),
-    el("div", { class: "barra-prog", role: "img", "aria-label": `${feitos} de ${n} conferidos` }, inv.map((i) => el("i", { class: i.status }))));
+  alvo.replaceChildren(
+    el("div", { class: "barra-prog", role: "img", "aria-label": `${feitos} de ${n} conferidos` }, inv.map((i) => el("i", { class: i.status }))),
+    el("span", { class: "num", text: feitos === n ? "Checklist completo" : `${feitos} de ${n} conferidos` }));
+  const fixa = $("ff-prog"); if (fixa) fixa.textContent = `${feitos}/${n} conferidos`;
   atualizarStatusAbas();
+  atualizarResumoAcoes();
+}
+
+/* checklist: uma linha por item; sugestão da IA com um clique; o detalhe abre só no item escolhido */
+function listaChecklist(d) {
+  return el("section", { class: "inv-cartao inv-check" },
+    el("div", { class: "inv-cartao-cab" }, el("h3", { text: "Checklist" }), el("span", { class: "dica", text: "A IA sugere, você decide." })),
+    el("div", { class: "inv-itens", id: "inv-itens" }, d.investigacao.map((it) => linhaItem(d, it))));
+}
+function alternarItem(item, abrir) {
+  const corpo = item.querySelector(".inv-item-corpo"), vai = abrir ?? corpo.hidden;
+  corpo.hidden = !vai; item.classList.toggle("aberto", vai);
+  item.querySelector(".inv-item-cab").setAttribute("aria-expanded", String(vai));
+  if (vai) fichaEstado.itemAberto = item.dataset.item; else if (fichaEstado.itemAberto === item.dataset.item) fichaEstado.itemAberto = null;
+}
+function linhaItem(d, it) {
+  const s = sugestaoDo(d, it.item);
+  const sug = s && s.situacao_sugerida !== "sem_informacao" ? s.situacao_sugerida : null;
+  const item = el("div", { class: "inv-item", "data-item": it.item, "data-status": it.status, tabindex: "0", "aria-label": it.rotulo });
+  const salvo = el("span", { class: "salvo", text: it.quando ? `atualizado em ${dataHoraBR(it.quando)}` : "" });
+  const nota = el("textarea", { class: "campo", rows: "2", maxlength: "2000", placeholder: "Sua anotação (opcional)", "aria-label": `Anotação: ${it.rotulo}` });
+  nota.value = it.nota || "";
+  let atual = { status: it.status, nota: it.nota || "" };
+  const botoes = el("div", { class: "seg seg-mini", role: "group", "aria-label": `Situação: ${it.rotulo}` },
+    STATUS_BOTOES.map(([v, r]) => el("button", { type: "button", class: `seg-b ${v}`, "aria-pressed": String(it.status === v), text: r,
+      onclick: () => marcar(v) })));
+  const marcar = (v) => salvar(atual.status === v ? "pendente" : v, nota.value.trim());
+  const estado = el("span", { class: "estado" });
+  const aceitar = sug ? el("button", { type: "button", class: "aceitar", title: `Marcar como a IA sugere: ${NOME_SITUACAO[sug]}`,
+    "aria-label": `Aceitar a sugestão da IA: ${NOME_SITUACAO[sug]}`, text: "✓ Aceitar",
+    onclick: (ev) => { ev.stopPropagation(); item._aceitar(); } }) : null;
+  item._marcar = marcar;
+  item._aceitar = () => sug ? salvar(sug, nota.value.trim() || s.resumo) : Promise.resolve();
+  const desenharEstado = () => {
+    const st = atual.status;
+    item.dataset.status = st;
+    estado.replaceChildren(st === "pendente"
+      ? (s ? el("span", { class: `pill-ia tom-${s.situacao_sugerida}`, title: "Sugestão da IA" }, el("small", { text: "IA " }), NOME_SITUACAO[s.situacao_sugerida]) : "")
+      : el("span", { class: `pill-voce tom-${st === "nao_se_aplica" ? "sem_informacao" : st}` }, NOME_SITUACAO[st],
+          sug && sug === st ? el("small", { text: " · como a IA" }) : sug ? el("small", { text: ` · IA: ${NOME_SITUACAO[sug]}` }) : null));
+    if (aceitar) aceitar.hidden = st !== "pendente";
+    botoes.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.classList.contains(st))));
+  };
+  async function salvar(status, texto) {
+    if (status === atual.status && texto === atual.nota) return;
+    salvo.textContent = "salvando…";
+    try {
+      const r = await api(`/api/imoveis/${d.imovel.id}/investigacao`, POST_JSON({ item: it.item, status, nota: texto || null }));
+      atual = { status, nota: texto || "" }; d.investigacao = r.investigacao; nota.value = atual.nota;
+      const novo = r.investigacao.find((x) => x.item === it.item);
+      salvo.textContent = `salvo em ${dataHoraBR(novo.quando)}`;
+      desenharEstado(); atualizarProgresso();
+    } catch (e) { salvo.textContent = "não salvo"; mostrarErro(e.message); }
+  }
+  nota.addEventListener("change", () => salvar(atual.status, nota.value.trim()));
+  const cab = el("div", { class: "inv-item-cab", "aria-expanded": "false", onclick: () => alternarItem(item) },
+    el("span", { class: "seta", "aria-hidden": "true" }), el("i", { class: "ponto", "aria-hidden": "true" }),
+    el("span", { class: "rot" }, el("b", { text: it.rotulo }), s ? el("small", { text: s.resumo }) : null),
+    estado, aceitar);
+  const temParecer = !!lerParecer(d), achados = ((d.achados || {})[it.item] || []).length;
+  const corpo = el("div", { class: "inv-item-corpo", hidden: true },
+    s ? el("div", { class: "ia-bloco" },
+          el("p", { text: s.resumo }),
+          s.fatos.length ? el("ul", { class: "cits" }, s.fatos.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null)
+      : el("p", { class: "ajuda", text: it.ajuda }),
+    it.item === "leilao" && d.sugestao_leilao ? el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao) : null,
+    el("div", { class: "decidir-item" }, el("span", { class: "dica", text: "Sua marcação" }), botoes),
+    el("div", { class: "nota-linha" }, nota, salvo),
+    atalhos(it.item, d.imovel),
+    TIPO_DO_ITEM[it.item] ? blocoAnexos(d, TIPO_DO_ITEM[it.item]) : null,
+    el("details", { class: "inv-sec busca" },
+      el("summary", { text: temParecer ? `Busca por palavra-chave${achados ? ` (${achados})` : ""}` : "O que procurar e trechos encontrados" }),
+      el("ul", { class: "procurar" }, PROCURAR[it.item].map((t) => el("li", { text: t }))), blocoAchados(it.item)));
+  item.append(cab, corpo);
+  desenharEstado();
+  if (fichaEstado.itemAberto === it.item) alternarItem(item, true);
+  return item;
+}
+function atualizarAchados() {
+  for (const it of fichaEstado.dados.investigacao) { const velho = $(`ach-${it.item}`); if (velho) velho.replaceWith(blocoAchados(it.item)); }
+}
+
+/* trechos: etiquetas p.N que abrem o documento na página, com o trecho em destaque */
+function chip(d, c, edital) {
+  const alvo = alvoDaCitacao(d, c, edital);
+  return el("button", { type: "button", class: `chip${c.confirmada ? "" : " nao-conf"}`,
+    title: `${c.confirmada ? "" : "Trecho não encontrado no documento: confira. "}«${c.trecho}»`,
+    text: alvo.descricao ? "descrição" : `p.${c.pagina}`, onclick: (ev) => { ev.stopPropagation(); abrirNoLeitor(alvo); } });
+}
+function alvoDaCitacao(d, c, edital) {
+  if (c.documento === "DESCRICAO") return { descricao: true, nome: "Descrição do lote", trecho: c.trecho, confirmada: c.confirmada };
+  const id = edital ? edital.anexo_id : Number(String(c.documento).replace(/^A/, ""));
+  const a = d.anexos.find((x) => x.id === id);
+  return { anexoId: id, nome: a ? nomeDoc(d, a) : c.documento, pagina: c.pagina,
+           trecho: c.trecho, confirmada: c.confirmada, transcrito: !!a && a.leitura === "transcrito_ia" };
+}
+const chips = (d, lista, edital) => el("span", { class: "chips" }, (lista || []).map((c) => chip(d, c, edital)));
+
+/* parecer: resumo e o detalhe (riscos, perguntas, regras do edital), recolhido */
+function cartaoParecer(d) {
+  const p = lerParecer(d);
+  if (!p) return null;
+  const u = d.parecer.uso || {};
+  const ordem = ["alto", "medio", "baixo"];
+  const riscos = [...(p.riscos || [])].sort((a, c) => ordem.indexOf(a.nivel) - ordem.indexOf(c.nivel));
+  const n = (nv) => riscos.filter((r) => r.nivel === nv).length;
+  const resumoRiscos = ordem.filter(n).map((nv) => `${n(nv)} ${{ alto: "alto", medio: "médio", baixo: "baixo" }[nv]}${n(nv) > 1 ? "s" : ""}`).join(" · ");
+  const texto = el("p", { class: "resumo-ia recolhido", text: p.resumo_geral });
+  const mais = el("button", { type: "button", class: "btn btn-texto mais", text: "ler tudo", onclick: () => {
+    const rec = texto.classList.toggle("recolhido"); mais.textContent = rec ? "ler tudo" : "recolher"; } });
+  const caixa = el("section", { class: "inv-cartao inv-parecer", id: "parecer-ia" },
+    el("div", { class: "inv-cartao-cab" }, el("h3", { text: "Parecer da IA" }),
+      el("span", { class: "dica num", title: u.custo_usd != null ? `custo ${usd(u.custo_usd)}` : "",
+        text: `${dataHoraBR(d.parecer.quando)} · ${p.citacoes_confirmadas}/${p.citacoes_total} trechos conferidos` })),
+    texto, mais);
+  if (riscos.length) caixa.append(el("details", { class: "inv-sec" },
+    el("summary", {}, el("b", { text: "Riscos" }), el("span", { class: "dica", text: ` ${resumoRiscos}` })),
+    el("ul", { class: "riscos" }, riscos.map((r) => el("li", {},
+      el("details", {}, el("summary", {}, el("span", { class: `nivel tom-${r.nivel}`, text: NOME_NIVEL[r.nivel] || r.nivel }), el("b", { text: r.titulo }),
+        chips(d, r.citacoes)),
+        el("p", { text: r.explicacao }),
+        r.citacoes.length ? el("ul", { class: "cits" }, r.citacoes.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null))))));
+  if ((p.perguntas || []).length) caixa.append(el("details", { class: "inv-sec" },
+    el("summary", {}, el("b", { text: "A apurar" }), el("span", { class: "dica", text: ` ${p.perguntas.length} perguntas que os documentos não respondem` })),
+    el("ul", { class: "perguntas" }, p.perguntas.map((q) => el("li", { text: q })))));
+  for (const e of d.regras_edital || []) caixa.append(el("details", { class: "inv-sec" },
+    el("summary", {}, el("b", { text: "Regras do edital" }), el("span", { class: "dica", text: ` ${e.regras.length} · valem para todos os imóveis deste edital` })),
+    el("ul", { class: "regras" }, e.regras.map((r) => el("li", {},
+      el("span", { class: "tema", text: NOME_TEMA[r.tema] || r.tema }), el("span", { text: r.regra }), chips(d, r.citacoes, e))))));
+  caixa.append(el("p", { class: "aviso-ia", text: "Gerado por IA a partir dos documentos. Não é análise jurídica: confira os trechos." }));
+  return caixa;
 }
 
 /* documentos: o que está anexado, em que estado, e a ação que falta */
@@ -1359,14 +1631,14 @@ function faixaDocumentos(d) {
   const lista = docs.map((a) => {
     const legivel = a.leitura === "lido" || a.leitura === "transcrito_ia";
     return el("li", {},
-      el("span", { class: "doc-tipo", text: d.tipos_anexo[a.tipo] || a.tipo }),
-      el("button", { type: "button", class: "doc-nome", text: a.nome_original, title: "Ver no leitor",
-        onclick: () => abrirNoLeitor({ anexoId: a.id, nome: a.nome_original, pagina: 1 }) }),
-      el("span", { class: `doc-st ${legivel ? "tom-ok" : "tom-atencao"}`, text: NOME_LEITURA[a.leitura] || "" }),
+      el("button", { type: "button", class: "doc-nome", title: `${a.nome_original} · ver no leitor`,
+        onclick: () => abrirNoLeitor({ anexoId: a.id, nome: nomeDoc(d, a), pagina: 1 }) },
+        el("i", { class: `doc-ic ${legivel ? "ok" : "pendente"}`, "aria-hidden": "true" }), nomeDoc(d, a)),
+      el("span", { class: "doc-st", text: NOME_LEITURA[a.leitura] || "" }),
       ["sem_texto", "erro"].includes(a.leitura) && /\.pdf$/i.test(a.nome_original) ? botaoTranscrever(d, a) : null);
   });
   return el("section", { class: "inv-cartao inv-docs" },
-    el("h3", { text: "Documentos" }),
+    el("div", { class: "inv-cartao-cab" }, el("h3", { text: "Documentos" })),
     lista.length ? el("ul", { class: "doc-lista" }, lista) : el("p", { class: "dica", text: "Nenhum edital ou matrícula anexado ainda." }),
     botaoDocumentosFonte(d));
 }
@@ -1388,156 +1660,7 @@ function botaoTranscrever(d, a) {
   return el("span", { class: "doc-acao" }, b, msg);
 }
 
-/* trechos: etiquetas p.N que abrem o documento na página, com o trecho em destaque */
-function chip(d, c, edital) {
-  const alvo = alvoDaCitacao(d, c, edital);
-  return el("button", { type: "button", class: `chip${c.confirmada ? "" : " nao-conf"}`,
-    title: `${c.confirmada ? "" : "Trecho não encontrado no documento: confira. "}«${c.trecho}»`,
-    text: alvo.descricao ? "descrição" : `p.${c.pagina}`, onclick: () => abrirNoLeitor(alvo) });
-}
-function alvoDaCitacao(d, c, edital) {
-  if (c.documento === "DESCRICAO") return { descricao: true, nome: "Descrição do lote", trecho: c.trecho, confirmada: c.confirmada };
-  const id = edital ? edital.anexo_id : Number(String(c.documento).replace(/^A/, ""));
-  const a = d.anexos.find((x) => x.id === id) || {};
-  return { anexoId: id, nome: a.nome_original || (edital && edital.nome) || c.documento, pagina: c.pagina,
-           trecho: c.trecho, confirmada: c.confirmada, transcrito: a.leitura === "transcrito_ia" };
-}
-const chips = (d, lista, edital) => el("span", { class: "chips" }, (lista || []).map((c) => chip(d, c, edital)));
-
-/* parecer: resumo, riscos e perguntas, compactos; o detalhe abre sob demanda */
-function cartaoParecer(d) {
-  const p = lerParecer(d), ia = d.ia || {};
-  const caixa = el("section", { class: "inv-cartao inv-parecer", id: "parecer-ia" });
-  const msg = el("p", { class: "dica parecer-msg" });
-  const lidos = d.anexos.filter((a) => a.leitura === "lido" || a.leitura === "transcrito_ia").length;
-  const escaneados = d.anexos.filter((a) => ["sem_texto", "erro"].includes(a.leitura) && /\.pdf$/i.test(a.nome_original)).length;
-  let confirmouSemDocs = false;
-  const rotulo = p ? "Gerar de novo" : "Gerar parecer";
-  const b = el("button", { type: "button", class: p ? "btn" : "btn btn-primario", disabled: !ia.disponivel, text: rotulo,
-    onclick: async () => {
-      if (!lidos && !escaneados && !confirmouSemDocs) {
-        confirmouSemDocs = true; msg.classList.add("erro");
-        msg.textContent = "Nenhum edital ou matrícula anexado. O parecer vai usar só a descrição do lote. Clique de novo para gerar mesmo assim.";
-        b.textContent = "Gerar só com a descrição"; return;
-      }
-      b.disabled = true; b.textContent = "Analisando…"; msg.classList.remove("erro"); msg.textContent = "";
-      const barra = barraDeProgresso(30 + 10 * lidos + 20 * escaneados, [
-        [0, escaneados ? "Lendo os PDFs escaneados" : "Preparando o material e mascarando CPF e RG"],
-        [escaneados ? 20 : 4, "A IA está lendo os documentos"],
-        [escaneados ? 35 : 18, "Organizando ocupação, débitos, ônus e riscos"],
-        [escaneados ? 55 : 35, "Conferindo cada trecho citado no texto original"],
-        [100, "Documentos longos: ainda trabalhando"]]);
-      cab.after(barra.el);
-      try {
-        await api(`/api/imoveis/${d.imovel.id}/parecer`, POST_JSON({}));
-        barra.concluir();
-        await abrirFicha(d.imovel.id);
-      } catch (e) { barra.el.remove(); barra.parar(); msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = rotulo; }
-    } });
-  const meta = p ? (() => {
-    const u = d.parecer.uso || {};
-    return `${dataHoraBR(d.parecer.quando)} · ${p.citacoes_confirmadas}/${p.citacoes_total} trechos conferidos` +
-      (u.custo_usd != null ? ` · US$ ${u.custo_usd.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "");
-  })() : "";
-  const cab = el("div", { class: "inv-cartao-cab" },
-    el("div", {}, el("h3", { text: "Parecer da IA" }), meta ? el("span", { class: "dica num", text: meta }) : null), b);
-  caixa.append(cab);
-  if (!ia.disponivel) caixa.append(el("p", { class: "dica erro", text: `Indisponível: ${ia.motivo}.` }));
-  if (!p) {
-    caixa.append(el("p", { class: "dica", text: "A IA lê edital e matrícula (os escaneados também), organiza ocupação, débitos, ônus e riscos e mostra a página de onde tirou cada informação. Ela só sugere; quem decide é você." }), msg);
-    return caixa;
-  }
-  caixa.append(el("p", { class: "resumo-ia", text: p.resumo_geral }), msg);
-  const ordem = ["alto", "medio", "baixo"];
-  const riscos = [...(p.riscos || [])].sort((a, c) => ordem.indexOf(a.nivel) - ordem.indexOf(c.nivel));
-  if (riscos.length) {
-    const n = (nv) => riscos.filter((r) => r.nivel === nv).length;
-    const resumo = ordem.filter(n).map((nv) => `${n(nv)} ${{ alto: "alto", medio: "médio", baixo: "baixo" }[nv]}${n(nv) > 1 ? "s" : ""}`).join(" · ");
-    caixa.append(el("details", { class: "inv-sec", open: true },
-      el("summary", {}, el("b", { text: "Riscos" }), el("span", { class: "dica", text: ` ${resumo}` })),
-      el("ul", { class: "riscos" }, riscos.map((r) => el("li", { class: `nivel-${r.nivel}` },
-        el("details", {}, el("summary", {}, el("span", { class: `nivel tom-${r.nivel}`, text: NOME_NIVEL[r.nivel] || r.nivel }), el("b", { text: r.titulo }),
-          chips(d, r.citacoes)),
-          el("p", { text: r.explicacao }),
-          r.citacoes.length ? el("ul", { class: "cits" }, r.citacoes.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null))))));
-  }
-  if ((p.perguntas || []).length) caixa.append(el("details", { class: "inv-sec" },
-    el("summary", {}, el("b", { text: "A apurar" }), el("span", { class: "dica", text: ` ${p.perguntas.length} perguntas que os documentos não respondem` })),
-    el("ul", { class: "perguntas" }, p.perguntas.map((q) => el("li", { text: q })))));
-  for (const e of d.regras_edital || []) caixa.append(el("details", { class: "inv-sec" },
-    el("summary", {}, el("b", { text: "Regras do edital" }), el("span", { class: "dica", text: ` ${e.regras.length} · lidas uma vez para todos os imóveis deste edital` })),
-    el("ul", { class: "regras" }, e.regras.map((r) => el("li", {},
-      el("span", { class: "tema", text: NOME_TEMA[r.tema] || r.tema }), el("span", { text: r.regra }), chips(d, r.citacoes, e))))));
-  caixa.append(el("p", { class: "aviso-ia", text: "Gerado por IA a partir dos documentos. Não é análise jurídica: confira os trechos." }));
-  return caixa;
-}
-
-/* checklist: uma linha por item; o detalhe abre só no item escolhido */
-function listaChecklist(d) {
-  return el("section", { class: "inv-cartao inv-check" },
-    el("div", { class: "inv-cartao-cab" }, el("h3", { text: "Checklist" }), el("span", { class: "dica", text: "A IA sugere; você marca." })),
-    el("div", { class: "inv-itens", id: "inv-itens" }, d.investigacao.map((it) => linhaItem(d, it))));
-}
-function alternarItem(item, abrir) {
-  const corpo = item.querySelector(".inv-item-corpo"), vai = abrir ?? corpo.hidden;
-  corpo.hidden = !vai; item.classList.toggle("aberto", vai);
-  item.querySelector(".inv-item-cab").setAttribute("aria-expanded", String(vai));
-  if (vai) fichaEstado.itemAberto = item.dataset.item; else if (fichaEstado.itemAberto === item.dataset.item) fichaEstado.itemAberto = null;
-}
-function linhaItem(d, it) {
-  const s = sugestaoDo(d, it.item);
-  const item = el("div", { class: "inv-item", "data-item": it.item, "data-status": it.status, tabindex: "0", "aria-label": it.rotulo });
-  const salvo = el("span", { class: "salvo", text: it.quando ? `atualizado em ${dataHoraBR(it.quando)}` : "" });
-  const nota = el("textarea", { class: "campo", rows: "2", maxlength: "2000", placeholder: "Sua anotação (opcional)", "aria-label": `Anotação: ${it.rotulo}` });
-  nota.value = it.nota || "";
-  let atual = { status: it.status, nota: it.nota || "" };
-  const botoes = el("div", { class: "seg seg-mini", role: "group", "aria-label": `Situação: ${it.rotulo}` },
-    STATUS_BOTOES.map(([v, r]) => el("button", { type: "button", class: `seg-b ${v}`, "aria-pressed": String(it.status === v), text: r, tabindex: "-1",
-      onclick: (ev) => { ev.stopPropagation(); marcar(v); } })));
-  const marcar = (v) => salvar(atual.status === v ? "pendente" : v, nota.value.trim());
-  item._marcar = marcar;
-  async function salvar(status, texto) {
-    if (status === atual.status && texto === atual.nota) return;
-    salvo.textContent = "salvando…";
-    try {
-      const r = await api(`/api/imoveis/${d.imovel.id}/investigacao`, POST_JSON({ item: it.item, status, nota: texto || null }));
-      atual = { status, nota: texto }; d.investigacao = r.investigacao;
-      const novo = r.investigacao.find((x) => x.item === it.item);
-      item.dataset.status = novo.status;
-      botoes.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.classList.contains(novo.status))));
-      salvo.textContent = `salvo em ${dataHoraBR(novo.quando)}`;
-      atualizarProgresso();
-    } catch (e) { salvo.textContent = "não salvo"; mostrarErro(e.message); }
-  }
-  nota.addEventListener("change", () => salvar(atual.status, nota.value.trim()));
-  const cab = el("div", { class: "inv-item-cab", "aria-expanded": "false", onclick: () => alternarItem(item) },
-    el("span", { class: "seta", "aria-hidden": "true" }),
-    el("b", { class: "rot", text: it.rotulo }),
-    s ? el("span", { class: `pill-ia tom-${s.situacao_sugerida}`, title: "Sugestão da IA", text: `IA: ${NOME_SITUACAO[s.situacao_sugerida]}` }) : null,
-    botoes);
-  const temParecer = !!lerParecer(d), achados = ((d.achados || {})[it.item] || []).length;
-  const corpo = el("div", { class: "inv-item-corpo", hidden: true },
-    s ? el("div", { class: "ia-bloco" },
-          el("p", { text: s.resumo }),
-          s.fatos.length ? el("ul", { class: "cits" }, s.fatos.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null,
-          s.situacao_sugerida !== "sem_informacao" ? el("button", { type: "button", class: "btn btn-texto", text: "Usar a sugestão da IA",
-            onclick: () => { nota.value = s.resumo; salvar(s.situacao_sugerida, s.resumo); } }) : null)
-      : el("p", { class: "ajuda", text: it.ajuda }),
-    it.item === "leilao" && d.sugestao_leilao ? el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao) : null,
-    atalhos(it.item, d.imovel),
-    el("div", { class: "nota-linha" }, nota, salvo),
-    TIPO_DO_ITEM[it.item] ? blocoAnexos(d, TIPO_DO_ITEM[it.item]) : null,
-    el("details", { class: "inv-sec busca" },
-      el("summary", { text: temParecer ? `Busca por palavra-chave${achados ? ` (${achados})` : ""}` : "O que procurar e trechos encontrados" }),
-      el("ul", { class: "procurar" }, PROCURAR[it.item].map((t) => el("li", { text: t }))), blocoAchados(it.item)));
-  item.append(cab, corpo);
-  if (fichaEstado.itemAberto === it.item) alternarItem(item, true);
-  return item;
-}
-function atualizarAchados() {
-  for (const it of fichaEstado.dados.investigacao) { const velho = $(`ach-${it.item}`); if (velho) velho.replaceWith(blocoAchados(it.item)); }
-}
-/* teclado: ↑↓ entre itens, Enter abre, 1–4 marca, P abre o primeiro trecho */
+/* teclado: ↑↓ entre itens, Enter abre, A aceita a IA, 1–4 marca, P abre o primeiro trecho */
 document.addEventListener("keydown", (ev) => {
   if ($("vista-ficha").hidden || fichaEstado.aba !== "investigar" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
   if (ev.target.closest && ev.target.closest("input, textarea, select")) return;
@@ -1547,31 +1670,39 @@ document.addEventListener("keydown", (ev) => {
   if (k === "ArrowDown" || k === "j") { ev.preventDefault(); itens[Math.min(itens.length - 1, i + 1)].focus(); }
   else if (k === "ArrowUp" || k === "k") { ev.preventDefault(); itens[Math.max(0, i - 1)].focus(); }
   else if (k === "Enter" && ev.target === itens[i]) { ev.preventDefault(); alternarItem(itens[i]); }
+  else if (k === "a" || k === "A") { ev.preventDefault(); itens[i]._aceitar(); }
   else if (["1", "2", "3", "4"].includes(k)) { ev.preventDefault(); itens[i]._marcar(STATUS_BOTOES[Number(k) - 1][0]); }
   else if (k === "p" || k === "P") { const c = itens[i].querySelector(".chip"); if (c) { ev.preventDefault(); c.click(); } }
 });
 
-/* leitor de documento (pdf.js 4.10.38, aprovado pelo Mateus em 16/11/2026) */
-const leitor = { lib: null, pdfs: {}, atual: null, seq: 0 };
+/* leitor de documento (pdf.js 4.10.38, aprovado pelo Mateus em 16/11/2026): zoom, tela cheia, miniaturas */
+const leitor = { lib: null, pdfs: {}, atual: null, seq: 0, zoom: 1 };
 function leitorDocumento() {
+  const bt = (txt, rot, fn, id) => el("button", { type: "button", class: "lt-b", text: txt, "aria-label": rot, title: rot, id, onclick: fn });
   return el("aside", { class: "inv-doc", id: "inv-doc", "aria-label": "Documento" },
     el("div", { class: "leitor-cab" },
-      el("div", { class: "leitor-tit" }, el("b", { id: "leitor-nome", text: "Documento" }), el("span", { id: "leitor-pag", class: "num dica" })),
+      el("div", { class: "leitor-tit" }, el("b", { id: "leitor-nome", text: "Documento" }), el("span", { id: "leitor-pag", class: "num" })),
       el("div", { class: "leitor-nav" },
-        el("button", { type: "button", class: "btn btn-texto", text: "‹", "aria-label": "Página anterior", onclick: () => irPagina(-1) }),
-        el("button", { type: "button", class: "btn btn-texto", text: "›", "aria-label": "Próxima página", onclick: () => irPagina(1) }),
-        el("a", { id: "leitor-abrir", class: "btn btn-texto", target: "_blank", rel: "noopener", text: "Abrir ↗", hidden: true }))),
+        bt("‹", "Página anterior", () => irPagina(-1)), bt("›", "Próxima página", () => irPagina(1)),
+        el("span", { class: "lt-sep" }),
+        bt("−", "Diminuir", () => mudarZoom(-1)), el("span", { class: "lt-zoom num", id: "leitor-zoom", text: "100%" }), bt("+", "Aumentar", () => mudarZoom(1)),
+        el("span", { class: "lt-sep" }),
+        bt("⤢", "Tela cheia", telaCheia),
+        el("a", { id: "leitor-abrir", class: "lt-b", target: "_blank", rel: "noopener", title: "Abrir em outra aba", "aria-label": "Abrir em outra aba", text: "↗", hidden: true }))),
     el("div", { class: "leitor-balao", id: "leitor-balao", hidden: true }),
-    el("div", { class: "leitor-corpo", id: "leitor-corpo", "data-observar": "1" },
-      el("p", { class: "leitor-vazio", text: "Clique numa página citada (p.12) ou no nome de um documento para vê-lo aqui, com o trecho em destaque." })));
+    el("div", { class: "leitor-corpo", id: "leitor-corpo" },
+      el("div", { class: "leitor-vazio" }, el("b", { text: "O documento aparece aqui" }),
+        el("span", { text: "Clique numa etiqueta de página, como " }), el("span", { class: "chip falso", text: "p.12" }),
+        el("span", { text: ", para abrir o edital ou a matrícula com o trecho em destaque." }))),
+    el("div", { class: "leitor-miniaturas", id: "leitor-miniaturas", hidden: true }));
 }
-// a largura do leitor mudou (janela, celular girado, troca de coluna): redesenha a página atual
+// a largura do leitor mudou (janela, celular girado, tela cheia): redesenha a página atual
 let timerLeitor = null;
 const observarLeitor = new ResizeObserver(() => {
   clearTimeout(timerLeitor);
   timerLeitor = setTimeout(async () => {
     const a = leitor.atual, corpo = $("leitor-corpo"), folha = corpo && corpo.querySelector(".leitor-folha");
-    if (!a || !a.total || !folha || Math.abs(folha.offsetWidth - (corpo.clientWidth - 24)) < 20) return;
+    if (!a || !a.total || !folha || Math.abs(folha.offsetWidth - (corpo.clientWidth - 24) * leitor.zoom) < 20) return;
     await desenharPagina(await leitor.pdfs[a.anexoId], a.paginaAtual || 1, ++leitor.seq);
   }, 200);
 });
@@ -1579,33 +1710,64 @@ function pdfjs() {
   leitor.lib ||= import("/vendor/pdfjs/pdf.min.mjs").then((m) => { m.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.mjs"; return m; });
   return leitor.lib;
 }
-async function abrirNoLeitor(alvo) {
+function telaCheia() {
+  const a = $("inv-doc"); if (!a) return;
+  if (document.fullscreenElement) document.exitFullscreen(); else if (a.requestFullscreen) a.requestFullscreen().catch(() => {});
+}
+async function mudarZoom(passo) {
+  const niveis = [0.75, 1, 1.25, 1.5, 2, 2.5];
+  const i = Math.max(0, Math.min(niveis.length - 1, niveis.indexOf(leitor.zoom) + passo));
+  if (niveis[i] === leitor.zoom) return;
+  leitor.zoom = niveis[i]; $("leitor-zoom").textContent = `${Math.round(leitor.zoom * 100)}%`;
+  const a = leitor.atual; if (a && a.total) await desenharPagina(await leitor.pdfs[a.anexoId], a.paginaAtual || 1, ++leitor.seq);
+}
+async function abrirNoLeitor(alvo, semTrocarColuna) {
   if (!$("leitor-corpo")) return;
-  mostrarColuna("doc");
-  leitor.atual = { ...alvo, imovelId: fichaEstado.dados.imovel.id };
+  if (!semTrocarColuna) mostrarColuna("doc");
+  const mesmoDoc = leitor.atual && leitor.atual.anexoId === alvo.anexoId && $("leitor-miniaturas").childElementCount;
+  leitor.atual = { ...alvo, imovelId: fichaEstado.dados.imovel.id, total: mesmoDoc ? leitor.atual.total : null };
   const seq = ++leitor.seq, corpo = $("leitor-corpo"), balao = $("leitor-balao");
   $("leitor-nome").textContent = alvo.nome || "Documento";
   balao.hidden = !alvo.trecho;
   if (alvo.trecho) balao.replaceChildren(el("span", { class: "rot", text: alvo.confirmada === false ? "Trecho citado · não encontrado no texto, confira" : "Trecho citado" }),
     el("q", { text: alvo.trecho }));
-  if (!window.matchMedia("(min-width: 1100px)").matches) $("inv-grade").scrollIntoView({ block: "start", behavior: "smooth" });
+  if (!semTrocarColuna && !window.matchMedia("(min-width: 1100px)").matches) $("inv-grade").scrollIntoView({ block: "start", behavior: "smooth" });
   if (alvo.descricao) {
-    $("leitor-abrir").hidden = true; $("leitor-pag").textContent = "";
+    $("leitor-abrir").hidden = true; $("leitor-pag").textContent = ""; $("leitor-miniaturas").hidden = true;
     corpo.replaceChildren(el("div", { class: "leitor-texto", text: fichaEstado.dados.imovel.descricao || "" }));
     return;
   }
   $("leitor-abrir").hidden = false;
-  corpo.replaceChildren(el("p", { class: "leitor-vazio", text: "Abrindo o documento…" }));
+  if (!mesmoDoc) corpo.replaceChildren(el("p", { class: "leitor-carregando", text: "Abrindo o documento…" }));
   try {
     const lib = await pdfjs();
     leitor.pdfs[alvo.anexoId] ||= lib.getDocument({ url: `/anexos/${alvo.anexoId}`, isEvalSupported: false }).promise;
     const pdf = await leitor.pdfs[alvo.anexoId];
     if (seq !== leitor.seq) return;
     leitor.atual.total = pdf.numPages;
+    if (!mesmoDoc) miniaturas(pdf);
     await desenharPagina(pdf, Math.min(Math.max(1, alvo.pagina || 1), pdf.numPages), seq);
   } catch (e) {
-    if (seq === leitor.seq) corpo.replaceChildren(el("p", { class: "leitor-vazio erro", text: `Não foi possível mostrar o PDF aqui (${e.message}). Use "Abrir ↗".` }));
+    if (seq === leitor.seq) corpo.replaceChildren(el("p", { class: "leitor-carregando erro", text: `Não foi possível mostrar o PDF aqui (${e.message}). Use ↗ para abrir em outra aba.` }));
   }
+}
+function miniaturas(pdf) {
+  const faixa = $("leitor-miniaturas");
+  faixa.hidden = pdf.numPages < 2;
+  const ver = new IntersectionObserver((ents) => ents.forEach(async (en) => {
+    if (!en.isIntersecting || en.target.dataset.ok) return;
+    en.target.dataset.ok = "1"; ver.unobserve(en.target);
+    const pg = await pdf.getPage(Number(en.target.dataset.n));
+    const vp = pg.getViewport({ scale: 56 / pg.getViewport({ scale: 1 }).width });
+    const c = el("canvas"); c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+    await pg.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
+    en.target.prepend(c);
+  }), { root: faixa, rootMargin: "0px 200px" });
+  faixa.replaceChildren(...Array.from({ length: pdf.numPages }, (_, i) => {
+    const b = el("button", { type: "button", class: "mini", "data-n": String(i + 1), "aria-label": `Página ${i + 1}`,
+      onclick: async () => desenharPagina(pdf, i + 1, ++leitor.seq) }, el("span", { class: "num", text: String(i + 1) }));
+    ver.observe(b); return b;
+  }));
 }
 async function irPagina(passo) {
   const a = leitor.atual; if (!a || !a.total) return;
@@ -1618,8 +1780,11 @@ async function desenharPagina(pdf, n, seq) {
   a.paginaAtual = n;
   $("leitor-pag").textContent = `página ${n} de ${pdf.numPages}`;
   $("leitor-abrir").href = `/anexos/${a.anexoId}#page=${n}`;
+  document.querySelectorAll("#leitor-miniaturas .mini").forEach((m) => m.classList.toggle("atual", Number(m.dataset.n) === n));
+  const atualMini = document.querySelector("#leitor-miniaturas .mini.atual");
+  if (atualMini) atualMini.scrollIntoView({ block: "nearest", inline: "center" });
   const page = await pdf.getPage(n);
-  const largura = Math.max(260, corpo.clientWidth - 24);
+  const largura = Math.max(260, corpo.clientWidth - 24) * leitor.zoom;
   const viewport = page.getViewport({ scale: largura / page.getViewport({ scale: 1 }).width });
   const dpr = window.devicePixelRatio || 1;
   const canvas = el("canvas", { class: "leitor-canvas", "aria-label": `Página ${n}` });
@@ -1630,14 +1795,19 @@ async function desenharPagina(pdf, n, seq) {
   await page.render({ canvasContext: canvas.getContext("2d"), viewport, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
   if (seq !== leitor.seq) return;
   corpo.replaceChildren(folha);
+  corpo.scrollTop = 0;
+  const balao = $("leitor-balao");
   if (a.trecho && n === a.pagina) {
+    balao.hidden = false;
     const achou = await destacar(page, viewport, folha, a.trecho, lib);
     if (achou) {
       const m = folha.querySelector(".realce-pdf");
-      if (m) corpo.scrollTop = Math.max(0, m.offsetTop - 60);
-    } else if (a.transcrito) {
-      $("leitor-balao").append(el("small", { text: "PDF escaneado: o trecho vem da transcrição e não dá para marcá-lo na imagem." }));
+      if (m) { corpo.scrollTop = Math.max(0, m.offsetTop - 60); corpo.scrollLeft = Math.max(0, m.offsetLeft - 40); }
+    } else if (a.transcrito && !balao.querySelector("small")) {
+      balao.append(el("small", { text: "PDF escaneado: o trecho vem da transcrição e não dá para marcá-lo na imagem." }));
     }
+  } else if (a.trecho) {
+    balao.hidden = true;                              // em outra página, o balão do trecho não se aplica
   }
 }
 async function destacar(page, viewport, folha, trecho, lib) {
@@ -1660,6 +1830,27 @@ async function destacar(page, viewport, folha, trecho, lib) {
     folha.append(m);
   }
   return true;
+}
+
+/* barra fixa da ficha: aparece quando o cabeçalho e as abas saem da tela */
+function barraFicha(d) {
+  const im = d.imovel;
+  const barra = el("div", { class: "ficha-fixa", id: "ficha-fixa", "aria-hidden": "true" },
+    el("div", { class: "ff-dentro" },
+      el("button", { type: "button", class: "ff-imovel", onclick: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+        el("b", { text: `${im.tipo || im.categoria || "Imóvel"} · ${im.cidade}` }),
+        el("span", { class: "num", text: im.preco == null ? "" : brl.format(im.preco) })),
+      el("nav", { class: "ff-passos" }, ABAS_FICHA.map((a, i) => el("button", { type: "button", "data-aba": a.id, tabindex: "-1",
+        onclick: () => { abaFicha(a.id); window.scrollTo({ top: 0 }); } }, el("span", { class: "num", text: String(i + 1) }), a.titulo))),
+      el("span", { class: "ff-prog num", id: "ff-prog" })));
+  return barra;
+}
+let observarAbas = null;
+function ligarBarraFicha() {
+  const abas = $("ficha-abas"), barra = $("ficha-fixa"); if (!abas || !barra) return;
+  if (observarAbas) observarAbas.disconnect();
+  observarAbas = new IntersectionObserver(([e]) => barra.classList.toggle("visivel", !e.isIntersecting && e.boundingClientRect.top < 0));
+  observarAbas.observe(abas);
 }
 
 let timerBuscaDocs = null;
@@ -1764,7 +1955,7 @@ function blocoAnexos(d, tipoFixo) {
   const lista = el("ul", { class: "anexo-lista" });
   const meus = () => d.anexos.filter((a) => (tipoFixo ? a.tipo === tipoFixo : !Object.values(TIPO_DO_ITEM).includes(a.tipo)));
   const desenhar = () => lista.replaceChildren(...meus().map((a) => el("li", {},
-    el("a", { href: `/anexos/${a.id}`, target: "_blank", rel: "noopener", text: a.nome_original }),
+    el("a", { href: `/anexos/${a.id}`, target: "_blank", rel: "noopener", text: nomeDoc(d, a), title: a.nome_original }),
     el("span", { class: "meta num", text: `${tipoFixo ? "" : (d.tipos_anexo[a.tipo] || a.tipo) + " · "}${tamanhoArquivo(a.tamanho)} · ${dataHoraBR(a.quando)}` +
       ({ lido: " · texto lido", transcrito_ia: " · transcrito por IA", sem_texto: " · PDF escaneado (sem texto)", erro: " · não deu para ler", desligada: " · leitura desligada" }[a.leitura] || "") }),
     ["sem_texto", "erro"].includes(a.leitura) ? botaoTranscrever(d, a) : null)));
