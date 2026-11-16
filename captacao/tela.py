@@ -14,6 +14,7 @@ Rotas:
   POST /api/imoveis/<id>/documentos-fonte      baixa edital/matrícula publicados pela fonte
   POST /api/imoveis/<id>/parecer               gera o parecer preliminar com IA (só sugere)
   POST /api/anexos/<id>/transcrever            PDF escaneado: a IA transcreve o texto
+  POST /api/editais-caixa {url}                 indexa um edital da Caixa e liga aos imóveis dele
 """
 import json
 import os
@@ -186,7 +187,7 @@ def _criar_handler(caminho_base: str, porta: int):
             mt = ROTA_TRANSCREVER.match(url.path)
             if mt:
                 return self._executar(lambda repo: ficha.transcrever_anexo(repo, pasta_anexos, montagem.ANALISADOR, int(mt.group(1))))
-            if url.path not in ("/api/simular", "/api/importar") and not (m and m.group(2)):
+            if url.path not in ("/api/simular", "/api/importar", "/api/editais-caixa") and not (m and m.group(2)):
                 return self._json(404, {"erro": "rota não encontrada"})
             # exigir JSON impede envio por formulário de outro site (CSRF)
             if tipo_corpo != "application/json":
@@ -200,6 +201,11 @@ def _criar_handler(caminho_base: str, porta: int):
                 return self._json(400, {"erro": "JSON inválido"})
             if url.path == "/api/simular":
                 return self._executar(lambda repo: ficha.simular(corpo))
+            if url.path == "/api/editais-caixa":
+                if not isinstance(corpo, dict) or set(corpo) != {"url"}:
+                    return self._json(400, {"erro": "envie {\"url\": \"...\"}"})
+                return self._executar(lambda repo: ficha.indexar_edital_caixa(
+                    repo, pasta_anexos, montagem.CLIENTE_WEB, str(corpo["url"]), montagem.FONTES))
             if url.path == "/api/importar":
                 if not isinstance(corpo, dict) or set(corpo) != {"url"}:
                     return self._json(400, {"erro": "envie {\"url\": \"...\"}"})

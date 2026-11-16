@@ -7,6 +7,9 @@ from captacao.adaptadores.web import ClienteWeb
 from captacao.aplicacao import ficha, triagem
 from captacao.aplicacao.portas import ErroDeFonte
 from captacao.dominio.modelo import ImovelCaptado
+from captacao.aplicacao.portas import EntradaInvalida
+sys.path.insert(0, os.path.dirname(__file__))
+from test_documentos import pdf_com_texto
 
 PDF = b"%PDF-1.7\n%%EOF\n"
 
@@ -75,6 +78,39 @@ class Web(unittest.TestCase):
         self.assertEqual(c.baixar("https://s.test/doc.pdf", sob_demanda=True), PDF)
         self.assertEqual(pedidos, ["https://s.test/robots.txt", "https://s.test/doc.pdf"])
         self.assertTrue(esperas and esperas[-1] >= 3.0)              # continua esperando entre pedidos
+
+
+class EditalCaixa(unittest.TestCase):
+    URL = "https://venda-imoveis.caixa.gov.br/editais/EL00610226CPARE.PDF"
+
+    def setUp(self):
+        self.repo = RepositorioSQLite(":memory:"); self.addCleanup(self.repo.close)
+        outro = imovel_caixa(); outro.id_fonte = "8444425522289"
+        fora = imovel_caixa(); fora.id_fonte = "1111111111111"
+        self.repo.gravar_coleta("caixa", "SP", "t", [imovel_caixa(), outro, fora])
+        ids = dict(self.repo.con.execute("SELECT id_fonte, id FROM imoveis").fetchall())
+        self.dentro, self.analisar, self.fora = ids["8787715548453"], ids["8444425522289"], ids["1111111111111"]
+        triagem.triar(self.repo, self.analisar, {"para": "analisar"})
+        self.pdf = pdf_com_texto(["Edital de Leilao 0061/0226 item 1 878771554845-3 R$ 100", "item 2 8444425522289 R$ 200 9999999999999"])
+        self.fontes = {"caixa": FonteCaixa()}
+
+    def test_liga_a_todos_e_anexa_nos_em_analise(self):
+        b = BaixadorFalso(recusa_robots=False)
+        b.baixar = lambda url, usar_cache=True, sob_demanda=False: (b.pedidos.append(url), self.pdf if "editais/EL" in url else PDF)[1]
+        r = ficha.indexar_edital_caixa(self.repo, tempfile.mkdtemp(), b, self.URL, self.fontes)
+        self.assertEqual((r["edital"], r["imoveis_no_edital"], r["imoveis_na_base"]), ("Edital 0061/0226 (Caixa)", 3, 2))
+        self.assertEqual(r["anexados_em_analise"], [self.analisar])
+        tipos = lambda i: sorted(d["tipo"] for d in ficha.documentos_da_fonte(self.repo.buscar_imovel(i), self.fontes))
+        self.assertEqual((tipos(self.dentro), tipos(self.fora)), (["edital", "matricula"], ["matricula"]))
+        self.assertEqual(sorted(a["tipo"] for a in self.repo.anexos(self.analisar)), ["edital", "matricula"])
+        self.assertEqual(self.repo.anexos(self.dentro), [])          # fora da análise: só fica ligado, sem baixar
+        self.assertEqual(b.pedidos.count(self.URL), 2)               # 1 para indexar + 1 ao anexar (o cliente real usa cache)
+
+    def test_so_aceita_link_de_edital_da_caixa(self):
+        for url in ("https://exemplo.com/editais/EL1.PDF", "http://venda-imoveis.caixa.gov.br/editais/EL00610226CPARE.PDF",
+                    "https://venda-imoveis.caixa.gov.br/sistema/detalhe-imovel.asp?hdnimovel=1"):
+            with self.assertRaises(EntradaInvalida):
+                ficha.indexar_edital_caixa(self.repo, tempfile.mkdtemp(), BaixadorFalso(), url, self.fontes)
 
 
 if __name__ == "__main__":

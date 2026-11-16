@@ -340,7 +340,24 @@ class RepositorioSQLite:
                 "SELECT numero, data, valor FROM pracas WHERE imovel_id=? ORDER BY numero", (imovel_id,))],
             "documentos": [dict(d) for d in self.con.execute(
                 "SELECT tipo, url, rotulo FROM documentos_fonte WHERE imovel_id=? ORDER BY tipo", (imovel_id,))]}
+        if lei is None:          # sem dados de leilão (ex.: Caixa): documentos achados por índice de edital
+            im["documentos"] = [dict(d) for d in self.con.execute(
+                "SELECT tipo, url, rotulo FROM documentos_fonte WHERE imovel_id=? ORDER BY tipo", (imovel_id,))]
         return im
+
+    def vincular_documento(self, fonte: str, ids_fonte: List[str], tipo: str, url: str, rotulo: str) -> List[dict]:
+        """Liga um documento publicado (ex.: edital da Caixa que lista vários imóveis) aos imóveis da
+        fonte com esses identificadores. Devolve os imóveis encontrados (id, id_fonte, estagio)."""
+        achados = []
+        for i in range(0, len(ids_fonte), 500):
+            parte = ids_fonte[i:i + 500]
+            achados += [dict(r) for r in self.con.execute(
+                f"SELECT id, id_fonte, estagio FROM imoveis WHERE fonte=? AND id_fonte IN ({','.join('?' * len(parte))})",
+                [fonte, *parte])]
+        self.con.executemany("INSERT OR IGNORE INTO documentos_fonte (imovel_id, tipo, url, rotulo) VALUES (?,?,?,?)",
+                             [(a["id"], tipo, url, rotulo) for a in achados])
+        self.con.commit()
+        return achados
 
     def contar_por_estagio(self) -> dict:
         return dict(self.con.execute("SELECT estagio, COUNT(*) FROM imoveis WHERE situacao='ativo' GROUP BY estagio"))

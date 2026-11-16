@@ -168,7 +168,7 @@ def salvar_simulacao(repo: RepositorioDeAnalise, imovel_id: int, corpo, agora: s
 def documentos_da_fonte(im: dict, fontes: dict = None) -> list:
     """Documentos publicados pela fonte: os gravados na coleta (leilões) mais os que a fonte sabe
     localizar pelo identificador do imóvel (ex.: matrícula da Caixa)."""
-    docs = list((im.get("leilao") or {}).get("documentos") or [])
+    docs = list((im.get("leilao") or {}).get("documentos") or im.get("documentos") or [])
     f = (fontes or {}).get(im.get("fonte"))
     if f is not None and hasattr(f, "documentos_conhecidos"):
         urls = {d["url"] for d in docs}
@@ -193,7 +193,7 @@ def baixar_documentos_fonte(repo: RepositorioDeAnalise, pasta: str, imovel_id: i
             continue
         try:
             dados = baixador.baixar(d["url"], sob_demanda=sob_demanda)
-            r = anexar(repo, pasta, imovel_id, d["tipo"], f"{d['rotulo'] or d['tipo']} ({im['fonte']}).pdf", dados, agora)
+            r = anexar(repo, pasta, imovel_id, d["tipo"], (d['rotulo'] or d['tipo']).replace("/", "-") + ".pdf", dados, agora)
             baixados.append({"tipo": d["tipo"], "duplicado": r["duplicado"]})
         except (ErroDeFonte, EntradaInvalida) as e:
             erros.append(f"{d['rotulo'] or d['tipo']}: {e}")
@@ -239,3 +239,32 @@ def transcrever_anexo(repo: RepositorioDeAnalise, pasta: str, transcritor, anexo
     repo.gravar_leitura(anexo_id, "transcrito_ia", paginas)
     return {"anexos": repo.anexos(a["imovel_id"]), "achados": _achados(repo, a["imovel_id"]),
             "uso": r.get("uso") or {}, "paginas": len(paginas)}
+
+
+def indexar_edital_caixa(repo, pasta: str, baixador: BaixadorWeb, url: str, fontes: dict = None) -> dict:
+    """Um edital da Caixa lista centenas de imóveis pelo número. Baixa o edital uma vez, liga-o a
+    todos os imóveis da base que aparecem nele e anexa nos que já estão em 'Para analisar'."""
+    import re
+    from ..documentos import extrair_paginas
+    from .portas import ErroDeFonte
+    m = re.fullmatch(r"https://venda-imoveis\.caixa\.gov\.br/editais/(E[LA]\w{4,40})\.pdf", (url or "").strip(), re.I)
+    if not m:
+        raise EntradaInvalida("cole o link do edital da Caixa (https://venda-imoveis.caixa.gov.br/editais/EL....PDF)")
+    url = url.strip()
+    dados = baixador.baixar(url, sob_demanda=True)
+    if not dados.startswith(b"%PDF"):
+        raise ErroDeFonte("a Caixa não devolveu um PDF nesse endereço")
+    texto = "\n".join(extrair_paginas(dados))
+    numeros = sorted({re.sub(r"\D", "", n) for n in re.findall(r"(?<!\d)\d{12}-?\d(?!\d)", texto)})
+    cod = m.group(1).upper()
+    num = re.match(r"E[LA](\d{4})(\d{4})", cod)
+    rotulo = f"Edital {num.group(1)}/{num.group(2)} (Caixa)" if num else f"Edital {cod} (Caixa)"
+    achados = repo.vincular_documento("caixa", numeros, "edital", url, rotulo)
+    anexados = []
+    for a in achados:
+        if a["estagio"] == "analisar" and documentos_pendentes(repo, a["id"], fontes):
+            r = baixar_documentos_fonte(repo, pasta, a["id"], baixador, fontes=fontes)
+            if r["baixados"]:
+                anexados.append(a["id"])
+    return {"edital": rotulo, "url": url, "imoveis_no_edital": len(numeros), "imoveis_na_base": len(achados),
+            "anexados_em_analise": anexados}

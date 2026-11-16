@@ -14,6 +14,7 @@
   python -m captacao tela [--porta 8765]             abre a tela de triagem no navegador
 """
 import argparse
+import os
 import csv
 import sys
 
@@ -71,6 +72,14 @@ def cmd_importar(a, repo):
           f"{lei.get('tipo_venda') or im['modalidade']} | próxima praça {im.get('proxima_praca') or '-'}")
     for av in r["avisos"]:
         print("  aviso:", av)
+
+
+def cmd_edital_caixa(a, repo):
+    from .aplicacao.ficha import indexar_edital_caixa
+    pasta = os.path.join(os.path.dirname(os.path.abspath(a.base)), "anexos")
+    r = indexar_edital_caixa(repo, pasta, montagem.CLIENTE_WEB, a.url, montagem.FONTES)
+    print(f"{r['edital']}: {r['imoveis_no_edital']} imóveis no edital, {r['imoveis_na_base']} na base; "
+          f"anexado em {len(r['anexados_em_analise'])} imóvel(is) em 'Para analisar'")
 
 
 def cmd_listar(a, repo):
@@ -135,6 +144,8 @@ def main(argv=None):
     c.add_argument("--arquivo"); c.add_argument("--limite", type=int, help="no máximo N imóveis (para testar)")
     c.set_defaults(f=cmd_coletar)
     imp = s.add_parser("importar"); imp.add_argument("url"); imp.set_defaults(f=cmd_importar)
+    ed = s.add_parser("edital-caixa", help="liga um edital da Caixa a todos os imóveis listados nele")
+    ed.add_argument("url"); ed.set_defaults(f=cmd_edital_caixa)
     l = s.add_parser("listar"); l.add_argument("--uf"); l.add_argument("--cidade"); l.add_argument("--tipo")
     l.add_argument("--categoria", help="casa, apartamento, terreno, comercial, rural, outros")
     l.add_argument("--desconto-min", type=float); l.add_argument("--preco-max", type=float)

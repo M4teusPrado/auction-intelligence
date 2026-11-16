@@ -307,6 +307,9 @@
   .docs-fonte b { width: 100%; font-size: 14px; }
   .docs-links { display: flex; flex-wrap: wrap; gap: 6px; }
   .docs-links .btn { text-decoration: none; min-height: 32px; padding: 4px 12px; font-size: 13.5px; }
+  .edital-caixa { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .linha-edital { display: flex; gap: 8px; flex-wrap: wrap; }
+  .linha-edital .campo { flex: 1 1 240px; width: auto; }
   .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
   .etiquetas:empty { display: none; }
   .etiqueta { border: 1px solid var(--borda-forte); background: var(--superficie); border-radius: 999px; padding: 3px 10px;
@@ -1249,6 +1252,28 @@ function sugestaoIA(d, it, salvar, nota) {
     s.fatos.length ? el("ul", { class: "citacoes" }, s.fatos.map((c) => citacao(d, c))) : null);
 }
 
+function blocoEditalCaixa(d) {
+  // Um edital da Caixa lista centenas de imóveis: colado uma vez, vale para todos os que aparecem nele.
+  const campo = el("input", { class: "campo", type: "url", placeholder: "https://venda-imoveis.caixa.gov.br/editais/EL....PDF",
+    "aria-label": "Link do edital da Caixa" });
+  const msg = el("p", { class: "dica docs-msg" });
+  const b = el("button", { type: "button", class: "btn", text: "Buscar edital", onclick: async () => {
+    b.disabled = true; b.textContent = "Lendo o edital…"; msg.classList.remove("erro"); msg.textContent = "";
+    try {
+      const r = await api("/api/editais-caixa", POST_JSON({ url: campo.value.trim() }));
+      const aqui = r.anexados_em_analise.includes(d.imovel.id);
+      mostrarAviso(`${r.edital}: ${r.imoveis_na_base} imóvel(is) da base ligados a ele` +
+        (r.anexados_em_analise.length ? `; anexado em ${r.anexados_em_analise.length} em análise` : ""), null);
+      if (!aqui && !r.anexados_em_analise.length && r.imoveis_na_base) msg.textContent = "Este imóvel não aparece nesse edital.";
+      await abrirFicha(d.imovel.id);
+    } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; b.disabled = false; b.textContent = "Buscar edital"; }
+  } });
+  return el("div", { class: "edital-caixa" },
+    el("span", { class: "dica", text: "Edital da Caixa: no site da Caixa, clique com o botão direito em \"Baixar edital e anexos\", " +
+      "\"Copiar endereço do link\" e cole aqui. Basta uma vez por edital: o sistema liga o edital a todos os imóveis que aparecem nele." }),
+    el("div", { class: "linha-edital" }, campo, b), msg);
+}
+
 function botaoDocumentosFonte(d) {
   const docs = d.documentos_fonte || [];
   if (!docs.length) return null;
@@ -1276,14 +1301,15 @@ function botaoDocumentosFonte(d) {
       } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; }
       b.disabled = false; b.textContent = emAnalise ? "Baixar agora" : "Tentar baixar agora";
     } });
-  const semEdital = !docs.some((x) => x.tipo === "edital")
+  const semEdital = !docs.some((x) => x.tipo === "edital") && d.imovel.fonte !== "caixa"
     ? ` O edital da ${fonte} ainda não é baixado sozinho: baixe pelo botão "Abrir na ${fonte}" e anexe no item Edital.` : "";
   const situacao = !faltam.length ? "Os documentos que o sistema sabe buscar já foram baixados e estão no item correspondente (Matrícula, Edital) em Investigar." + semEdital
     : emAnalise ? "O sistema baixa estes documentos sozinho porque o imóvel está em Para analisar. Recarregue em alguns segundos, ou baixe agora."
                 : "Ao marcar o imóvel como Para analisar, o sistema baixa estes documentos sozinho.";
   return el("div", { class: "docs-fonte" },
     el("b", { text: `Documentos publicados pela ${fonte}` }), links,
-    el("span", { class: "dica", text: situacao }), faltam.length ? b : null, msg);
+    el("span", { class: "dica", text: situacao }), faltam.length ? b : null, msg,
+    d.imovel.fonte === "caixa" && !docs.some((x) => x.tipo === "edital") ? blocoEditalCaixa(d) : null);
 }
 
 function atualizarProgresso() {

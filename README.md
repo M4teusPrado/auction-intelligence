@@ -132,4 +132,7 @@ em "Para analisar", a tela baixa sozinha, em segundo plano, os documentos public
 só para imóveis escolhidos por uma pessoa: nesse caso o robots.txt do servidor de arquivos não
 impede o pedido (Mega, Soleon), mas o ritmo e a identificação continuam valendo. Na Caixa, a
 matrícula fica em endereço previsível pelo número do imóvel e costuma ser escaneada (use "Ler
-PDF escaneado com IA"). O edital da Caixa ainda não é localizado automaticamente.
+PDF escaneado com IA"). O edital da Caixa é um PDF único que lista
+centenas de imóveis pelo número: cole o link dele uma vez (na ficha, ou
+`python -m captacao edital-caixa <url>`) e o sistema liga o edital a todos os imóveis da base que
+aparecem nele, anexando nos que estão em "Para analisar".
