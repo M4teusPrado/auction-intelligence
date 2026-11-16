@@ -1484,19 +1484,21 @@ function resumoInvestigacao(d) {
   const msg = el("p", { class: "dica parecer-msg", role: "status" });
   const lidos = d.anexos.filter((a) => a.leitura === "lido" || a.leitura === "transcrito_ia").length;
   const escaneados = d.anexos.filter((a) => ["sem_texto", "erro"].includes(a.leitura) && /\.pdf$/i.test(a.nome_original)).length;
+  const anexados = new Set(d.anexos.map((a) => a.tipo));
+  const aBaixar = (d.documentos_fonte || []).filter((x) => !anexados.has(x.tipo)).length;   // o parecer baixa antes
   let confirmouSemDocs = false;
   const rotulo = p ? "Gerar de novo" : "Gerar parecer";
   const gerar = el("button", { type: "button", class: p ? "btn btn-texto" : "btn btn-primario", disabled: !ia.disponivel, text: rotulo,
     title: ia.disponivel ? "A IA lê edital e matrícula (os escaneados também) e sugere cada item. Custa centavos." : ia.motivo,
     onclick: async () => {
-      if (!lidos && !escaneados && !confirmouSemDocs) {
+      if (!lidos && !escaneados && !aBaixar && !confirmouSemDocs) {
         confirmouSemDocs = true; msg.classList.add("erro");
         msg.textContent = "Nenhum edital ou matrícula anexado: o parecer vai usar só a descrição do lote. Clique de novo para gerar assim mesmo.";
         gerar.textContent = "Gerar só com a descrição"; return;
       }
       gerar.disabled = true; gerar.textContent = "Analisando…"; msg.classList.remove("erro"); msg.textContent = "";
-      const barra = barraDeProgresso(30 + 10 * lidos + 20 * escaneados, [
-        [0, escaneados ? "Lendo os PDFs escaneados" : "Preparando o material e mascarando CPF e RG"],
+      const barra = barraDeProgresso(30 + 10 * (lidos + aBaixar) + 20 * escaneados, [
+        [0, aBaixar ? "Baixando edital e matrícula da fonte" : escaneados ? "Lendo os PDFs escaneados" : "Preparando o material e mascarando CPF e RG"],
         [escaneados ? 20 : 4, "A IA está lendo os documentos"],
         [escaneados ? 35 : 18, "Organizando ocupação, débitos, ônus e riscos"],
         [escaneados ? 55 : 35, "Conferindo cada trecho citado no texto original"],

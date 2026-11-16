@@ -57,6 +57,11 @@ class Caixa(unittest.TestCase):
         self.assertEqual(r["anexos"][0]["tipo"], "matricula")
         self.assertFalse(ficha.documentos_pendentes(self.repo, self.iid, self.fontes))           # não baixa de novo
 
+    def test_pedido_do_parecer_tambem_e_escolha(self):
+        b = BaixadorFalso()
+        r = ficha.baixar_documentos_fonte(self.repo, tempfile.mkdtemp(), self.iid, b, fontes=self.fontes, pedido_da_pessoa=True)
+        self.assertEqual(([x["tipo"] for x in r["baixados"]], r["sob_demanda"], b.pedidos[-1][1]), (["matricula"], True, True))
+
 
 class Web(unittest.TestCase):
     def test_sob_demanda_ignora_robots_mas_mantem_ritmo(self):

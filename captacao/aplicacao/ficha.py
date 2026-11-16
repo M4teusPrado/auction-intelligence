@@ -179,13 +179,15 @@ def documentos_da_fonte(im: dict, fontes: dict = None) -> list:
 
 
 def baixar_documentos_fonte(repo: RepositorioDeAnalise, pasta: str, imovel_id: int, baixador: BaixadorWeb,
-                            agora: str = None, fontes: dict = None) -> dict:
+                            agora: str = None, fontes: dict = None, pedido_da_pessoa: bool = False) -> dict:
     """Baixa edital, matrícula e laudo publicados pela fonte do anúncio e anexa à ficha
     (a leitura de PDF roda em seguida). Só links gravados na coleta; nada digitado por pessoas.
     Imóvel em 'Para analisar': download sob demanda (decisão do Mateus, 15/11/2026), um pedido
     por documento, mesmo onde o robots.txt do servidor de arquivos não permite robôs."""
     im = _buscar_imovel(repo, imovel_id)
-    sob_demanda = im.get("estagio") == "analisar"
+    # sob demanda: imóvel escolhido por uma pessoa: em 'Para analisar' ou, autorizado pelo Mateus em
+    # 16/11/2026, quando ela pede o parecer do imóvel
+    sob_demanda = im.get("estagio") == "analisar" or pedido_da_pessoa
     docs = documentos_da_fonte(im, fontes)
     if not docs:
         raise EntradaInvalida("a fonte deste imóvel não publicou documentos para baixar")

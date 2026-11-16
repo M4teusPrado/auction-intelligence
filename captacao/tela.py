@@ -236,11 +236,17 @@ def _criar_handler(caminho_base: str, porta: int):
             if m.group(2) == "parecer":
                 def parecer(repo):
                     iid = int(m.group(1))
+                    # pedir o parecer é escolher o imóvel: os documentos da fonte vêm antes, sozinhos
+                    repo.ligar_editais_de_leiloeiros()
+                    baixados = {"baixados": [], "erros": []}
+                    if ficha.documentos_pendentes(repo, iid, montagem.FONTES):
+                        baixados = ficha.baixar_documentos_fonte(repo, pasta_anexos, iid, montagem.CLIENTE_WEB,
+                                                                 fontes=montagem.FONTES, pedido_da_pessoa=True)
                     t = ficha.transcrever_pendentes(repo, pasta_anexos, montagem.ANALISADOR, iid)
                     r = gerar_parecer(repo, montagem.ANALISADOR, iid)
                     if t["custo_usd"]:
                         r["uso"]["custo_transcricao_usd"] = t["custo_usd"]
-                    return {**r, "transcricao": t}
+                    return {**r, "transcricao": t, "documentos_baixados": len(baixados["baixados"]), "erros_documentos": baixados["erros"]}
                 return self._executar(parecer)
             if m.group(2) == "documentos-fonte":
                 def baixar_agora(repo):
