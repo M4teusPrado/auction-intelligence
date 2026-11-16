@@ -1480,8 +1480,9 @@ function resumoInvestigacao(d) {
         : el("span", { class: "vazio-ia", text: ia.disponivel ? "A IA ainda não leu os documentos deste imóvel." : `IA indisponível: ${ia.motivo}.` }),
       p ? el("span", { class: "dica", text: "sugeridos pela IA" }) : null),
     el("div", { class: "acoes-resumo" }, aceitarTodas, gerar));
-  caixa.append(titulo, quadro || (p ? el("p", { class: "dica", text: "Gere de novo para ver o quadro rápido (desocupação, débitos, ocupação)." }) : null),
-    el("div", { class: "inv-prog", id: "inv-progresso" }), msg);
+  // append() do DOM escreve null como texto: só entram elementos de verdade
+  caixa.append(...[titulo, quadro || (p ? el("p", { class: "dica", text: "Gere de novo para ver o quadro rápido (desocupação, débitos, ocupação)." }) : null),
+    el("div", { class: "inv-prog", id: "inv-progresso" }), msg].filter(Boolean));
   setTimeout(caixa._atualizar);
   return caixa;
 }
