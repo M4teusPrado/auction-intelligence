@@ -149,3 +149,10 @@ citação vira uma etiqueta `p.N` que abre o documento na página, com o trecho 
 usa o pdf.js 4.10.38 (Mozilla, Apache 2.0, aprovado pelo Mateus), guardado em
 `captacao/web/vendor/pdfjs/` para funcionar sem internet. "Gerar parecer" lê antes, sozinho, os PDFs
 escaneados (modelo barato).
+
+**Revisão item a item e tarefas (16/11/2026):** "Revisar N itens" abre um item por vez, com a
+sugestão da IA e a prova recortada da página do PDF (trecho em destaque). Teclas: A concordo,
+D discordo (1–4 escolhe), N anota, ← →, Esc. As perguntas que os documentos não respondem viram
+tarefas em "A apurar" (com situação guardada na tabela `tarefas`), cada uma com uma ação pronta
+(pedir certidão no ONR, consultar IPTU, mensagem ao síndico para copiar, mapa...); a pessoa pode
+criar as suas.

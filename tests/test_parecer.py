@@ -281,5 +281,23 @@ class RegrasDoEditalUmaVez(unittest.TestCase):
         self.assertNotIn("8444425522289 134.264,38", ia.contextos[1])
 
 
+class Tarefas(unittest.TestCase):
+    def test_perguntas_viram_tarefas_e_a_pessoa_cria_as_suas(self):
+        repo = base_teste(); self.addCleanup(repo.close)
+        iid = repo.con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
+        repo.salvar_parecer(iid, "m", {"resumo_geral": "", "itens": [], "riscos": [], "perguntas": ["Há débito de IPTU?", "Está ocupado?"]},
+                            {}, [], "2026-11-16T10:00:00")
+        t = ficha.tarefas(repo, iid)
+        self.assertEqual([(x["texto"], x["feita"], x["origem"]) for x in t], [("Há débito de IPTU?", False, "ia"), ("Está ocupado?", False, "ia")])
+        r = ficha.marcar_tarefa(repo, iid, {"chave": t[0]["chave"], "feita": True})
+        self.assertEqual([x["texto"] for x in r["tarefas"]], ["Está ocupado?", "Há débito de IPTU?"])    # feitas vão para o fim
+        r = ficha.marcar_tarefa(repo, iid, {"texto": "Ligar para o síndico"})
+        self.assertIn(("Ligar para o síndico", "manual", False), [(x["texto"], x["origem"], x["feita"]) for x in r["tarefas"]])
+        for ruim in ({"chave": "x", "feita": True}, {"texto": ""}, {"texto": "a" * 301}, {"chave": t[1]["chave"], "feita": "sim"}, {"outro": 1}):
+            with self.assertRaises(Exception):
+                ficha.marcar_tarefa(repo, iid, ruim)
+        self.assertEqual(len(ficha.ficha(repo, iid)["tarefas"]), 3)
+
+
 if __name__ == "__main__":
     unittest.main()

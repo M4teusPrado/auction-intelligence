@@ -35,7 +35,7 @@ HTML = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.ht
 # pdf.js 4.10.38 (Apache 2.0), aprovado pelo Mateus em 16/11/2026: leitor de PDF com trecho em destaque
 VENDOR = {"/vendor/pdfjs/pdf.min.mjs", "/vendor/pdfjs/pdf.worker.min.mjs"}
 CORPO_MAX = 16 * 1024
-ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte|parecer))?$")
+ROTA_IMOVEL = re.compile(r"^/api/imoveis/(\d{1,12})(?:/(triagem|investigacao|simulacao|anexos|documentos-fonte|parecer|tarefas))?$")
 ROTA_ANEXO = re.compile(r"^/anexos/(\d{1,12})$")
 ROTA_TRANSCREVER = re.compile(r"^/api/anexos/(\d{1,12})/transcrever$")
 TIPOS_UPLOAD = {"application/pdf", "image/png", "image/jpeg"}
@@ -260,7 +260,7 @@ def _criar_handler(caminho_base: str, porta: int):
                     return im
                 return self._executar(triar_e_baixar)
             acao = {"triagem": triagem.triar, "investigacao": ficha.investigar,
-                    "simulacao": ficha.salvar_simulacao}[m.group(2)]
+                    "simulacao": ficha.salvar_simulacao, "tarefas": ficha.marcar_tarefa}[m.group(2)]
             self._executar(acao, int(m.group(1)), corpo)
 
     return Handler

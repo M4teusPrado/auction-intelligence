@@ -82,6 +82,10 @@ CREATE INDEX IF NOT EXISTS ix_regras_edital_sha ON regras_edital (sha256);
 CREATE TABLE IF NOT EXISTS editais_caixa (       -- editais da Caixa já consultados (para não baixar de novo)
   codigo TEXT PRIMARY KEY, existe INTEGER NOT NULL, url TEXT, imoveis INTEGER, quando TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS tarefas (             -- o que falta apurar: perguntas do parecer e tarefas da pessoa
+  id INTEGER PRIMARY KEY, imovel_id INTEGER NOT NULL REFERENCES imoveis(id), chave TEXT NOT NULL, texto TEXT NOT NULL,
+  origem TEXT NOT NULL, feita INTEGER NOT NULL DEFAULT 0, quando TEXT NOT NULL, UNIQUE (imovel_id, chave)
+);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
@@ -106,7 +110,7 @@ COLUNAS_NOVAS = [
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
 TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas", "leiloes", "pracas",
-                 "documentos_fonte", "pareceres", "regras_edital", "editais_caixa")
+                 "documentos_fonte", "pareceres", "regras_edital", "editais_caixa", "tarefas")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
@@ -362,6 +366,16 @@ class RepositorioSQLite:
     def salvar_regras_edital(self, sha256: str, modelo: str, regras: dict, uso: dict, quando: str) -> None:
         self.con.execute("INSERT INTO regras_edital (sha256, modelo, regras, uso, quando) VALUES (?,?,?,?,?)",
                          (sha256, modelo, json.dumps(regras, ensure_ascii=False), json.dumps(uso), quando))
+        self.con.commit()
+
+    def tarefas(self, imovel_id: int) -> List[dict]:
+        return [dict(r) for r in self.con.execute(
+            "SELECT chave, texto, origem, feita, quando FROM tarefas WHERE imovel_id=? ORDER BY id", (imovel_id,))]
+
+    def gravar_tarefa(self, imovel_id: int, chave: str, texto: str, origem: str, feita: bool, quando: str) -> None:
+        self.con.execute("INSERT INTO tarefas (imovel_id, chave, texto, origem, feita, quando) VALUES (?,?,?,?,?,?) "
+                         "ON CONFLICT (imovel_id, chave) DO UPDATE SET feita=excluded.feita, quando=excluded.quando",
+                         (imovel_id, chave, texto, origem, int(feita), quando))
         self.con.commit()
 
     def edital_caixa(self, codigo: str) -> Optional[dict]:

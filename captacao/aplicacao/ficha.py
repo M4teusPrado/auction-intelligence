@@ -85,6 +85,7 @@ def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes:
             "simulacao_salva": repo.ultima_simulacao(imovel_id),
             "documentos_fonte": documentos_da_fonte(im, fontes),
             "parecer": repo.ultimo_parecer(imovel_id),
+            "tarefas": tarefas(repo, imovel_id),
             "regras_edital": _regras_dos_editais(repo, imovel_id),
             "ia": {"disponivel": analisador is not None and analisador.disponivel() is None,
                    "motivo": "a análise com IA não está configurada" if analisador is None else analisador.disponivel(),
@@ -363,3 +364,44 @@ def transcrever_pendentes(repo, pasta: str, transcritor, imovel_id: int) -> dict
             except Exception as e:                 # segue sem esse documento; o parecer avisa que não há texto
                 erros.append(f"{a['nome_original']}: {e}")
     return {"transcritos": feitos, "custo_usd": round(custo, 4), "erros": erros}
+
+
+TAREFA_MAX = 300
+
+
+def _chave_pergunta(texto: str) -> str:
+    import hashlib, re as _re
+    return "ia:" + hashlib.sha1(_re.sub(r"\W+", " ", texto.lower()).strip().encode("utf-8")).hexdigest()[:16]
+
+
+def tarefas(repo, imovel_id: int) -> list:
+    """O que falta apurar: as perguntas do parecer mais recente (com a situação que a pessoa marcou)
+    e as tarefas criadas pela pessoa. Abertas primeiro."""
+    salvas = {t["chave"]: t for t in repo.tarefas(imovel_id)}
+    parecer = repo.ultimo_parecer(imovel_id)
+    lista = []
+    for q in ((parecer or {}).get("parecer") or {}).get("perguntas") or []:
+        t = salvas.get(_chave_pergunta(q))
+        lista.append({"chave": _chave_pergunta(q), "texto": q, "origem": "ia", "feita": bool(t and t["feita"]),
+                      "quando": t["quando"] if t else None})
+    lista += [{**t, "feita": bool(t["feita"])} for t in salvas.values() if t["origem"] == "manual"]
+    return sorted(lista, key=lambda t: t["feita"])
+
+
+def marcar_tarefa(repo, imovel_id: int, corpo, agora: str = None) -> dict:
+    """{chave, feita}: marca uma tarefa existente. {texto}: cria uma tarefa da pessoa."""
+    _buscar_imovel(repo, imovel_id)
+    if not isinstance(corpo, dict) or set(corpo) - {"chave", "feita", "texto"}:
+        raise EntradaInvalida("envie {chave, feita} ou {texto}")
+    quando = _agora(agora)
+    if "texto" in corpo:
+        texto = corpo["texto"].strip() if isinstance(corpo["texto"], str) else ""
+        if not texto or len(texto) > TAREFA_MAX:
+            raise EntradaInvalida(f"escreva a tarefa (até {TAREFA_MAX} caracteres)")
+        repo.gravar_tarefa(imovel_id, "manual:" + _chave_pergunta(texto + quando)[3:], texto, "manual", False, quando)
+    else:
+        atual = {t["chave"]: t for t in tarefas(repo, imovel_id)}.get(corpo.get("chave"))
+        if atual is None or not isinstance(corpo.get("feita"), bool):
+            raise EntradaInvalida("tarefa não encontrada ou 'feita' inválido")
+        repo.gravar_tarefa(imovel_id, atual["chave"], atual["texto"], atual["origem"], corpo["feita"], quando)
+    return {"tarefas": tarefas(repo, imovel_id)}

@@ -492,6 +492,54 @@
   .mini canvas { display: block; width: 56px; height: auto; }
   .mini span { position: absolute; bottom: 2px; right: 3px; font-size: 10px; background: rgba(0,0,0,.6); color: #fff; padding: 0 3px; border-radius: 3px; }
   .mini.atual { border-color: #ffc400; }
+
+  /* tarefas */
+  .tarefas { list-style: none; margin: 0 0 10px; padding: 0; display: grid; }
+  .tarefas li { padding: 9px 0; border-top: 1px solid var(--borda); display: grid; gap: 4px; }
+  .tarefas li:first-child { border-top: 0; }
+  .tarefas label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; font-size: 14px; line-height: 1.45; }
+  .tarefas input[type="checkbox"] { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--destaque); flex: none; }
+  .tarefas .txt { flex: 1; }
+  .tarefas .orig { font-size: 10.5px; font-weight: 650; color: var(--texto-3); border: 1px solid var(--borda-forte); border-radius: 4px; padding: 0 4px; height: fit-content; }
+  .tarefas li.feita .txt { color: var(--texto-3); text-decoration: line-through; }
+  .tarefa-acoes { display: flex; gap: 4px 14px; flex-wrap: wrap; padding-left: 27px; font-size: 13px; }
+  .tarefa-acoes .mini-acao { padding: 0; }
+  .tarefa-acoes a { color: var(--destaque-escuro); text-underline-offset: 2px; }
+  .inv-tarefas .campo { font-size: 14px; }
+  /* revisão item a item */
+  body.com-revisao { overflow: hidden; }
+  .revisao { position: fixed; inset: 0; z-index: 50; background: rgba(20, 26, 23, .55); display: grid; place-items: center;
+             padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)); animation: rv-entra .15s ease-out; }
+  @keyframes rv-entra { from { opacity: 0; } to { opacity: 1; } }
+  .rv-janela { background: var(--superficie); border-radius: 16px; width: min(800px, 100%); max-height: 100%; display: flex; flex-direction: column;
+               box-shadow: 0 20px 60px rgba(0,0,0,.3); overflow: hidden; }
+  .rv-cab { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--borda); }
+  .rv-passo { font-size: 13px; color: var(--texto-2); white-space: nowrap; }
+  .rv-pontos { display: flex; gap: 4px; flex: 1; }
+  .rv-pontos i { flex: 1; height: 6px; border-radius: 3px; background: var(--borda); }
+  .rv-pontos i.ok { background: #2f8a5b; } .rv-pontos i.atencao { background: #d39a2a; }
+  .rv-pontos i.impeditivo { background: var(--erro); } .rv-pontos i.nao_se_aplica { background: #a9b0ab; }
+  .rv-pontos i.atual { outline: 2px solid var(--foco); outline-offset: 1px; }
+  .rv-fechar { color: var(--texto-2); } .rv-fechar:hover { background: #eef0ed; color: var(--texto); }
+  .rv-corpo { padding: 18px 22px; overflow: auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .rv-corpo h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .rv-resumo { margin: 0; font-size: 15.5px; line-height: 1.6; }
+  .rv-prova { background: #f3f4f2; border-radius: 10px; padding: 12px; }
+  .rv-folha-moldura { overflow-x: auto; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.12); background: #fff; }
+  .rv-folha { position: relative; margin: 0 auto; }
+  .rv-canvas { display: block; }
+  .rv-trecho { margin: 0; padding: 10px 14px; background: #fff6cf; border-left: 3px solid #e0b400; border-radius: 6px; font-size: 14px; line-height: 1.5; color: #3d3410; }
+  .rv-legenda { display: flex; justify-content: space-between; gap: 6px 14px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--texto-2); }
+  .rv-fonte { appearance: none; border: 0; background: none; padding: 0; font: inherit; color: var(--destaque-escuro); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .rv-carregando { margin: 30px 0; text-align: center; color: var(--texto-3); font-size: 14px; }
+  .rv-outras { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .rv-outras .chip.ativo { background: var(--destaque); color: #fff; border-color: var(--destaque); }
+  .rv-escolha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 12px; background: #f8f9f7; border-radius: 10px; }
+  .rv-acoes { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px 16px; border-top: 1px solid var(--borda); background: #fafbf9; }
+  .rv-fim .rv-acoes { border: 0; background: none; padding: 6px 0 0; }
+  .rv-sep { flex: 1; }
+  .rv-acoes kbd, .rv-escolha kbd { font: 600 11px/1 ui-monospace, Menlo, monospace; border: 1px solid currentColor; border-radius: 4px; padding: 1px 4px; opacity: .75; }
+  @media (max-width: 600px) { .rv-corpo { padding: 14px; } .rv-acoes .btn { flex: 1 1 auto; } .rv-sep { display: none; } .rv-acoes kbd { display: none; } }
   /* barra fixa da ficha */
   .ficha-fixa { position: fixed; left: 0; right: 0; top: 0; z-index: 30; background: rgba(255,255,255,.94); backdrop-filter: saturate(1.4) blur(8px);
                 border-bottom: 1px solid var(--borda); padding-top: env(safe-area-inset-top, 0px); transform: translateY(-110%); transition: transform .18s ease; }
@@ -1404,7 +1452,7 @@ function nomeDoc(d, a) {
 function painelInvestigar(d) {
   if (!leitor.atual || leitor.atual.imovelId !== d.imovel.id) leitor.aberto = false;   // outro imóvel: documento começa fechado
   const esq = el("div", { class: "inv-esq" },
-    faixaDocumentos(d), resumoInvestigacao(d), listaChecklist(d), cartaoParecer(d),
+    faixaDocumentos(d), resumoInvestigacao(d), listaChecklist(d), cartaoTarefas(d), cartaoParecer(d),
     el("details", { class: "inv-cartao inv-outros" }, el("summary", { text: "Outros arquivos (laudo, fotos…)" }), blocoAnexos(d, null)),
     proximo("simular", "Próximo: simular →"));
   setTimeout(() => {
@@ -1478,14 +1526,21 @@ function resumoInvestigacao(d) {
     for (const it of lista) { const linha = document.querySelector(`.inv-item[data-item="${it.item}"]`); if (linha) await linha._aceitar(); }
     aceitarTodas.textContent = "Aceitas"; atualizarResumoAcoes();
   } });
-  caixa._atualizar = () => { const n = pendentes().length; aceitarTodas.hidden = !n || !p; };
+  const revisar = el("button", { type: "button", class: "btn btn-primario", text: "Revisar item a item", title: "Um item por vez, com a prova do documento. Teclas: A concordo, D discordo, → pular",
+    onclick: () => abrirRevisao(d) });
+  caixa._atualizar = () => {
+    const n = pendentes().length, abertos = d.investigacao.filter((it) => it.status === "pendente").length;
+    aceitarTodas.hidden = !n || !p; revisar.hidden = !p || !abertos;
+    revisar.textContent = `Revisar ${abertos} ite${abertos > 1 ? "ns" : "m"}`;
+    gerar.className = p ? "btn btn-texto" : "btn btn-primario";
+  };
   const titulo = el("div", { class: "inv-resumo-cab" },
     el("div", { class: "conts" },
       p ? [["impeditivo", "impeditivo"], ["atencao", "atenção"], ["sem_informacao", "sem informação"], ["ok", "ok"]]
             .filter(([k]) => conts[k]).map(([k, r]) => el("span", { class: `cont tom-${k}` }, el("b", { class: "num", text: String(conts[k]) }), ` ${r}`))
         : el("span", { class: "vazio-ia", text: ia.disponivel ? "A IA ainda não leu os documentos deste imóvel." : `IA indisponível: ${ia.motivo}.` }),
       p ? el("span", { class: "dica", text: "sugeridos pela IA" }) : null),
-    el("div", { class: "acoes-resumo" }, aceitarTodas, gerar));
+    el("div", { class: "acoes-resumo" }, gerar, aceitarTodas, revisar));
   // append() do DOM escreve null como texto: só entram elementos de verdade
   caixa.append(...[titulo, quadro || (p ? el("p", { class: "dica", text: "Gere de novo para ver o quadro rápido (desocupação, débitos, ocupação)." }) : null),
     el("div", { class: "inv-prog", id: "inv-progresso" }), msg].filter(Boolean));
@@ -1546,6 +1601,8 @@ function linhaItem(d, it) {
     onclick: (ev) => { ev.stopPropagation(); item._aceitar(); } }) : null;
   item._marcar = marcar;
   item._aceitar = () => sug ? salvar(sug, nota.value.trim() || s.resumo) : Promise.resolve();
+  item._definir = (v, texto) => salvar(v, texto == null ? nota.value.trim() : texto);
+  item._atual = () => ({ ...atual });
   const desenharEstado = () => {
     const st = atual.status;
     item.dataset.status = st;
@@ -1638,9 +1695,6 @@ function cartaoParecer(d) {
         chips(d, r.citacoes)),
         el("p", { text: r.explicacao }),
         r.citacoes.length ? el("ul", { class: "cits" }, r.citacoes.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null))))));
-  if ((p.perguntas || []).length) caixa.append(el("details", { class: "inv-sec" },
-    el("summary", {}, el("b", { text: "A apurar" }), el("span", { class: "dica", text: ` ${p.perguntas.length} perguntas que os documentos não respondem` })),
-    el("ul", { class: "perguntas" }, p.perguntas.map((q) => el("li", { text: q })))));
   for (const e of d.regras_edital || []) caixa.append(el("details", { class: "inv-sec" },
     el("summary", {}, el("b", { text: "Regras do edital" }), el("span", { class: "dica", text: ` ${e.regras.length} · valem para todos os imóveis deste edital` })),
     el("ul", { class: "regras" }, e.regras.map((r) => el("li", {},
@@ -1685,7 +1739,7 @@ function botaoTranscrever(d, a) {
 
 /* teclado: ↑↓ entre itens, Enter abre, A aceita a IA, 1–4 marca, P abre o primeiro trecho */
 document.addEventListener("keydown", (ev) => {
-  if ($("vista-ficha").hidden || fichaEstado.aba !== "investigar" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  if (revisao.aberta || $("vista-ficha").hidden || fichaEstado.aba !== "investigar" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
   if (ev.target.closest && ev.target.closest("input, textarea, select")) return;
   const itens = [...document.querySelectorAll("#inv-itens .inv-item")]; if (!itens.length) return;
   const i = itens.indexOf(ev.target.closest ? ev.target.closest(".inv-item") : null), k = ev.key;
@@ -1834,6 +1888,16 @@ async function desenharPagina(pdf, n, seq) {
   }
 }
 async function destacar(page, viewport, folha, trecho, lib) {
+  const rets = await retangulosTrecho(page, viewport, trecho, lib);
+  if (!rets) return false;
+  for (const r of rets) {
+    const m = el("div", { class: "realce-pdf" });
+    Object.assign(m.style, { left: `${r.x}px`, top: `${r.y}px`, width: `${r.w}px`, height: `${r.h}px` });
+    folha.append(m);
+  }
+  return true;
+}
+async function retangulosTrecho(page, viewport, trecho, lib) {
   const tc = await page.getTextContent();
   let texto = ""; const dono = [];
   tc.items.forEach((it, i) => { const t = normalizarBusca(it.str); texto += t; for (let k = 0; k < t.length; k++) dono.push(i); });
@@ -1843,16 +1907,201 @@ async function destacar(page, viewport, folha, trecho, lib) {
     const j = texto.indexOf(p);
     if (j >= 0) { ini = j; fim = j + p.length; break; }
   }
-  if (ini < 0) return false;
+  if (ini < 0) return null;
+  const rets = [];
   for (const i of new Set(dono.slice(ini, fim))) {
     const it = tc.items[i], tx = lib.Util.transform(viewport.transform, it.transform);
     const h = Math.hypot(tx[2], tx[3]), w = it.width * viewport.scale;
-    if (!w || !h) continue;
-    const m = el("div", { class: "realce-pdf" });
-    Object.assign(m.style, { left: `${tx[4]}px`, top: `${tx[5] - h * 0.95}px`, width: `${w}px`, height: `${h * 1.2}px` });
-    folha.append(m);
+    if (w && h) rets.push({ x: tx[4], y: tx[5] - h * 0.95, w, h: h * 1.2 });
   }
-  return true;
+  return rets.length ? rets : null;
+}
+
+/* ---------- tarefas: o que falta apurar (perguntas do parecer + as da pessoa), com ação pronta ---------- */
+function cartaoTarefas(d) {
+  const lista = el("ul", { class: "tarefas" });
+  const cab = el("span", { class: "dica" });
+  const desenhar = () => {
+    const abertas = d.tarefas.filter((t) => !t.feita).length;
+    cab.textContent = d.tarefas.length ? (abertas ? `${abertas} aberta${abertas > 1 ? "s" : ""}` : "tudo apurado") : "";
+    lista.replaceChildren(...d.tarefas.map((t) => {
+      const caixa = el("input", { type: "checkbox", checked: t.feita, "aria-label": `Feita: ${t.texto}`,
+        onchange: async () => {
+          try { d.tarefas = (await api(`/api/imoveis/${d.imovel.id}/tarefas`, POST_JSON({ chave: t.chave, feita: caixa.checked }))).tarefas; desenhar(); atualizarResumoAcoes(); }
+          catch (e) { caixa.checked = !caixa.checked; mostrarErro(e.message); }
+        } });
+      return el("li", { class: t.feita ? "feita" : "" },
+        el("label", {}, caixa, el("span", { class: "txt", text: t.texto }), t.origem === "ia" ? el("small", { class: "orig", text: "IA" }) : null),
+        t.feita ? null : acoesTarefa(d, t));
+    }));
+  };
+  const nova = el("input", { class: "campo", type: "text", maxlength: "300", placeholder: "+ Nova tarefa (Enter para adicionar)", "aria-label": "Nova tarefa" });
+  nova.addEventListener("keydown", async (ev) => {
+    if (ev.key !== "Enter" || !nova.value.trim()) return;
+    ev.preventDefault();
+    try { d.tarefas = (await api(`/api/imoveis/${d.imovel.id}/tarefas`, POST_JSON({ texto: nova.value.trim() }))).tarefas; nova.value = ""; desenhar(); atualizarResumoAcoes(); }
+    catch (e) { mostrarErro(e.message); }
+  });
+  desenhar();
+  return el("section", { class: "inv-cartao inv-tarefas", id: "inv-tarefas" },
+    el("div", { class: "inv-cartao-cab" }, el("h3", { text: "A apurar" }), cab),
+    d.tarefas.length ? null : el("p", { class: "dica", text: lerParecer(d) ? "A IA não deixou perguntas em aberto." : "Ao gerar o parecer, o que os documentos não respondem vira tarefa aqui." }),
+    lista, nova);
+}
+/* ação pronta para cada tarefa, pelo assunto: link para onde se resolve, ou mensagem pronta para copiar */
+function acoesTarefa(d, t) {
+  const im = d.imovel, txt = t.texto.toLowerCase();
+  const local = [im.endereco, im.bairro, im.cidade, im.uf].filter(Boolean).join(", ");
+  const link = (rot, url) => el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: `${rot} ↗` });
+  const copiar = (rot, texto) => el("button", { type: "button", class: "btn btn-texto mini-acao", text: rot, onclick: async () => {
+    try { await navigator.clipboard.writeText(texto); mostrarAviso("Mensagem copiada. Cole no WhatsApp ou no e-mail.", null); }
+    catch (e) { mostrarErro("Não foi possível copiar: selecione e copie o texto à mão."); }
+  } });
+  const acoes = [];
+  if (/matr[íi]cula|certid|ônus|onus|gravame|penhora|averba|propriet/.test(txt)) acoes.push(link("Pedir certidão no ONR", "https://registradores.onr.org.br/"));
+  if (/iptu|tribut|prefeitura|inscri/.test(txt)) {
+    const inscr = (t.texto.match(/\d{8,}/) || [""])[0];
+    acoes.push(link("Consultar IPTU", `https://www.google.com/search?q=${encodeURIComponent(`consulta débitos IPTU prefeitura ${im.cidade} ${im.uf || ""} ${inscr}`)}`));
+  }
+  if (/condom|s[íi]ndic|administradora/.test(txt)) acoes.push(copiar("Copiar mensagem ao síndico",
+    `Olá! Tenho interesse no imóvel ${local}, que está em leilão. Poderia me informar se há débitos de condomínio em aberto (valor e período) e o valor atual da taxa condominial? Obrigado.`));
+  if (/ocupad|desocup|morador|ocupante|vistoria|conserva/.test(txt)) acoes.push(link("Ver no mapa", `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(local)}`));
+  if (/a[çc][ãa]o|processo|judicial|evic/.test(txt)) acoes.push(link("Buscar processos pelo endereço", `https://www.google.com/search?q=${encodeURIComponent(`"${im.endereco || ""}" ${im.cidade} processo`)}`));
+  if (/leil[ãa]o|data|pra[çc]a|lance|vigente|edital/.test(txt) && /^https:\/\//.test(im.link || "")) acoes.push(link(`Página na ${nomeFonte(im.fonte)}`, im.link));
+  return acoes.length ? el("div", { class: "tarefa-acoes" }, acoes) : null;
+}
+
+/* ---------- modo revisão: um item por vez, com a prova recortada do documento ---------- */
+const revisao = { d: null, ordem: [], i: 0, aberta: false, discordar: false };
+function abrirRevisao(d) {
+  const p = lerParecer(d); if (!p) return;
+  const pend = d.investigacao.filter((it) => it.status === "pendente").map((it) => it.item);
+  revisao.d = d; revisao.ordem = pend.length ? pend : d.investigacao.map((it) => it.item); revisao.i = 0; revisao.aberta = true;
+  document.body.classList.add("com-revisao");
+  if (!$("revisao")) document.body.append(el("div", { class: "revisao", id: "revisao", role: "dialog", "aria-modal": "true", "aria-label": "Revisão item a item" }));
+  $("revisao").hidden = false;
+  mostrarItemRevisao();
+}
+function fecharRevisao() {
+  revisao.aberta = false; document.body.classList.remove("com-revisao");
+  const r = $("revisao"); if (r) r.hidden = true;
+}
+async function mostrarItemRevisao() {
+  const d = revisao.d, caixa = $("revisao");
+  revisao.discordar = false;
+  if (revisao.i >= revisao.ordem.length) return fimRevisao();
+  const chave = revisao.ordem[revisao.i];
+  const it = d.investigacao.find((x) => x.item === chave), s = sugestaoDo(d, chave);
+  const linha = document.querySelector(`.inv-item[data-item="${chave}"]`);
+  const atual = linha ? linha._atual() : { status: it.status, nota: it.nota || "" };
+  const sug = s && s.situacao_sugerida !== "sem_informacao" ? s.situacao_sugerida : null;
+  const pontos = el("div", { class: "rv-pontos", "aria-hidden": "true" }, revisao.ordem.map((k, j) => {
+    const st = (d.investigacao.find((x) => x.item === k) || {}).status;
+    return el("i", { class: `${st}${j === revisao.i ? " atual" : ""}` });
+  }));
+  const nota = el("textarea", { class: "campo", rows: "2", maxlength: "2000", placeholder: "Anotação (opcional)", hidden: !atual.nota });
+  nota.value = atual.nota || "";
+  const salvar = async (status) => {
+    if (!linha) return;
+    await linha._definir(status, nota.value.trim() || (status === sug ? s.resumo : ""));
+    revisao.i++; mostrarItemRevisao();
+  };
+  const escolha = el("div", { class: "rv-escolha", hidden: true },
+    el("span", { class: "dica", text: "O que você encontrou?" }),
+    STATUS_BOTOES.map(([v, r], j) => el("button", { type: "button", class: `seg-b ${v}`, text: `${j + 1} · ${r}`, onclick: () => salvar(v) })));
+  const prova = el("div", { class: "rv-prova" });
+  const fatos = (s && s.fatos) || [];
+  const verProva = async (c) => {
+    prova.replaceChildren(el("p", { class: "rv-carregando", text: "Carregando a prova…" }));
+    prova.replaceChildren(await recorteProva(d, c, prova.clientWidth - 24));
+    outras.querySelectorAll(".chip").forEach((b) => b.classList.toggle("ativo", b._c === c));
+  };
+  const outras = el("div", { class: "rv-outras" }, fatos.length > 1 ? el("span", { class: "dica", text: "Outras provas:" }) : null,
+    fatos.length > 1 ? fatos.map((c) => { const b = chip(d, c); b.onclick = (ev) => { ev.stopPropagation(); verProva(c); }; b._c = c; b.title = c.afirmacao; return b; }) : null);
+  caixa.replaceChildren(el("div", { class: "rv-janela" },
+    el("div", { class: "rv-cab" },
+      el("span", { class: "rv-passo num", text: `${revisao.i + 1} de ${revisao.ordem.length}` }), pontos,
+      el("button", { type: "button", class: "lt-b rv-fechar", "aria-label": "Fechar a revisão (Esc)", title: "Fechar (Esc)", text: "✕", onclick: fecharRevisao })),
+    el("div", { class: "rv-corpo" },
+      el("h2", { text: it.rotulo }),
+      s ? el("div", { class: "rv-ia" }, el("span", { class: `pill-voce tom-${s.situacao_sugerida}`, text: `A IA diz: ${NOME_SITUACAO[s.situacao_sugerida]}` }),
+            atual.status !== "pendente" ? el("span", { class: "dica", text: ` · você marcou ${NOME_SITUACAO[atual.status]}` }) : null)
+        : el("p", { class: "dica", text: "A IA não analisou este item." }),
+      el("p", { class: "rv-resumo", text: s ? s.resumo : it.ajuda }),
+      fatos.length ? prova : null, outras, escolha, nota),
+    el("div", { class: "rv-acoes" },
+      el("button", { type: "button", class: "btn btn-primario", disabled: !sug, onclick: () => salvar(sug) }, el("kbd", { text: "A" }), sug ? ` Concordo · ${NOME_SITUACAO[sug]}` : " Concordo"),
+      el("button", { type: "button", class: "btn", onclick: () => { revisao.discordar = !escolha.hidden ? false : true; escolha.hidden = !escolha.hidden; } }, el("kbd", { text: "D" }), " Discordo"),
+      el("button", { type: "button", class: "btn btn-texto", onclick: () => { nota.hidden = false; nota.focus(); } }, el("kbd", { text: "N" }), " Anotar"),
+      el("span", { class: "rv-sep" }),
+      el("button", { type: "button", class: "btn btn-texto", disabled: revisao.i === 0, onclick: () => { revisao.i--; mostrarItemRevisao(); } }, "← Voltar"),
+      el("button", { type: "button", class: "btn btn-texto", onclick: () => { revisao.i++; mostrarItemRevisao(); } }, "Pular →"))));
+  revisao.escolha = escolha; revisao.nota = nota; revisao.salvar = salvar; revisao.sug = sug;
+  if (fatos.length) verProva(fatos.find((c) => c.confirmada) || fatos[0]);
+}
+function fimRevisao() {
+  const d = revisao.d, feitos = d.investigacao.filter((i) => i.status !== "pendente").length;
+  const abertas = (d.tarefas || []).filter((t) => !t.feita).length;
+  $("revisao").replaceChildren(el("div", { class: "rv-janela rv-fim" },
+    el("div", { class: "rv-corpo" },
+      el("h2", { text: "Revisão concluída" }),
+      el("p", { text: `${feitos} de ${d.investigacao.length} itens conferidos.` + (abertas ? ` Ficaram ${abertas} tarefa${abertas > 1 ? "s" : ""} para apurar.` : "") }),
+      el("div", { class: "rv-acoes" },
+        abertas ? el("button", { type: "button", class: "btn btn-primario", text: "Ver o que falta apurar", onclick: () => { fecharRevisao(); $("inv-tarefas").scrollIntoView({ behavior: "smooth", block: "start" }); } }) : null,
+        el("button", { type: "button", class: abertas ? "btn" : "btn btn-primario", text: "Ir para simular →", onclick: () => { fecharRevisao(); abaFicha("simular", true); } }),
+        el("button", { type: "button", class: "btn btn-texto", text: "Fechar", onclick: fecharRevisao })))));
+}
+document.addEventListener("keydown", (ev) => {
+  if (!revisao.aberta || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  ev.stopPropagation();                               // com a revisão aberta, as teclas são só dela
+  if (ev.key === "Escape") { ev.preventDefault(); return fecharRevisao(); }
+  if (ev.target.closest && ev.target.closest("textarea, input")) return;
+  const k = ev.key.toLowerCase();
+  if (k === "a" && revisao.sug) { ev.preventDefault(); revisao.salvar(revisao.sug); }
+  else if (k === "d" && revisao.escolha) { ev.preventDefault(); revisao.escolha.hidden = !revisao.escolha.hidden; }
+  else if (k === "n" && revisao.nota) { ev.preventDefault(); revisao.nota.hidden = false; revisao.nota.focus(); }
+  else if (["1", "2", "3", "4"].includes(k) && revisao.escolha && !revisao.escolha.hidden) { ev.preventDefault(); revisao.salvar(STATUS_BOTOES[Number(k) - 1][0]); }
+  else if (ev.key === "ArrowRight") { ev.preventDefault(); revisao.i++; mostrarItemRevisao(); }
+  else if (ev.key === "ArrowLeft" && revisao.i > 0) { ev.preventDefault(); revisao.i--; mostrarItemRevisao(); }
+}, true);
+
+/* recorte da página do PDF em volta do trecho citado, com o trecho em destaque */
+async function recorteProva(d, c, larguraMax) {
+  const alvo = alvoDaCitacao(d, c);
+  const fonte = el("button", { type: "button", class: "rv-fonte", onclick: () => { fecharRevisao(); abrirNoLeitor(alvo); } },
+    `${alvo.nome}${alvo.descricao ? "" : ` · página ${alvo.pagina}`} · ver inteiro ↗`);
+  const citacaoTexto = el("blockquote", { class: "rv-trecho", text: c.trecho });
+  const legenda = el("div", { class: "rv-legenda" }, el("span", { text: c.afirmacao }), fonte);
+  if (alvo.descricao) return el("div", {}, citacaoTexto, legenda);
+  try {
+    const lib = await pdfjs();
+    leitor.pdfs[alvo.anexoId] ||= lib.getDocument({ url: `/anexos/${alvo.anexoId}`, isEvalSupported: false }).promise;
+    const pdf = await leitor.pdfs[alvo.anexoId];
+    const page = await pdf.getPage(Math.min(Math.max(1, alvo.pagina || 1), pdf.numPages));
+    const largura = Math.max(240, Math.min(720, larguraMax || 720));
+    const vp = page.getViewport({ scale: largura / page.getViewport({ scale: 1 }).width });
+    const rets = await retangulosTrecho(page, vp, c.trecho, lib);
+    if (!rets) return el("div", {}, citacaoTexto, legenda,
+      alvo.transcrito ? el("small", { class: "dica", text: "PDF escaneado: o trecho vem da transcrição e não dá para recortá-lo da imagem." }) : null);
+    const topo = Math.max(0, Math.min(...rets.map((r) => r.y)) - 48), base = Math.min(vp.height, Math.max(...rets.map((r) => r.y + r.h)) + 48);
+    const dpr = window.devicePixelRatio || 1, pagina = el("canvas");
+    pagina.width = Math.floor(vp.width * dpr); pagina.height = Math.floor(vp.height * dpr);
+    await page.render({ canvasContext: pagina.getContext("2d"), viewport: vp, transform: dpr !== 1 ? [dpr, 0, 0, dpr, 0, 0] : null }).promise;
+    const alt = base - topo, recorte = el("canvas", { class: "rv-canvas", "aria-label": `Recorte da página ${alvo.pagina}` });
+    recorte.width = Math.floor(vp.width * dpr); recorte.height = Math.floor(alt * dpr);
+    recorte.style.width = `${vp.width}px`; recorte.style.height = `${alt}px`;
+    recorte.getContext("2d").drawImage(pagina, 0, topo * dpr, pagina.width, alt * dpr, 0, 0, recorte.width, recorte.height);
+    const folha = el("div", { class: "rv-folha" }, recorte);
+    folha.style.width = `${vp.width}px`; folha.style.height = `${alt}px`;
+    for (const r of rets) {
+      const m = el("div", { class: "realce-pdf" });
+      Object.assign(m.style, { left: `${r.x}px`, top: `${r.y - topo}px`, width: `${r.w}px`, height: `${r.h}px` });
+      folha.append(m);
+    }
+    return el("div", {}, el("div", { class: "rv-folha-moldura" }, folha), legenda);
+  } catch (e) {
+    return el("div", {}, citacaoTexto, legenda);
+  }
 }
 
 /* barra fixa da ficha: aparece quando o cabeçalho e as abas saem da tela */
