@@ -16,7 +16,8 @@ try:
 except ImportError:            # SDK não instalado: análise desligada
     anthropic = None
 
-MODELO = "claude-opus-5-5"             # parecer do imóvel (definido pelo teste comparativo)
+MODELO = "claude-sonnet-5-5"           # parecer do imóvel: escolhido pelo Mateus após o teste de 16/11/2026
+                                       # (mesmos riscos e 100% dos trechos conferidos que o Opus, metade do preço)
 MODELO_EDITAL = "claude-opus-5-5"      # regras do edital: uma vez por edital, vale para todos os imóveis dele
 MODELO_TRANSCRICAO = "claude-haiku-5-5"  # copiar texto de PDF escaneado: não exige raciocínio, ~40x mais barato
 
@@ -69,7 +70,7 @@ def _tem_credencial() -> bool:
 
 
 class AnalisadorClaude:
-    def __init__(self, cliente=None, esforco: str = "high", modelo: str = MODELO, modelo_edital: str = MODELO_EDITAL,
+    def __init__(self, cliente=None, esforco: str = "medium", modelo: str = MODELO, modelo_edital: str = MODELO_EDITAL,
                  modelo_transcricao: str = MODELO_TRANSCRICAO, esforco_edital: str = "medium"):
         self._cliente = cliente          # trocável nos testes
         self.esforco, self.esforco_edital = esforco, esforco_edital

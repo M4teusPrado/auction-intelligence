@@ -132,7 +132,7 @@ class Adaptador(unittest.TestCase):
         self.assertIn("server-side-fallback-2026-07-01", kw["betas"])
         self.assertEqual(kw["messages"], [{"role": "user", "content": "material"}])
         self.assertIn("Use só o que está escrito", kw["system"])
-        self.assertEqual(r["uso"]["custo_usd"], 0.14)                                     # 20k x $4/M + 3k x $20/M
+        self.assertEqual(r["uso"]["custo_usd"], 0.07)                                     # Sonnet: 20k x $2/M + 3k x $10/M
         self.assertEqual(r["parecer"]["itens"][0]["item"], "ocupacao")
 
     def test_recusa_corte_e_json_invalido(self):

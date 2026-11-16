@@ -136,3 +136,9 @@ PDF escaneado com IA"). O edital da Caixa é um PDF único que lista
 centenas de imóveis pelo número: cole o link dele uma vez (na ficha, ou
 `python -m captacao edital-caixa <url>`) e o sistema liga o edital a todos os imóveis da base que
 aparecem nele, anexando nos que estão em "Para analisar".
+
+**Custo da IA (decisão do Mateus, 16/11/2026, após teste comparativo):** parecer com
+claude-sonnet-5-5 (esforço médio), ~US$ 0,08–0,15 por imóvel; regras gerais de cada edital
+coletivo (Caixa) lidas uma vez com claude-opus-5-5 (~US$ 0,26 por edital, reaproveitadas por
+todos os imóveis dele); transcrição de PDF escaneado com claude-haiku-5-5 (< US$ 0,01 por
+matrícula). Antes: ~US$ 1,00 por imóvel com edital da Caixa.
