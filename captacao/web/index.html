@@ -310,6 +310,9 @@
   .edital-caixa { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
   .linha-edital { display: flex; gap: 8px; flex-wrap: wrap; }
   .linha-edital .campo { flex: 1 1 240px; width: auto; }
+  .regras-edital { margin: 4px 0 12px; }
+  .regras-edital summary { cursor: pointer; padding: 6px 0; }
+  .regras-edital > details > ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 8px; }
   .carga-ia { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; width: 100%; }
   .carga-trilho { height: 8px; border-radius: 999px; background: var(--borda); overflow: hidden; }
   .carga-barra { height: 100%; width: 0; border-radius: 999px; background: var(--destaque); transition: width .5s linear; }
@@ -1190,8 +1193,22 @@ function painelInvestigar(d) {
 /* parecer preliminar com IA: só sugere; cada afirmação tem trecho conferido no documento */
 const NOME_SITUACAO = { ok: "OK", atencao: "Atenção", impeditivo: "Impeditivo", sem_informacao: "Sem informação" };
 const NOME_NIVEL = { alto: "Risco alto", medio: "Risco médio", baixo: "Risco baixo" };
-function citacao(d, c) {
-  const doc = ((d.parecer || {}).documentos || []).find((x) => x.codigo === c.documento);
+const NOME_TEMA = { condominio: "Condomínio", iptu: "IPTU e tributos", desocupacao: "Desocupação", estado_do_imovel: "Estado do imóvel",
+  venda_ad_corpus: "Venda ad corpus", onus_e_acoes: "Ônus e ações", comissao: "Comissão", pagamento: "Pagamento",
+  fgts_financiamento: "FGTS e financiamento", prazos: "Prazos", direito_de_preferencia: "Direito de preferência",
+  desistencia_e_penalidades: "Desistência e multas", outros: "Outros" };
+function blocoRegrasEdital(d) {
+  if (!(d.regras_edital || []).length) return null;
+  return el("div", { class: "regras-edital" }, d.regras_edital.map((e) => el("details", {},
+    el("summary", {}, el("b", { text: `Regras do edital (${e.regras.length})` }),
+      el("span", { class: "dica", text: ` · ${e.nome} · lidas uma vez para todos os imóveis deste edital` })),
+    el("ul", {}, e.regras.map((r) => el("li", {},
+      el("b", { text: (NOME_TEMA[r.tema] || r.tema) + ": " }), el("span", { text: r.regra }),
+      el("ul", { class: "citacoes" }, r.citacoes.map((c) => citacao(d, { ...c, afirmacao: "" }, e)))))))));
+}
+function citacao(d, c, edital) {
+  const doc = edital ? { nome: edital.nome, anexo_id: edital.anexo_id }
+                     : ((d.parecer || {}).documentos || []).find((x) => x.codigo === c.documento);
   const nome = c.documento === "DESCRICAO" ? "descrição do lote" : doc ? doc.nome : c.documento;
   const fonte = doc && doc.anexo_id ? el("a", { href: `/anexos/${doc.anexo_id}#page=${c.pagina}`, target: "_blank", rel: "noopener", text: `${nome} · página ${c.pagina}` })
                                     : el("span", { text: nome });
@@ -1230,11 +1247,13 @@ function blocoParecer(d) {
     } });
   const cab = el("div", { class: "parecer-cab" }, el("h3", { text: "Parecer preliminar (IA)" }), b);
   caixa.append(cab);
+  const regras = blocoRegrasEdital(d);
+  if (regras) caixa.append(regras);
   if (p) caixa.append(msg);
   if (!ia.disponivel) caixa.append(el("p", { class: "dica erro", text: `Indisponível: ${ia.motivo}.` }));
   if (!p) {
     caixa.append(el("p", { class: "dica", text: "A IA lê a descrição do lote e os PDFs anexados (edital, matrícula) e organiza ocupação, débitos, ônus e riscos, " +
-      "mostrando o trecho de onde tirou cada informação. Ela só sugere: quem marca cada item é você. Custa cerca de US$ 0,15 por análise." }), msg);
+      "mostrando o trecho de onde tirou cada informação. Ela só sugere: quem marca cada item é você. Custa centavos de dólar por imóvel; o edital é lido uma vez e reaproveitado." }), msg);
     return caixa;
   }
   const u = d.parecer.uso || {};

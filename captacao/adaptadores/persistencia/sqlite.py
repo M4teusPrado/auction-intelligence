@@ -75,6 +75,10 @@ CREATE TABLE IF NOT EXISTS pareceres (           -- pareceres preliminares gerad
   parecer TEXT NOT NULL, uso TEXT, documentos TEXT, quando TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_pareceres_imovel ON pareceres (imovel_id);
+CREATE TABLE IF NOT EXISTS regras_edital (       -- regras gerais de um edital, lidas uma vez (pelo conteúdo do PDF)
+  id INTEGER PRIMARY KEY, sha256 TEXT NOT NULL, modelo TEXT NOT NULL, regras TEXT NOT NULL, uso TEXT, quando TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_regras_edital_sha ON regras_edital (sha256);
 CREATE TABLE IF NOT EXISTS coletas (
   id INTEGER PRIMARY KEY, fonte TEXT, recorte TEXT, origem TEXT, quando TEXT,
   total INTEGER, novos INTEGER, alterados INTEGER, saidos INTEGER, avisos INTEGER
@@ -99,7 +103,7 @@ COLUNAS_NOVAS = [
 
 # Tabelas criadas depois da primeira versão (o CREATE está em ESQUEMA).
 TABELAS_NOVAS = ("triagens", "investigacao", "anexos", "simulacoes", "anexo_paginas", "leiloes", "pracas",
-                 "documentos_fonte", "pareceres")
+                 "documentos_fonte", "pareceres", "regras_edital")
 
 
 def conectar(caminho: str) -> sqlite3.Connection:
@@ -345,6 +349,17 @@ class RepositorioSQLite:
                 "SELECT tipo, url, rotulo FROM documentos_fonte WHERE imovel_id=? ORDER BY tipo", (imovel_id,))]
         return im
 
+    def regras_edital(self, sha256: str) -> Optional[dict]:
+        r = self.con.execute("SELECT modelo, regras, uso, quando FROM regras_edital WHERE sha256=? ORDER BY id DESC LIMIT 1",
+                             (sha256,)).fetchone()
+        return None if r is None else {"modelo": r["modelo"], "regras": json.loads(r["regras"]),
+                                       "uso": json.loads(r["uso"] or "{}"), "quando": r["quando"]}
+
+    def salvar_regras_edital(self, sha256: str, modelo: str, regras: dict, uso: dict, quando: str) -> None:
+        self.con.execute("INSERT INTO regras_edital (sha256, modelo, regras, uso, quando) VALUES (?,?,?,?,?)",
+                         (sha256, modelo, json.dumps(regras, ensure_ascii=False), json.dumps(uso), quando))
+        self.con.commit()
+
     def vincular_documento(self, fonte: str, ids_fonte: List[str], tipo: str, url: str, rotulo: str) -> List[dict]:
         """Liga um documento publicado (ex.: edital da Caixa que lista vários imóveis) aos imóveis da
         fonte com esses identificadores. Devolve os imóveis encontrados (id, id_fonte, estagio)."""
@@ -432,7 +447,7 @@ class RepositorioSQLite:
     # ------------------------------------------------------------------ anexos
     def anexos(self, imovel_id: int) -> List[dict]:
         return [dict(r) for r in self.con.execute(
-            "SELECT id, tipo, nome_original, tamanho, quando, leitura FROM anexos WHERE imovel_id=? ORDER BY id DESC",
+            "SELECT id, tipo, nome_original, tamanho, quando, leitura, sha256 FROM anexos WHERE imovel_id=? ORDER BY id DESC",
             (imovel_id,))]
 
     def anexo_por_conteudo(self, imovel_id: int, sha256: str) -> Optional[int]:
@@ -468,12 +483,12 @@ class RepositorioSQLite:
     def textos_lidos(self, imovel_id: int) -> List[dict]:
         """Anexos lidos com o texto de cada página: [{id, nome_original, paginas: [...]}]."""
         saida = []
-        for a in self.con.execute("SELECT id, nome_original, leitura FROM anexos WHERE imovel_id=? "
+        for a in self.con.execute("SELECT id, nome_original, leitura, tipo, sha256 FROM anexos WHERE imovel_id=? "
                                   "AND leitura IN ('lido', 'transcrito_ia') ORDER BY id", (imovel_id,)).fetchall():
             paginas = [r[0] for r in self.con.execute(
                 "SELECT texto FROM anexo_paginas WHERE anexo_id=? ORDER BY pagina", (a["id"],))]
             saida.append({"id": a["id"], "nome_original": a["nome_original"], "paginas": paginas,
-                          "transcrito_ia": a["leitura"] == "transcrito_ia"})
+                          "transcrito_ia": a["leitura"] == "transcrito_ia", "tipo": a["tipo"], "sha256": a["sha256"]})
         return saida
 
     # ------------------------------------------------------------------ simulações

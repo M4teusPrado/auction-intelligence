@@ -4,6 +4,7 @@ from types import SimpleNamespace
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from captacao.adaptadores.ia.claude import AnalisadorClaude, ESQUEMA_PARECER, MODELO
 from captacao.aplicacao import ficha
+from captacao.adaptadores.persistencia.sqlite import RepositorioSQLite
 from captacao.aplicacao.parecer import gerar_parecer, montar_contexto
 from captacao.aplicacao.portas import ErroDeAnalise
 from captacao.dominio.parecer import conferir, mascarar_dados_pessoais, trecho_existe
@@ -105,15 +106,24 @@ class CasoDeUso(unittest.TestCase):
         self.assertIn("=== DOCUMENTO DESCRICAO, página 1 ===\nCasa", ctx)          # a descrição vai junto, com texto
 
 
+def cliente_falso(resp, chamadas):
+    """Imita client.beta.messages.stream(...) com get_final_message()."""
+    class Fluxo:
+        def __enter__(s): return s
+        def __exit__(s, *a): pass
+        def get_final_message(s): return resp
+    def stream(**kw):
+        chamadas.append(kw); return Fluxo()
+    return SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(stream=stream)))
+
+
 class Adaptador(unittest.TestCase):
     def cliente(self, stop="end_turn", texto=None):
         self.chamadas = []
         resp = SimpleNamespace(stop_reason=stop, model=MODELO,
                                content=[SimpleNamespace(type="text", text=texto if texto is not None else json.dumps(parecer_exemplo("A1", "A2")))],
                                usage=SimpleNamespace(input_tokens=20000, output_tokens=3000))
-        def create(**kw):
-            self.chamadas.append(kw); return resp
-        return SimpleNamespace(beta=SimpleNamespace(messages=SimpleNamespace(create=create)))
+        return cliente_falso(resp, self.chamadas)
 
     def test_envia_formato_e_calcula_custo(self):
         r = AnalisadorClaude(cliente=self.cliente()).analisar("material")
@@ -191,8 +201,9 @@ class AdaptadorTranscricao(unittest.TestCase):
         self.assertEqual(r["paginas"], ["pág 1", "pág 2"])                              # ordenado pelo número
         doc = chamadas[0]["messages"][0]["content"][0]
         self.assertEqual((doc["type"], doc["source"]["media_type"]), ("document", "application/pdf"))
-        self.assertEqual(chamadas[0]["fallbacks"], "default")
-        self.assertEqual(r["uso"]["custo_usd"], 0.08)
+        self.assertEqual(chamadas[0]["model"], "claude-haiku-5-5")                     # transcrever: modelo barato
+        self.assertNotIn("fallbacks", chamadas[0])                                      # Haiku não tem fallback no servidor
+        self.assertEqual(r["uso"]["custo_usd"], 0.002)                                  # 10k x $0,10/M + 2k x $0,50/M
 
 
 class EditalComVariosImoveis(unittest.TestCase):
@@ -205,6 +216,58 @@ class EditalComVariosImoveis(unittest.TestCase):
         self.assertEqual(paginas_de_outros_imoveis(paginas, "8444425522289"), {2})
         self.assertEqual(paginas_de_outros_imoveis(paginas, "8444425522289-x"), {2})
         self.assertEqual(paginas_de_outros_imoveis(paginas, "gabrieltorres.com.br:73187"), set())   # sem número: não omite
+
+
+class RegrasDoEditalUmaVez(unittest.TestCase):
+    CLAUSULA = "19.4.1 Eventuais débitos de condomínio e IPTU devem ser quitados exclusivamente pelo adquirente."
+
+    def setUp(self):
+        import tempfile
+        from captacao.dominio.modelo import ImovelCaptado
+        sys.path.insert(0, os.path.dirname(__file__))
+        from test_documentos import pdf_com_texto
+        self.repo = RepositorioSQLite(":memory:"); self.addCleanup(self.repo.close)
+        base = dict(fonte="caixa", uf="SP", cidade="SOROCABA", bairro="", endereco="", preco=1.0, valor_avaliacao=1.0,
+                    desconto_pct=0.0, modalidade="Leilão SFI", tipo="casa", area_privativa=None, area_terreno=None,
+                    area_total=None, descricao="Casa", link="", data_fonte="", categoria="casa")
+        self.repo.gravar_coleta("caixa", "SP", "t", [ImovelCaptado(id_fonte="8444425522289", **base),
+                                                       ImovelCaptado(id_fonte="8787715548453", **base)])
+        self.a, self.b = [r[0] for r in self.repo.con.execute("SELECT id FROM imoveis ORDER BY id_fonte")]
+        edital = pdf_com_texto([self.CLAUSULA, "560 RUA X 8444425522289 134.264,38 / 561 8444411111111 9,00",
+                                "562 8787715548453 50,00 / 563 8787700000002 60,00", "564 8787700000003 1,00 / 565 8787700000004 2,00"])
+        pasta = tempfile.mkdtemp()
+        for i in (self.a, self.b):
+            ficha.anexar(self.repo, pasta, i, "edital", "edital.pdf", edital)
+
+    class IA(AnalisadorFalso):
+        modelo_edital = "falso-edital"
+        def __init__(s):
+            super().__init__(); s.editais, s.contextos = [], []
+        def extrair_regras_edital(s, texto):
+            s.editais.append(texto)
+            return {"regras": {"regras": [{"tema": "condominio", "regra": "Débitos de condomínio e IPTU ficam com o comprador.",
+                     "citacoes": [{"afirmacao": "x", "documento": "EDITAL", "pagina": 1, "trecho": "débitos de condomínio e IPTU devem ser quitados exclusivamente pelo adquirente"}]},
+                    {"tema": "comissao", "regra": "inventada", "citacoes": [{"afirmacao": "x", "documento": "EDITAL", "pagina": 1, "trecho": "comissão de 5% sobre o valor"}]}]},
+                    "uso": {"custo_usd": 0.3}}
+        def analisar(s, contexto):
+            s.contextos.append(contexto)
+            return {"parecer": {"resumo_geral": "r", "itens": [], "riscos": [], "perguntas": []}, "uso": {"custo_usd": 0.05}}
+
+    def test_le_uma_vez_e_envia_so_o_necessario(self):
+        ia = self.IA()
+        r1 = gerar_parecer(self.repo, ia, self.a)
+        r2 = gerar_parecer(self.repo, ia, self.b)
+        self.assertEqual(len(ia.editais), 1)                                   # 2º imóvel reaproveita as regras
+        self.assertNotIn("8444411111111", ia.editais[0])                      # tabela de imóveis não vai para a leitura do edital
+        self.assertEqual((r1["uso"]["custo_usd"], r1["uso"]["custo_edital_usd"], r2["uso"]["custo_usd"]), (0.35, 0.3, 0.05))
+        ctx = ia.contextos[0]
+        self.assertIn("Débitos de condomínio e IPTU ficam com o comprador", ctx)
+        self.assertNotIn("inventada", ctx)                                    # regra com trecho não conferido fica fora
+        self.assertIn("8444425522289 134.264,38", ctx)                        # a linha do imóvel vai
+        self.assertNotIn("8787700000003", ctx)                                # páginas só de outros imóveis não
+        self.assertNotIn(self.CLAUSULA[:20], ctx.split("REGRAS GERAIS")[0])   # cláusulas vão pelas regras, não a página inteira
+        self.assertIn("8787715548453 50,00", ia.contextos[1])
+        self.assertNotIn("8444425522289 134.264,38", ia.contextos[1])
 
 
 if __name__ == "__main__":

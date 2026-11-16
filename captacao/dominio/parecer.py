@@ -69,6 +69,32 @@ ESQUEMA_PARECER = {
 }
 
 
+# Regras gerais de um edital que vale para muitos imóveis (lido uma vez, reaproveitado).
+TEMAS_EDITAL = ("condominio", "iptu", "desocupacao", "estado_do_imovel", "venda_ad_corpus", "onus_e_acoes",
+                "comissao", "pagamento", "fgts_financiamento", "prazos", "direito_de_preferencia",
+                "desistencia_e_penalidades", "outros")
+ESQUEMA_REGRAS_EDITAL = {
+    "type": "object",
+    "properties": {
+        "regras": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "tema": {"type": "string", "enum": list(TEMAS_EDITAL)},
+                    "regra": {"type": "string", "description": "o que o edital determina, em uma ou duas frases"},
+                    "citacoes": {"type": "array", "items": _CITACAO},
+                },
+                "required": ["tema", "regra", "citacoes"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["regras"],
+    "additionalProperties": False,
+}
+
+
 # ------------------------------------------------------------------ proteção de dados
 _CPF = re.compile(r"(?<!\d)\d{3}\.?\d{3}\.?\d{3}\s?-?\s?\d{2}(?!\d)")
 _RG = re.compile(r"(\b(?:RG|R\.G\.|C[ée]dula de Identidade)\s*(?:n[º°o.]*\s*)?:?\s*)([\dXx][\d.\-Xx/ ]{4,16}[\dXx])", re.I)
@@ -121,3 +147,13 @@ def conferir(parecer: dict, fontes: Dict[str, List[str]]) -> dict:
     parecer["citacoes_total"] = len(total)
     parecer["citacoes_confirmadas"] = sum(1 for c in total if c["confirmada"])
     return parecer
+
+
+def conferir_regras(regras: dict, paginas: List[str], codigo: str = "EDITAL") -> dict:
+    """Confere as citações das regras do edital contra o texto do edital (todas as páginas)."""
+    marca = conferir({"itens": [], "riscos": [{"citacoes": r.get("citacoes", [])} for r in regras.get("regras", [])]},
+                     {codigo: paginas})
+    for r, conf in zip(regras.get("regras", []), marca["riscos"]):
+        r["citacoes"] = conf["citacoes"]
+    regras["citacoes_total"], regras["citacoes_confirmadas"] = marca["citacoes_total"], marca["citacoes_confirmadas"]
+    return regras

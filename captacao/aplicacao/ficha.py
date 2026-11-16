@@ -85,6 +85,7 @@ def ficha(repo: RepositorioDeAnalise, imovel_id: int, pasta: str = None, fontes:
             "simulacao_salva": repo.ultima_simulacao(imovel_id),
             "documentos_fonte": documentos_da_fonte(im, fontes),
             "parecer": repo.ultimo_parecer(imovel_id),
+            "regras_edital": _regras_dos_editais(repo, imovel_id),
             "ia": {"disponivel": analisador is not None and analisador.disponivel() is None,
                    "motivo": "a análise com IA não está configurada" if analisador is None else analisador.disponivel(),
                    "modelo": getattr(analisador, "modelo", None)}}
@@ -268,3 +269,16 @@ def indexar_edital_caixa(repo, pasta: str, baixador: BaixadorWeb, url: str, font
                 anexados.append(a["id"])
     return {"edital": rotulo, "url": url, "imoveis_no_edital": len(numeros), "imoveis_na_base": len(achados),
             "anexados_em_analise": anexados}
+
+
+def _regras_dos_editais(repo, imovel_id: int) -> list:
+    """Regras gerais já lidas dos editais anexados (uma leitura por edital, vale para todos os imóveis dele)."""
+    saida = []
+    for a in repo.anexos(imovel_id):
+        salvo = a["tipo"] == "edital" and a.get("sha256") and repo.regras_edital(a["sha256"])
+        if salvo:
+            regras = [{**r, "citacoes": [{**c, "documento": f"A{a['id']}"} for c in r.get("citacoes", []) if c.get("confirmada")]}
+                      for r in salvo["regras"].get("regras", [])]
+            saida.append({"anexo_id": a["id"], "nome": a["nome_original"], "quando": salvo["quando"],
+                          "regras": [r for r in regras if r["citacoes"]]})
+    return saida
