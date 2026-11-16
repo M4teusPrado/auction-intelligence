@@ -1276,7 +1276,9 @@ function botaoDocumentosFonte(d) {
       } catch (e) { msg.classList.add("erro"); msg.textContent = e.message; }
       b.disabled = false; b.textContent = emAnalise ? "Baixar agora" : "Tentar baixar agora";
     } });
-  const situacao = !faltam.length ? "Todos os documentos publicados já estão anexados."
+  const semEdital = !docs.some((x) => x.tipo === "edital")
+    ? ` O edital da ${fonte} ainda não é baixado sozinho: baixe pelo botão "Abrir na ${fonte}" e anexe no item Edital.` : "";
+  const situacao = !faltam.length ? "Os documentos que o sistema sabe buscar já foram baixados e estão no item correspondente (Matrícula, Edital) em Investigar." + semEdital
     : emAnalise ? "O sistema baixa estes documentos sozinho porque o imóvel está em Para analisar. Recarregue em alguns segundos, ou baixe agora."
                 : "Ao marcar o imóvel como Para analisar, o sistema baixa estes documentos sozinho.";
   return el("div", { class: "docs-fonte" },
