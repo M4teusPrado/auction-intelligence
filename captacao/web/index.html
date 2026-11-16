@@ -396,7 +396,13 @@
   @media (max-width: 520px) { .inv-item-corpo { padding-left: 16px; } }
   .ia-bloco p { margin: 0 0 6px; line-height: 1.55; }
   .decidir-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .decidir-item .dica { font-size: 12px; }
+  .mini-acao { font-size: 13px; padding: 4px 6px; }
+  .ajuda .hip-linha { color: var(--texto-3); }
+  .rodape-item { display: flex; align-items: flex-start; gap: 6px 16px; flex-wrap: wrap; font-size: 13px; }
+  .rodape-item .atalhos { margin: 0; display: flex; gap: 12px; flex-wrap: wrap; }
+  .rodape-item .atalhos a { font-size: 13px; }
+  .rodape-item .busca { flex: 1 1 100%; }
+  .rodape-item .busca summary { cursor: pointer; color: var(--texto-2); }
   .seg-mini .seg-b { padding: 4px 11px; font-size: 12.5px; }
   .nota-linha { display: grid; gap: 4px; }
   .nota-linha textarea { resize: vertical; font-size: 14px; background: var(--superficie); }
@@ -1504,6 +1510,18 @@ function listaChecklist(d) {
     el("div", { class: "inv-cartao-cab" }, el("h3", { text: "Checklist" }), el("span", { class: "dica", text: "A IA sugere, você decide." })),
     el("div", { class: "inv-itens", id: "inv-itens" }, d.investigacao.map((it) => linhaItem(d, it))));
 }
+/* trechos citados: os primeiros visíveis, o resto num clique */
+function listaCits(d, fatos, n) {
+  if (!fatos || !fatos.length) return null;
+  const li = (c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c));
+  const ul = el("ul", { class: "cits" }, fatos.slice(0, n).map(li));
+  if (fatos.length > n) {
+    const mais = el("li", {}, el("button", { type: "button", class: "btn btn-texto mini-acao", text: `+ ${fatos.length - n} trechos`,
+      onclick: () => { mais.replaceWith(...fatos.slice(n).map(li)); } }));
+    ul.append(mais);
+  }
+  return ul;
+}
 function alternarItem(item, abrir) {
   const corpo = item.querySelector(".inv-item-corpo"), vai = abrir ?? corpo.hidden;
   corpo.hidden = !vai; item.classList.toggle("aberto", vai);
@@ -1555,19 +1573,22 @@ function linhaItem(d, it) {
     el("span", { class: "rot" }, el("b", { text: it.rotulo }), s ? el("small", { text: s.resumo }) : null),
     estado, aceitar);
   const temParecer = !!lerParecer(d), achados = ((d.achados || {})[it.item] || []).length;
+  // anotação: escondida até a pessoa pedir (ou se já existir)
+  const linhaNota = el("div", { class: "nota-linha", hidden: !atual.nota }, nota, salvo);
+  const maisNota = el("button", { type: "button", class: "btn btn-texto mini-acao", text: atual.nota ? "anotação" : "+ anotação",
+    onclick: () => { linhaNota.hidden = !linhaNota.hidden; if (!linhaNota.hidden) nota.focus(); } });
+  const hipotese = !s && it.item === "leilao" && d.sugestao_leilao ? d.sugestao_leilao : null;
+  const links = atalhos(it.item, d.imovel);
   const corpo = el("div", { class: "inv-item-corpo", hidden: true },
-    s ? el("div", { class: "ia-bloco" },
-          el("p", { text: s.resumo }),
-          s.fatos.length ? el("ul", { class: "cits" }, s.fatos.map((c) => el("li", {}, el("span", { text: c.afirmacao }), " ", chip(d, c)))) : null)
-      : el("p", { class: "ajuda", text: it.ajuda }),
-    it.item === "leilao" && d.sugestao_leilao ? el("div", { class: "sugestao" }, el("span", { class: "hip", text: "hipótese" }), d.sugestao_leilao) : null,
-    el("div", { class: "decidir-item" }, el("span", { class: "dica", text: "Sua marcação" }), botoes),
-    el("div", { class: "nota-linha" }, nota, salvo),
-    atalhos(it.item, d.imovel),
+    s ? el("div", { class: "ia-bloco" }, el("p", { text: s.resumo }), listaCits(d, s.fatos, 3))
+      : el("p", { class: "ajuda" }, it.ajuda, hipotese ? el("span", { class: "hip-linha", text: ` ${hipotese}` }) : null),
+    el("div", { class: "decidir-item" }, botoes, maisNota),
+    linhaNota,
     TIPO_DO_ITEM[it.item] ? blocoAnexos(d, TIPO_DO_ITEM[it.item]) : null,
-    el("details", { class: "inv-sec busca" },
-      el("summary", { text: temParecer ? `Busca por palavra-chave${achados ? ` (${achados})` : ""}` : "O que procurar e trechos encontrados" }),
-      el("ul", { class: "procurar" }, PROCURAR[it.item].map((t) => el("li", { text: t }))), blocoAchados(it.item)));
+    el("div", { class: "rodape-item" }, links,
+      el("details", { class: "busca" },
+        el("summary", { text: temParecer ? `Busca por palavra-chave${achados ? ` (${achados})` : ""}` : `O que procurar${achados ? ` · ${achados} trechos` : ""}` }),
+        el("ul", { class: "procurar" }, PROCURAR[it.item].map((t) => el("li", { text: t }))), blocoAchados(it.item))));
   item.append(cab, corpo);
   desenharEstado();
   if (fichaEstado.itemAberto === it.item) alternarItem(item, true);
