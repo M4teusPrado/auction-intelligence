@@ -361,6 +361,24 @@ class RepositorioSQLite:
                          (sha256, modelo, json.dumps(regras, ensure_ascii=False), json.dumps(uso), quando))
         self.con.commit()
 
+    def ligar_editais_de_leiloeiros(self) -> int:
+        """Imóvel da Caixa vendido por um leiloeiro que coletamos: o lote do leiloeiro traz o link da
+        matrícula da Caixa (/editais/matricula/<UF>/<número do imóvel>.pdf) e o edital do leilão.
+        O edital do lote passa a valer para o imóvel da Caixa de mesmo número. Devolve quantos ligou."""
+        pares = self.con.execute(
+            """SELECT DISTINCT c.id AS caixa_id, e.url, e.rotulo
+               FROM documentos_fonte m
+               JOIN imoveis l ON l.id = m.imovel_id AND l.fonte <> 'caixa'
+               JOIN documentos_fonte e ON e.imovel_id = l.id AND e.tipo = 'edital'
+               JOIN imoveis c ON c.fonte = 'caixa'
+                AND c.id_fonte = substr(m.url, length(rtrim(m.url, '0123456789.pdf')) + 1, 13)
+               WHERE m.url LIKE 'https://venda-imoveis.caixa.gov.br/editais/matricula/%'
+                 AND NOT EXISTS (SELECT 1 FROM documentos_fonte x WHERE x.imovel_id = c.id AND x.url = e.url)""").fetchall()
+        self.con.executemany("INSERT OR IGNORE INTO documentos_fonte (imovel_id, tipo, url, rotulo) VALUES (?, 'edital', ?, ?)",
+                             [(p["caixa_id"], p["url"], f"Edital do leiloeiro ({p['rotulo'] or 'edital'})") for p in pares])
+        self.con.commit()
+        return len(pares)
+
     def vincular_documento(self, fonte: str, ids_fonte: List[str], tipo: str, url: str, rotulo: str) -> List[dict]:
         """Liga um documento publicado (ex.: edital da Caixa que lista vários imóveis) aos imóveis da
         fonte com esses identificadores. Devolve os imóveis encontrados (id, id_fonte, estagio)."""

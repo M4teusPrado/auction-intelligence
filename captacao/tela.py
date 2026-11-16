@@ -44,6 +44,7 @@ def baixar_em_segundo_plano(caminho_base: str, pasta_anexos: str, imovel_id: int
     def tarefa():
         try:
             with montagem.repositorio(caminho_base, migrar=False) as repo:
+                repo.ligar_editais_de_leiloeiros()
                 if ficha.documentos_pendentes(repo, imovel_id, montagem.FONTES):
                     r = ficha.baixar_documentos_fonte(repo, pasta_anexos, imovel_id, montagem.CLIENTE_WEB,
                                                       fontes=montagem.FONTES)

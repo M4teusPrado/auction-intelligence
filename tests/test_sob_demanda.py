@@ -113,5 +113,24 @@ class EditalCaixa(unittest.TestCase):
                 ficha.indexar_edital_caixa(self.repo, tempfile.mkdtemp(), BaixadorFalso(), url, self.fontes)
 
 
+class EditalPeloLeiloeiro(unittest.TestCase):
+    def test_lote_do_leiloeiro_com_matricula_caixa_liga_o_edital(self):
+        from captacao.dominio.modelo import DadosLeilao, DocumentoFonte
+        repo = RepositorioSQLite(":memory:"); self.addCleanup(repo.close)
+        repo.gravar_coleta("caixa", "SP", "t", [imovel_caixa()])
+        lote = imovel_caixa(); lote.fonte, lote.id_fonte = "soleon", "3torresleiloes.com.br:73187"
+        edital = "https://cdn.exemplo/leiloes/2606/edital.pdf"
+        lote.leilao = DadosLeilao(comitente="Caixa", documentos=[
+            DocumentoFonte(tipo="matricula", url="https://venda-imoveis.caixa.gov.br/editais/matricula/SP/8787715548453.pdf", rotulo="Matrícula"),
+            DocumentoFonte(tipo="edital", url=edital, rotulo="EDITAL")])
+        repo.gravar_coleta("soleon", "x", "t", [lote])
+        self.assertEqual(repo.ligar_editais_de_leiloeiros(), 1)
+        self.assertEqual(repo.ligar_editais_de_leiloeiros(), 0)                      # não duplica
+        cid = repo.con.execute("SELECT id FROM imoveis WHERE fonte='caixa'").fetchone()[0]
+        docs = ficha.documentos_da_fonte(repo.buscar_imovel(cid), {"caixa": FonteCaixa()})
+        self.assertEqual(sorted((d["tipo"], d["url"]) for d in docs),
+                         [("edital", edital), ("matricula", "https://venda-imoveis.caixa.gov.br/editais/matricula/SP/8787715548453.pdf")])
+
+
 if __name__ == "__main__":
     unittest.main()

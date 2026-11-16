@@ -21,6 +21,8 @@ def coletar(fonte: FonteDeImoveis, repo: RepositorioDeImoveis, recorte: str = ""
     avisos = list(c.avisos) + classifica.classificar(c.imoveis)
     completa = c.completa and not limite
     r = repo.gravar_coleta(fonte.nome, c.recorte, c.origem, c.imoveis, len(avisos), agora, marcar_saidos=completa)
+    if hasattr(repo, "ligar_editais_de_leiloeiros"):
+        repo.ligar_editais_de_leiloeiros()      # imóvel da Caixa leiloado por quem coletamos: o edital vem de lá
     r["lista_avisos"] = avisos
     r["recorte"] = c.recorte
     r["completa"] = completa
