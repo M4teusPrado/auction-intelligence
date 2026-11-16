@@ -5,6 +5,7 @@ mascara CPF e RG, pede a análise à porta AnalisadorDeDocumentos, confere cada 
 contra o texto enviado e guarda o parecer (nada é apagado; o mais recente vale).
 Não marca nada na investigação: a pessoa decide.
 """
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -17,6 +18,20 @@ TAMANHO_MAX = 700_000          # caracteres enviados; acima disso a pessoa é av
 def _valor(v):
     return "não informado" if v in (None, "") else (f"R$ {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                                                      if isinstance(v, float) else str(v))
+
+
+NUMERO_IMOVEL = re.compile(r"(?<!\d)\d{12}-?\d(?!\d)")
+
+
+def paginas_de_outros_imoveis(paginas, id_fonte: str) -> set:
+    """Páginas de tabela de um edital com vários imóveis (2+ números de imóvel) em que este imóvel
+    não aparece. Ficam fora do envio à IA (no edital da Caixa são ~3/4 das páginas) e seguem
+    valendo para conferir citações. Sem identificador numérico, nada é omitido."""
+    alvo = re.sub(r"\D", "", id_fonte or "")
+    if len(alvo) != 13:
+        return set()
+    return {i for i, p in enumerate(paginas)
+            if len(NUMERO_IMOVEL.findall(p)) >= 2 and alvo not in {re.sub(r"\D", "", n) for n in NUMERO_IMOVEL.findall(p)}}
 
 
 def montar_contexto(repo: RepositorioDeAnalise, imovel_id: int):
@@ -45,8 +60,13 @@ def montar_contexto(repo: RepositorioDeAnalise, imovel_id: int):
         "(Se edital ou matrícula não estiverem na lista, eles ainda não foram anexados: diga isso nas perguntas.)", ""])
     partes = [cabecalho]
     for codigo, paginas in fontes.items():
+        omitir = paginas_de_outros_imoveis(paginas, im.get("id_fonte")) if codigo != "DESCRICAO" else set()
         for i, texto in enumerate(paginas, start=1):
+            if i - 1 in omitir:
+                continue
             partes.append(f"=== DOCUMENTO {codigo}, página {i} ===\n{texto.strip()}\n")
+        if omitir:
+            partes.append(f"(DOCUMENTO {codigo}: {len(omitir)} páginas omitidas por listarem apenas outros imóveis.)\n")
     return "\n".join(partes), fontes, documentos
 
 

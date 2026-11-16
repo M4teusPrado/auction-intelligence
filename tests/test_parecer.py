@@ -195,5 +195,17 @@ class AdaptadorTranscricao(unittest.TestCase):
         self.assertEqual(r["uso"]["custo_usd"], 0.08)
 
 
+class EditalComVariosImoveis(unittest.TestCase):
+    def test_omite_paginas_so_com_outros_imoveis(self):
+        from captacao.aplicacao.parecer import paginas_de_outros_imoveis
+        paginas = ["19.4.1 Débitos de condomínio ficam com o adquirente.",
+                   "560 RUA X 8444425522289 134.264,38 / 561 RUA Y 8444411111111 99.000,00",
+                   "562 RUA Z 8787700000001 50.000,00 / 563 RUA W 8787700000002 60.000,00",
+                   "Anexo: modelo de proposta"]
+        self.assertEqual(paginas_de_outros_imoveis(paginas, "8444425522289"), {2})
+        self.assertEqual(paginas_de_outros_imoveis(paginas, "8444425522289-x"), {2})
+        self.assertEqual(paginas_de_outros_imoveis(paginas, "gabrieltorres.com.br:73187"), set())   # sem número: não omite
+
+
 if __name__ == "__main__":
     unittest.main()
