@@ -325,18 +325,16 @@
   .painel.inv { max-width: none; }
   .inv-grade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
   .inv-esq { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-  .inv-alternar { display: none; gap: 2px; background: #eceeeb; border-radius: 10px; padding: 3px; width: 100%; margin: 0 0 12px;
-                  position: sticky; top: calc(56px + env(safe-area-inset-top, 0px)); z-index: 6; }
-  .inv-alternar button { flex: 1; border: 0; background: transparent; padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 14px;
-                         cursor: pointer; color: var(--texto-2); }
-  .inv-alternar [aria-selected="true"] { background: var(--superficie); box-shadow: var(--sombra); color: var(--texto); font-weight: 600; }
-  @media (min-width: 1100px) { .inv-grade { grid-template-columns: minmax(0, 1fr) minmax(400px, 47%); } }
+  .inv-grade[data-doc="fechado"] .inv-doc { display: none; }
+  @media (min-width: 1100px) { .inv-grade[data-doc="aberto"] { grid-template-columns: minmax(0, 1fr) minmax(420px, 50%); } }
   @media (max-width: 1099px) {
-    .inv-alternar { display: flex; }
-    .inv-grade[data-coluna="lista"] .inv-doc { display: none; }
-    .inv-grade[data-coluna="doc"] .inv-esq { display: none; }
-    .inv-doc { position: static !important; height: calc(100vh - 150px) !important; }
+    .inv-grade[data-doc="aberto"] .inv-doc { position: fixed !important; inset: 0; z-index: 40; height: 100% !important; border-radius: 0;
+                                             padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
   }
+  body.doc-tela-cheia { overflow: hidden; }
+  .inv-doc { animation: entra-doc .18s ease-out; }
+  @keyframes entra-doc { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .inv-doc { animation: none; } }
   .inv-cartao, .inv-resumo { background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; }
   .inv-cartao { padding: 14px 16px; }
   .inv-cartao h3 { font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-3); font-weight: 650; }
@@ -1233,7 +1231,7 @@ function abaFicha(id, rolar) {
     $(`painel-${a.id}`).hidden = !sel;
   }
   if (id === "decidir") atualizarDecidir();
-  $("vista-ficha").classList.toggle("larga", id === "investigar");
+  $("vista-ficha").classList.toggle("larga", id === "investigar" && !!leitor.aberto);
   document.querySelectorAll(".ff-passos button").forEach((b) => b.toggleAttribute("aria-current", false) || (b.dataset.aba === id && b.setAttribute("aria-current", "step")));
   if (rolar) $("ficha-abas").scrollIntoView({ block: "start", behavior: "smooth" });
 }
@@ -1396,6 +1394,7 @@ function nomeDoc(d, a) {
 }
 
 function painelInvestigar(d) {
+  if (!leitor.atual || leitor.atual.imovelId !== d.imovel.id) leitor.aberto = false;   // outro imóvel: documento começa fechado
   const esq = el("div", { class: "inv-esq" },
     resumoInvestigacao(d), listaChecklist(d), cartaoParecer(d), faixaDocumentos(d),
     el("details", { class: "inv-cartao inv-outros" }, el("summary", { text: "Outros arquivos (laudo, fotos…)" }), blocoAnexos(d, null)),
@@ -1403,23 +1402,24 @@ function painelInvestigar(d) {
   setTimeout(() => {
     atualizarProgresso();
     // a ficha foi redesenhada (parecer gerado, PDF lido...): o documento que estava aberto continua aberto
-    if (leitor.atual && leitor.atual.imovelId === d.imovel.id && window.matchMedia("(min-width: 1100px)").matches) abrirNoLeitor(leitor.atual, true);
+    if (leitor.aberto && leitor.atual && leitor.atual.imovelId === d.imovel.id) abrirNoLeitor(leitor.atual);
   });
   const l = leitorDocumento(); observarLeitor.observe(l.querySelector(".leitor-corpo"));
   return el("section", { class: "painel inv", id: "painel-investigar", role: "tabpanel", "aria-labelledby": "fa-investigar", hidden: true },
-    el("div", { class: "inv-alternar", role: "tablist", "aria-label": "Ver" },
-      el("button", { type: "button", role: "tab", id: "inv-ver-lista", "aria-selected": "true", text: "Checklist", onclick: () => mostrarColuna("lista") }),
-      el("button", { type: "button", role: "tab", id: "inv-ver-doc", "aria-selected": "false", text: "Documento", onclick: () => mostrarColuna("doc") })),
-    el("div", { class: "inv-grade", id: "inv-grade", "data-coluna": "lista" }, esq, l),
+    el("div", { class: "inv-grade", id: "inv-grade", "data-doc": "fechado" }, esq, l),
     el("p", { class: "inv-teclas" }, "Atalhos ", ...[["↑ ↓", "navegar"], ["Enter", "abrir"], ["A", "aceitar a IA"], ["1–4", "marcar"], ["P", "ver o trecho"]]
       .flatMap(([k, t]) => [el("kbd", { text: k }), ` ${t}  `])));
 }
-function mostrarColuna(c) {
+/* o documento só aparece quando a pessoa pede (clique num p.N ou num documento); ✕ ou Esc fecham */
+function painelDoc(abrir) {
   const g = $("inv-grade"); if (!g) return;
-  g.dataset.coluna = c;
-  $("inv-ver-lista").setAttribute("aria-selected", String(c === "lista"));
-  $("inv-ver-doc").setAttribute("aria-selected", String(c === "doc"));
+  g.dataset.doc = abrir ? "aberto" : "fechado";
+  leitor.aberto = abrir;
+  $("vista-ficha").classList.toggle("larga", abrir && fichaEstado.aba === "investigar");
+  document.body.classList.toggle("doc-tela-cheia", abrir && !window.matchMedia("(min-width: 1100px)").matches);
+  if (!abrir && document.fullscreenElement) document.exitFullscreen();
 }
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && leitor.aberto && !$("vista-ficha").hidden) painelDoc(false); });
 
 /* topo: o que decide em 10 segundos, e a ação principal (gerar o parecer / aceitar as sugestões) */
 function resumoInvestigacao(d) {
@@ -1688,12 +1688,11 @@ function leitorDocumento() {
         bt("−", "Diminuir", () => mudarZoom(-1)), el("span", { class: "lt-zoom num", id: "leitor-zoom", text: "100%" }), bt("+", "Aumentar", () => mudarZoom(1)),
         el("span", { class: "lt-sep" }),
         bt("⤢", "Tela cheia", telaCheia),
-        el("a", { id: "leitor-abrir", class: "lt-b", target: "_blank", rel: "noopener", title: "Abrir em outra aba", "aria-label": "Abrir em outra aba", text: "↗", hidden: true }))),
+        el("a", { id: "leitor-abrir", class: "lt-b", target: "_blank", rel: "noopener", title: "Abrir em outra aba", "aria-label": "Abrir em outra aba", text: "↗", hidden: true }),
+        el("span", { class: "lt-sep" }),
+        bt("✕", "Fechar o documento (Esc)", () => painelDoc(false)))),
     el("div", { class: "leitor-balao", id: "leitor-balao", hidden: true }),
-    el("div", { class: "leitor-corpo", id: "leitor-corpo" },
-      el("div", { class: "leitor-vazio" }, el("b", { text: "O documento aparece aqui" }),
-        el("span", { text: "Clique numa etiqueta de página, como " }), el("span", { class: "chip falso", text: "p.12" }),
-        el("span", { text: ", para abrir o edital ou a matrícula com o trecho em destaque." }))),
+    el("div", { class: "leitor-corpo", id: "leitor-corpo" }),
     el("div", { class: "leitor-miniaturas", id: "leitor-miniaturas", hidden: true }));
 }
 // a largura do leitor mudou (janela, celular girado, tela cheia): redesenha a página atual
@@ -1721,9 +1720,11 @@ async function mudarZoom(passo) {
   leitor.zoom = niveis[i]; $("leitor-zoom").textContent = `${Math.round(leitor.zoom * 100)}%`;
   const a = leitor.atual; if (a && a.total) await desenharPagina(await leitor.pdfs[a.anexoId], a.paginaAtual || 1, ++leitor.seq);
 }
-async function abrirNoLeitor(alvo, semTrocarColuna) {
+async function abrirNoLeitor(alvo) {
   if (!$("leitor-corpo")) return;
-  if (!semTrocarColuna) mostrarColuna("doc");
+  const estavaFechado = !leitor.aberto || $("inv-grade").dataset.doc !== "aberto";
+  painelDoc(true);
+  if (estavaFechado) await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));   // largura nova do painel
   const mesmoDoc = leitor.atual && leitor.atual.anexoId === alvo.anexoId && $("leitor-miniaturas").childElementCount;
   leitor.atual = { ...alvo, imovelId: fichaEstado.dados.imovel.id, total: mesmoDoc ? leitor.atual.total : null };
   const seq = ++leitor.seq, corpo = $("leitor-corpo"), balao = $("leitor-balao");
@@ -1731,7 +1732,6 @@ async function abrirNoLeitor(alvo, semTrocarColuna) {
   balao.hidden = !alvo.trecho;
   if (alvo.trecho) balao.replaceChildren(el("span", { class: "rot", text: alvo.confirmada === false ? "Trecho citado · não encontrado no texto, confira" : "Trecho citado" }),
     el("q", { text: alvo.trecho }));
-  if (!semTrocarColuna && !window.matchMedia("(min-width: 1100px)").matches) $("inv-grade").scrollIntoView({ block: "start", behavior: "smooth" });
   if (alvo.descricao) {
     $("leitor-abrir").hidden = true; $("leitor-pag").textContent = ""; $("leitor-miniaturas").hidden = true;
     corpo.replaceChildren(el("div", { class: "leitor-texto", text: fichaEstado.dados.imovel.descricao || "" }));
@@ -2187,6 +2187,7 @@ function atualizarDecidir() {
 /* ---------- rotas: #/imovel/<id> abre a ficha ---------- */
 let rolagemTriagem = 0, triagemSuja = false;
 function rota() {
+  document.body.classList.remove("doc-tela-cheia");
   const m = /^#\/imovel\/(\d+)$/.exec(location.hash);
   const naFicha = !!m;
   if (naFicha && $("vista-ficha").hidden) rolagemTriagem = window.scrollY;
