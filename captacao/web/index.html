@@ -153,6 +153,8 @@
   .aviso.erro { background: var(--erro); }
 
   .veu { display: none; }
+  .corpo.sem-filtros { grid-template-columns: minmax(0, 1fr); }
+  .corpo.sem-filtros aside.filtros, .corpo.sem-filtros .abrir-gaveta { display: none; }
 
   @media (max-width: 860px) {
     .corpo { grid-template-columns: minmax(0, 1fr); padding: 16px; }
@@ -602,7 +604,7 @@ const ALERTAS = {
   sem_area: "nenhuma área informada",
   preco_ausente: "preço não informado",
 };
-const ORDEM_TEXTO = { preco: "menor preço", desconto: "maior desconto", area_terreno: "maior área de terreno", recente: "mais recentes", leilao: "leilão mais próximo" };
+const ORDEM_TEXTO = { entrada: "último que entrou primeiro", preco: "menor preço", desconto: "maior desconto", area_terreno: "maior área de terreno", recente: "mais recentes", leilao: "leilão mais próximo" };
 const NOMES_FONTE = {};                       // preenchido por /api/opcoes (registro de fontes do servidor)
 const nomeFonte = (f) => NOMES_FONTE[f] || f || "fonte";
 function dataHora(iso) {
@@ -651,9 +653,13 @@ async function api(caminho, opcoes) {
 function marcados(nome) {
   return [...document.querySelectorAll(`input[name="${nome}"]:checked`)].map((i) => i.value);
 }
+// Filtros e ordenação valem para a Fila (o funil). As outras abas são as listas da pessoa:
+// mostram tudo o que foi marcado, com o último que entrou no topo (pilha).
+const ehFila = () => estado.estagio === "identificado";
 function parametros() {
   const p = new URLSearchParams();
   p.set("estagio", estado.estagio);
+  if (!ehFila()) { p.set("ordem", "entrada"); p.set("pagina", String(estado.pagina)); return p; }
   marcados("fonte").forEach((f) => p.append("fonte", f));
   marcados("modalidade").forEach((m) => p.append("modalidade", m));
   marcados("categoria").forEach((c) => p.append("categoria", c));
@@ -864,8 +870,9 @@ async function carregarLista() {
   const lista = $("lista");
   const meu = ++estado.carregando;
   lista.setAttribute("aria-busy", "true");
-  const ativos = contarFiltrosAtivos();
+  const ativos = ehFila() ? contarFiltrosAtivos() : 0;
   $("abrir-gaveta").textContent = ativos ? `Filtros (${ativos})` : "Filtros";
+  $("vista-triagem").classList.toggle("sem-filtros", !ehFila());
   try {
     const r = await api(`/api/imoveis?${parametros()}`);
     if (meu !== estado.carregando) return;           // resposta antiga: ignora

@@ -65,6 +65,16 @@ class Listar(unittest.TestCase):
         self.assertEqual(triagem.listar(self.con, q(sem_alertas=1))["total"], 119)
         self.assertEqual(triagem.listar(self.con, q(estagio="analisar"))["total"], 0)
 
+    def test_ordem_de_entrada_e_pilha(self):
+        ids = [r[0] for r in self.con.con.execute("SELECT id FROM imoveis ORDER BY id LIMIT 3")] if hasattr(self.con, "con") else None
+        repo = self.con if hasattr(self.con, "con") else None
+        if repo is None:
+            self.skipTest("base de teste sem repositório")
+        for i in (ids[1], ids[0], ids[2]):
+            triagem.triar(repo, i, {"para": "analisar"})
+        lista = triagem.listar(repo, {"estagio": ["analisar"], "ordem": ["entrada"]})["itens"]
+        self.assertEqual([x["id"] for x in lista], [ids[2], ids[0], ids[1]])        # último marcado no topo
+
     def test_ordem(self):
         self.assertEqual(triagem.listar(self.con, q(ordem="preco"))["itens"][0]["id_fonte"], "1000")
         self.assertEqual(triagem.listar(self.con, q(ordem="area_terreno"))["itens"][0]["id_fonte"], "1109")

@@ -289,6 +289,7 @@ class RepositorioSQLite:
         "area_terreno": "area_terreno IS NULL, area_terreno DESC, id",
         "recente": "primeira_vez DESC, id DESC",
         "leilao": "proxima_praca IS NULL, proxima_praca ASC, id",
+        "entrada": "(SELECT MAX(t.id) FROM triagens t WHERE t.imovel_id = imoveis.id) DESC, id DESC",  # pilha
     }
 
     @staticmethod
