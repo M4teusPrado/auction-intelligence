@@ -92,7 +92,7 @@ class FiltroImoveis:
     uf: Optional[str] = None
     modalidades: List[str] = field(default_factory=list)
     categorias: List[str] = field(default_factory=list)
-    cidade: Optional[str] = None          # trecho do nome, sem diferença de acento ou maiúscula
+    cidades: List[str] = field(default_factory=list)   # qualquer uma; trecho do nome, sem acento/maiúscula
     tipo: Optional[str] = None            # trecho do tipo da fonte
     preco_min: Optional[float] = None
     preco_max: Optional[float] = None

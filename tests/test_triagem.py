@@ -56,6 +56,9 @@ class Listar(unittest.TestCase):
         self.assertEqual(triagem.listar(self.con, q(categoria=["terreno", "apartamento"]))["total"], 20)
         self.assertEqual(triagem.listar(self.con, q(cidade="sao jose"))["total"], 10)   # sem acento
         self.assertEqual(triagem.listar(self.con, q(cidade="  "))["total"], 120)
+        self.assertEqual(triagem.listar(self.con, {"estagio": ["identificado"], "cidade": ["sorocaba", "sao jose"]})["total"], 20)
+        with self.assertRaises(EntradaInvalida):
+            triagem.listar(self.con, {"cidade": [f"c{i}" for i in range(31)]})
         self.assertEqual(triagem.listar(self.con, q(preco_min=150000, preco_max=160000))["total"], 11)
         self.assertEqual(triagem.listar(self.con, q(desconto_min=55))["total"], 10)
         self.assertEqual(triagem.listar(self.con, q(area_terreno_min=1000))["total"], 10)

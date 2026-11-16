@@ -17,7 +17,7 @@ POR_PAGINA = 50
 CATEGORIAS_VALIDAS = sorted(set(CATEGORIAS.values()) | {"outros"})
 PARAMS_LISTA = {"estagio", "fonte", "modalidade", "categoria", "cidade", "preco_min", "preco_max",
                 "desconto_min", "area_terreno_min", "sem_alertas", "ordem", "pagina"}
-MULTIPLOS = {"fonte", "modalidade", "categoria"}
+MULTIPLOS = {"fonte", "modalidade", "categoria", "cidade"}
 NOTA_MAX = 1000
 
 __all__ = ["listar", "resumo", "opcoes", "triar", "EntradaInvalida", "NaoEncontrado"]
@@ -80,9 +80,9 @@ def filtro_da_tela(params: Dict[str, List[str]]) -> FiltroImoveis:
     for c in f.categorias:
         if c not in CATEGORIAS_VALIDAS:
             raise EntradaInvalida("categoria inválida: use " + ", ".join(CATEGORIAS_VALIDAS))
-    cidade = _um(params, "cidade")
-    if cidade is not None and chave(_texto(cidade, "cidade", 80)):
-        f.cidade = cidade
+    f.cidades = [c for c in (_texto(x, "cidade", 80) for x in params.get("cidade", [])) if chave(c)]
+    if len(f.cidades) > 30:
+        raise EntradaInvalida("cidades demais (máximo 30)")
     f.preco_min, f.preco_max = _numero(params, "preco_min"), _numero(params, "preco_max")
     f.desconto_min, f.area_terreno_min = _numero(params, "desconto_min"), _numero(params, "area_terreno_min")
     f.sem_alertas = _booleano(params, "sem_alertas")

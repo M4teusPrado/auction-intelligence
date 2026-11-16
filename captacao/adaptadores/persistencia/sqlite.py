@@ -309,8 +309,9 @@ class RepositorioSQLite:
             em("modalidade", f.modalidades)
         if f.categorias:
             em("categoria", f.categorias)
-        if f.cidade:
-            where.append("chave(cidade) LIKE ?"); args.append(f"%{chave(f.cidade)}%")
+        if f.cidades:
+            where.append("(" + " OR ".join("chave(cidade) LIKE ?" for _ in f.cidades) + ")")
+            args.extend(f"%{chave(c)}%" for c in f.cidades)
         if f.tipo:
             where.append("chave(COALESCE(tipo, '')) LIKE ?"); args.append(f"%{chave(f.tipo)}%")
         for valor, expr in ((f.preco_min, "preco >= ?"), (f.preco_max, "preco <= ?"),

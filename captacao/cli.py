@@ -75,7 +75,7 @@ def cmd_importar(a, repo):
 
 def cmd_listar(a, repo):
     f = FiltroImoveis(uf=a.uf.upper() if a.uf else None, categorias=[a.categoria.lower()] if a.categoria else [],
-                      cidade=a.cidade, tipo=a.tipo, desconto_min=a.desconto_min, preco_max=a.preco_max,
+                      cidades=[a.cidade] if a.cidade else [], tipo=a.tipo, desconto_min=a.desconto_min, preco_max=a.preco_max,
                       sem_alertas=a.sem_alertas, ordem="desconto", limite=a.limite)
     total, linhas = repo.listar_imoveis(f)
     for r in linhas:

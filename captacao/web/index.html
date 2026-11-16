@@ -307,6 +307,11 @@
   .docs-fonte b { width: 100%; font-size: 14px; }
   .docs-links { display: flex; flex-wrap: wrap; gap: 6px; }
   .docs-links .btn { text-decoration: none; min-height: 32px; padding: 4px 12px; font-size: 13.5px; }
+  .etiquetas { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; }
+  .etiquetas:empty { display: none; }
+  .etiqueta { border: 1px solid var(--borda-forte); background: var(--superficie); border-radius: 999px; padding: 3px 10px;
+              font: inherit; font-size: 13px; cursor: pointer; }
+  .etiqueta:hover { border-color: var(--texto-3); }
   .docs-msg.erro { color: var(--alerta); font-weight: 600; }
   .transcrever { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; width: 100%; }
   .transcrever .dica { font-size: 12px; color: var(--texto-3); }
@@ -516,9 +521,12 @@
       <fieldset><legend>Modalidade</legend><div id="f-modalidade"></div></fieldset>
       <fieldset><legend>Categoria</legend><div id="f-categoria"></div></fieldset>
       <div class="bloco">
-        <label class="rotulo-campo" for="f-cidade">Cidade</label>
-        <input class="campo" id="f-cidade" name="cidade" type="search" list="lista-cidades" placeholder="Buscar cidade" maxlength="80">
+        <label class="rotulo-campo" for="f-cidade">Cidades</label>
+        <input class="campo" id="f-cidade" name="cidade" type="search" list="lista-cidades" placeholder="Buscar e adicionar cidade" maxlength="80"
+               aria-describedby="dica-cidades">
         <datalist id="lista-cidades"></datalist>
+        <div id="f-cidades" class="etiquetas" aria-live="polite"></div>
+        <span class="dica" id="dica-cidades">Escolha na lista ou digite e tecle Enter. Pode adicionar várias.</span>
       </div>
       <div class="bloco">
         <span class="rotulo-campo">Preço (R$)</span>
@@ -597,7 +605,7 @@ const dec = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
 const pct = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const $ = (id) => document.getElementById(id);
 
-const estado = { estagio: "identificado", pagina: 1, resumo: null, opcoes: null, carregando: 0 };
+const estado = { estagio: "identificado", pagina: 1, resumo: null, opcoes: null, carregando: 0, cidades: [] };
 let ultimoAviso = null, timerAviso = null;
 
 /* ---------- utilidades ---------- */
@@ -639,8 +647,9 @@ function parametros() {
   marcados("fonte").forEach((f) => p.append("fonte", f));
   marcados("modalidade").forEach((m) => p.append("modalidade", m));
   marcados("categoria").forEach((c) => p.append("categoria", c));
+  estado.cidades.forEach((c) => p.append("cidade", c));
   const cidade = $("f-cidade").value.trim();
-  if (cidade) p.set("cidade", cidade);
+  if (cidade && !estado.cidades.includes(cidade)) p.append("cidade", cidade);   // ainda digitando: filtra pelo trecho
   for (const [id, nome] of [["f-preco-min", "preco_min"], ["f-preco-max", "preco_max"],
                             ["f-desconto", "desconto_min"], ["f-area", "area_terreno_min"]]) {
     const v = numeroCampo($(id).value);
@@ -653,6 +662,7 @@ function parametros() {
 }
 function contarFiltrosAtivos() {
   let n = marcados("fonte").length + marcados("modalidade").length + marcados("categoria").length;
+  n += estado.cidades.length;
   for (const id of ["f-cidade", "f-preco-min", "f-preco-max", "f-desconto", "f-area"]) if ($(id).value.trim()) n++;
   if ($("f-sem-alertas").checked) n++;
   return n;
@@ -879,13 +889,35 @@ async function carregarLista() {
 function aoMudarFiltro() { estado.pagina = 1; carregarLista(); }
 let timerTexto = null;
 $("form-filtros").addEventListener("change", (ev) => { if (ev.target.type !== "search" && ev.target.inputMode !== "numeric" && ev.target.inputMode !== "decimal") aoMudarFiltro(); });
+function desenharCidades() {
+  $("f-cidades").replaceChildren(...estado.cidades.map((c) => el("button", {
+    type: "button", class: "etiqueta", title: `Tirar ${c} do filtro`, "aria-label": `Tirar ${c} do filtro`,
+    onclick: () => { estado.cidades = estado.cidades.filter((x) => x !== c); desenharCidades(); aoMudarFiltro(); $("f-cidade").focus(); } },
+    el("span", { text: c }), el("span", { "aria-hidden": "true", text: " ×" }))));
+}
+function adicionarCidade(texto) {
+  const v = (texto || "").trim();
+  if (!v) return false;
+  const conhecida = ((estado.opcoes || {}).cidades || []).find((c) => c.valor.toLowerCase() === v.toLowerCase());
+  const nome = conhecida ? conhecida.valor : v;
+  if (!estado.cidades.includes(nome)) estado.cidades.push(nome);
+  $("f-cidade").value = ""; desenharCidades(); return true;
+}
+$("f-cidade").addEventListener("keydown", (ev) => {
+  if (ev.key === "Enter") { ev.preventDefault(); clearTimeout(timerTexto); if (adicionarCidade(ev.target.value)) aoMudarFiltro(); }
+  if (ev.key === "Backspace" && !ev.target.value && estado.cidades.length) { estado.cidades.pop(); desenharCidades(); aoMudarFiltro(); }
+});
 $("form-filtros").addEventListener("input", (ev) => {
   if (ev.target.type === "checkbox" || ev.target.tagName === "SELECT") return;
+  if (ev.target.id === "f-cidade" && ((estado.opcoes || {}).cidades || []).some((c) => c.valor === ev.target.value)) {
+    clearTimeout(timerTexto); adicionarCidade(ev.target.value); aoMudarFiltro(); return;   // escolhida na lista
+  }
   clearTimeout(timerTexto); timerTexto = setTimeout(aoMudarFiltro, 350);
 });
 $("form-filtros").addEventListener("submit", (ev) => { ev.preventDefault(); clearTimeout(timerTexto); aoMudarFiltro(); });
 function limparFiltros() {
   $("form-filtros").reset();
+  estado.cidades = []; desenharCidades();
   document.querySelectorAll('#form-filtros input[type="checkbox"]').forEach((c) => (c.checked = false));
   aoMudarFiltro();
 }
