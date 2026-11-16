@@ -90,6 +90,13 @@ def _bairro(titulo: str) -> str:
     return m.group(1).strip() if m else ""
 
 
+def _link_do_lote(url: str, dominio: str, item_id: str) -> str:
+    """O endereço real do lote. Alguns leiloeiros listam lotes hospedados no site de outro do mesmo
+    grupo (ex.: gabrieltorresleiloes lista lotes de 3torresleiloes); montar com o domínio da coleta dá 404."""
+    m = re.match(r"(https://[^/?#]+/item/\d+/detalhes)", url or "")
+    return m.group(1) if m else f"https://www.{dominio}/item/{item_id}/detalhes"
+
+
 def interpretar_lote(pagina: str, url: str, dominio: str, hoje: Optional[str] = None) -> Optional[ImovelCaptado]:
     """Lê a página de um lote. Devolve None se o lote não for imóvel. Formato estranho: ErroDeFonte."""
     if "soleon" not in (re.search(r'<meta name="author" content="([^"]*)"', pagina) or [None, ""])[1].lower():
@@ -164,7 +171,7 @@ def interpretar_lote(pagina: str, url: str, dominio: str, hoje: Optional[str] = 
         preco=preco, valor_avaliacao=avaliacao,
         desconto_pct=round((1 - preco / avaliacao) * 100, 2) if preco and avaliacao and preco <= avaliacao else None,
         modalidade=tipo_venda or "Leilão", tipo=tipo, area_privativa=privativa, area_terreno=terreno, area_total=total,
-        descricao=f"{titulo}. {descricao}"[:4000], link=f"https://www.{dominio}/item/{item_id}/detalhes",
+        descricao=f"{titulo}. {descricao}"[:4000], link=_link_do_lote(url, dominio, item_id),
         data_fonte=hoje or datetime.now().strftime("%d/%m/%Y"), leilao=lei)
 
 

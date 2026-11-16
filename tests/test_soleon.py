@@ -112,5 +112,13 @@ class Coleta(unittest.TestCase):
             self.assertEqual(repo.buscar_imovel(r["id"])["leilao"]["pracas"][1]["valor"], 210000.0)
 
 
+class LinkReal(unittest.TestCase):
+    def test_lote_hospedado_em_outro_site_do_grupo(self):
+        url = "https://www.3torresleiloes.com.br/item/73187/detalhes"
+        im = so.interpretar_lote(ler("soleon_item_aberto_best.html").decode(), url, "gabrieltorresleiloes.com.br")
+        self.assertEqual(im.link, url)                                       # não monta com o domínio da coleta (404)
+        self.assertEqual(im.id_fonte, "gabrieltorresleiloes.com.br:73187")   # identidade estável
+
+
 if __name__ == "__main__":
     unittest.main()
