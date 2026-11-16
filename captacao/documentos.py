@@ -55,6 +55,19 @@ def leitura_ligada() -> bool:
     return pypdf is not None
 
 
+_CARIMBO = re.compile(r"^.*(valide|assinador|https?://|autenticidade|c[óo]digo de verifica).*$", re.I | re.M)
+
+
+def tem_texto_util(paginas: List[str], minimo: int = 100) -> bool:
+    """O PDF tem texto de verdade? Matrícula digital do ONR, por exemplo, é imagem com só um carimbo
+    de validação em texto ("Valide este documento..."): isso não conta. Útil = metade das páginas
+    ou mais com pelo menos `minimo` letras ou dígitos fora de linhas de carimbo/link."""
+    if not paginas:
+        return False
+    uteis = sum(1 for p in paginas if len(re.findall(r"[0-9A-Za-zÀ-ú]", _CARIMBO.sub("", p or ""))) >= minimo)
+    return uteis * 2 >= len(paginas)
+
+
 def extrair_paginas(dados: bytes) -> List[str]:
     """Texto de cada página. Lista de textos vazios = PDF sem texto (provável imagem escaneada)."""
     if pypdf is None:

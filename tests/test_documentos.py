@@ -68,7 +68,7 @@ class LeituraPdf(unittest.TestCase):
         iid = con.con.execute("SELECT id FROM imoveis LIMIT 1").fetchone()[0]
         pasta = tempfile.mkdtemp()
         r = ficha.anexar(con, pasta, iid, "edital", "edital.pdf",
-                         pdf_com_texto(["O imovel encontra-se ocupado.", "Debitos de condominio por conta do adquirente."]))
+                         pdf_com_texto(["O imovel encontra-se ocupado. | texto complementar desta pagina de teste para ter o tamanho de uma pagina real lida", "Debitos de condominio por conta do adquirente. | texto complementar desta pagina de teste para ter o tamanho de uma pagina real lida"]))
         self.assertEqual(r["anexos"][0]["leitura"], "lido")
         self.assertEqual(set(r["achados"]), {"ocupacao", "condominio", "edital"})
         oc = r["achados"]["ocupacao"][0]
@@ -95,6 +95,15 @@ class SemPypdf(unittest.TestCase):
             self.assertFalse(ficha.ficha(con, iid)["leitura_pdf"])
         finally:
             documentos.pypdf = original
+
+
+class TextoUtil(unittest.TestCase):
+    def test_carimbo_do_onr_nao_conta_como_texto(self):
+        onr = "Valide este documento clicando no link a seguir: https://assinador-web.onr.org.br/docs/X\nValide aqui\neste documento "
+        self.assertFalse(documentos.tem_texto_util([onr] * 5))
+        self.assertFalse(documentos.tem_texto_util([onr] * 4 + ["MATRÍCULA 132.952 Registro de Imóveis " * 10, onr]))
+        self.assertTrue(documentos.tem_texto_util(["19.4.1 Eventuais débitos de condomínio ficam com o adquirente " * 5] * 3))
+        self.assertFalse(documentos.tem_texto_util([]))
 
 
 if __name__ == "__main__":

@@ -233,8 +233,9 @@ class RegrasDoEditalUmaVez(unittest.TestCase):
         self.repo.gravar_coleta("caixa", "SP", "t", [ImovelCaptado(id_fonte="8444425522289", **base),
                                                        ImovelCaptado(id_fonte="8787715548453", **base)])
         self.a, self.b = [r[0] for r in self.repo.con.execute("SELECT id FROM imoveis ORDER BY id_fonte")]
-        edital = pdf_com_texto([self.CLAUSULA, "560 RUA X 8444425522289 134.264,38 / 561 8444411111111 9,00",
-                                "562 8787715548453 50,00 / 563 8787700000002 60,00", "564 8787700000003 1,00 / 565 8787700000004 2,00"])
+        enche = " | texto complementar desta pagina de teste para ter o tamanho de uma pagina real lida"
+        edital = pdf_com_texto([self.CLAUSULA + enche, "560 RUA X 8444425522289 134.264,38 / 561 8444411111111 9,00" + enche,
+                                "562 8787715548453 50,00 / 563 8787700000002 60,00" + enche, "564 8787700000003 1,00 / 565 8787700000004 2,00" + enche])
         pasta = tempfile.mkdtemp()
         for i in (self.a, self.b):
             ficha.anexar(self.repo, pasta, i, "edital", "edital.pdf", edital)

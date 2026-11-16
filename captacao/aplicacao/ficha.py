@@ -45,7 +45,7 @@ def _ler_pdf(repo: RepositorioDeAnalise, anexo_id: int, dados: bytes) -> str:
     except Exception:
         paginas, situacao = [], "erro"
     else:
-        situacao = "lido" if any(p.strip() for p in paginas) else "sem_texto"
+        situacao = "lido" if documentos.tem_texto_util(paginas) else "sem_texto"
     repo.gravar_leitura(anexo_id, situacao, paginas)
     return situacao
 
